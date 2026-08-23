@@ -29,6 +29,11 @@ beforeEach(function (): void {
     ]);
     $user->roles()->attach($adminRole);
 
+    Role::query()->create([
+        'name' => RoleEnum::COMPANY_MANAGER->value,
+        'display_name' => 'مدیر شرکت',
+    ]);
+
     Sanctum::actingAs($user, ['*']);
 
     $this->company = Company::query()->forceCreate([

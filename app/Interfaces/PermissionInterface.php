@@ -19,7 +19,7 @@ interface PermissionInterface
 
     public function byRole(Role $role): Collection;
 
-    public function findRole($user);
+    public function findRole($user): ?Role;
 
     public function findByName($name);
 

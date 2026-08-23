@@ -12,6 +12,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Services\Company\CompanySupportTokenService;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
 
 class AuthService
@@ -35,8 +36,7 @@ class AuthService
             return ServiceResult::error(__('public.invalid_credentials'));
         }
 
-        $authenticatedUserData = $this->authenticatedUserData($user);
-        $company = $authenticatedUserData['role']['name'] === RoleEnum::USER->value
+        $company = $user->company_id !== null
             ? $this->companyForUser($user)
             : null;
         $newToken = $this->accessTokenService->create(
@@ -45,17 +45,10 @@ class AuthService
             $company ? $this->supportTokenService->userAbilitiesFor($company) : ['*'],
         );
 
-        $data = [
+        return ServiceResult::success([
             'token' => $newToken->plainTextToken,
-            ...$authenticatedUserData,
-            'auth_mode' => $company ? 'company' : 'system',
-        ];
-
-        if ($company) {
-            $data['company'] = $this->supportTokenService->context($user, $newToken->accessToken);
-        }
-
-        return ServiceResult::success($data);
+            ...$this->authenticationContext($user, $newToken->accessToken),
+        ]);
     }
 
     public function loginAsCompany(User $admin, Company $company, int $durationDays): ServiceResult
@@ -64,7 +57,15 @@ class AuthService
             return ServiceResult::error(__('public.access_denied', ['attribute' => 'شرکت']), Response::HTTP_FORBIDDEN);
         }
 
-        $authenticatedUserData = $this->authenticatedUserData($admin);
+        $supportRole = $this->supportTokenService->supportRole();
+
+        if (! $supportRole) {
+            return ServiceResult::error(
+                __('public.not_found', ['attribute' => 'نقش مدیر شرکت']),
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
+        }
+
         $newToken = $this->accessTokenService->create(
             $admin,
             $this->supportTokenService->tokenName($company),
@@ -74,9 +75,7 @@ class AuthService
 
         return ServiceResult::success([
             'token' => $newToken->plainTextToken,
-            ...$authenticatedUserData,
-            'auth_mode' => 'company_support',
-            //            'support_access' => $this->supportTokenService->context($admin, $newToken->accessToken),
+            ...$this->authenticationContext($admin, $newToken->accessToken),
         ]);
     }
 
@@ -85,18 +84,9 @@ class AuthService
         /** @var User $user */
         $user = auth()->user();
 
-        $data = $this->authenticatedUserData($user);
-
-        $supportAccess = $this->supportTokenService->currentContext($user);
-        if ($supportAccess) {
-            $isSupportToken = $this->supportTokenService->isSupportToken($user);
-            $data['auth_mode'] = $isSupportToken ? 'company_support' : 'company';
-            $data[$isSupportToken ? 'support_access' : 'company_access'] = $supportAccess;
-        } else {
-            $data['auth_mode'] = 'system';
-        }
-
-        return ServiceResult::success($data);
+        return ServiceResult::success(
+            $this->authenticationContext($user, $this->accessTokenService->current($user))
+        );
     }
 
     public function logout(): ServiceResult
@@ -123,7 +113,7 @@ class AuthService
             ServiceResult::error(__('public.not_found', ['attribute' => 'نقش']), Response::HTTP_FORBIDDEN);
         }
 
-        if ($role->name === RoleEnum::USER->value) {
+        if ($user->company_id !== null) {
             $this->companyForUser($user);
         }
 
@@ -132,6 +122,46 @@ class AuthService
             'role' => $role,
             'permissions' => $user->getPermissions(),
         ];
+    }
+
+    /**
+     * Build the shared response contract used by login, login-as, and check-token.
+     *
+     * @return array<string, mixed>
+     */
+    private function authenticationContext(User $user, ?PersonalAccessToken $token): array
+    {
+        $data = $this->authenticatedUserData($user);
+
+        if (! $token) {
+            return [
+                ...$data,
+                'auth_mode' => 'system',
+            ];
+        }
+
+        $companyContext = $this->supportTokenService->context($user, $token);
+
+        if (! $companyContext) {
+            return [
+                ...$data,
+                'auth_mode' => 'system',
+            ];
+        }
+
+        if ($this->supportTokenService->isSupportAccessToken($token)) {
+            $data['role'] = $this->supportTokenService->supportRole();
+            $data['permissions'] = $this->supportTokenService->permissionsFromToken($token);
+            $data['auth_mode'] = 'company_support';
+            $data['support_access'] = $companyContext;
+
+            return $data;
+        }
+
+        $data['auth_mode'] = 'company';
+        $data['company_access'] = $companyContext;
+
+        return $data;
     }
 
     private function companyForUser(User $user): Company

@@ -16,6 +16,13 @@ class Role extends Model
         'description',
     ];
 
+    protected $hidden = [
+        'pivot',
+        'deleted_at',
+        'created_at',
+        'updated_at',
+    ];
+
     public function permissions(): BelongsToMany
     {
         return $this->belongsToMany(

@@ -6,8 +6,6 @@ use App\Enums\CompanyParentEnum;
 use App\Enums\StatusEnum;
 use App\Http\Requests\BaseRequest;
 use App\Models\Company;
-use App\Models\User;
-use App\Rules\NationalCodeRule;
 use Illuminate\Validation\Rule;
 
 class StoreCompanyRequest extends BaseRequest
@@ -60,19 +58,6 @@ class StoreCompanyRequest extends BaseRequest
 
             'status' => ['nullable', Rule::enum(StatusEnum::class)],
 
-            /*'account' => ['required', 'array'],
-            'account.first_name' => ['required', 'string', 'max:255'],
-            'account.last_name' => ['required', 'string', 'max:255'],
-            'account.phone' => ['required', 'string', 'max:20', Rule::unique(User::class, 'phone')],
-            'account.national_code' => [
-                'required',
-                'string',
-                Rule::unique(User::class, 'national_code'),
-                new NationalCodeRule,
-            ],
-            'account.email' => ['nullable', 'email', 'max:255', Rule::unique(User::class, 'email')],
-            'account.username' => ['required', 'string', 'max:255', Rule::unique(User::class, 'username')],
-            'account.password' => ['required', 'string', 'min:8'],*/
         ];
     }
 }

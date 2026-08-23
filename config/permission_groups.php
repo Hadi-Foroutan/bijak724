@@ -14,6 +14,7 @@ return [
     'roles' => [
         'superAdmin' => ['*'],
         'admin' => ['admin.*'],
+        'companyManager' => ['user.*', 'profile.*'],
         'user' => ['user.*', 'profile.*'],
     ],
 

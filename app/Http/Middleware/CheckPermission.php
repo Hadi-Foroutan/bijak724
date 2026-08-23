@@ -41,9 +41,12 @@ class CheckPermission
         }
 
         if ($currentUser instanceof User
-            && $this->supportTokenService->isSupportToken($currentUser)
-            && Str::is('user.*', $routeName)) {
-            return $next($request);
+            && $this->supportTokenService->isSupportToken($currentUser)) {
+            return $currentUser->tokenCan($routeName)
+                ? $next($request)
+                : response()->json([
+                    'message' => __('public.access_denied', ['attribute' => 'صفحه']),
+                ], Response::HTTP_FORBIDDEN);
         }
 
         // چک کردن سوپر ادمین بودن (اگر برای یوزر هم تعریف شده باشد)

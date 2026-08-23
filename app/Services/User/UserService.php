@@ -15,9 +15,7 @@ class UserService
     public function __construct(
         protected UserInterface $userRepository,
         protected RoleInterface $roleRepository,
-    )
-    {
-    }
+    ) {}
 
     public function all(array $params): ServiceResult
     {
@@ -42,7 +40,7 @@ class UserService
         if (! $isAdmin && empty($data['company_id'])) {
             return ServiceResult::error(
                 __('validation.required', [
-                    'attribute' => 'شرکت'
+                    'attribute' => 'شرکت',
                 ]),
                 Response::HTTP_UNPROCESSABLE_ENTITY
             );
@@ -50,12 +48,22 @@ class UserService
 
         $user = $this->userRepository->store($data);
 
+        if (! $user) {
+            return ServiceResult::error(
+                __('public.not_found', ['attribute' => 'کاربر'])
+            );
+        }
+
+        $this->roleRepository->assignRoleToUser($role, $user);
+        $this->roleRepository->syncDefaultPermissionsToUser($user, $role);
+        $user->load('roles');
+
         // if has image
 
         return ServiceResult::success($user);
     }
 
-    public function update(array $data, User $user = null): ServiceResult
+    public function update(array $data, ?User $user = null): ServiceResult
     {
         return DB::transaction(function () use ($data, $user) {
 
@@ -105,14 +113,16 @@ class UserService
         });
     }
 
-    public function destroy(User $user = null): ServiceResult
+    public function destroy(?User $user = null): ServiceResult
     {
-        if (is_null($user))
+        if (is_null($user)) {
             $user = auth()->user();
+        }
 
         // if has image delete
 
         $this->userRepository->destroy($user);
+
         return ServiceResult::success(__('public.delete_success', ['attribute' => 'کاربر']));
     }
 }

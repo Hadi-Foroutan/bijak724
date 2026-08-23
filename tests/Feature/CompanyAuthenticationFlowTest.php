@@ -8,7 +8,6 @@ use App\Models\Role;
 use App\Models\State;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
-use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Sanctum\Sanctum;
 
 uses(LazilyRefreshDatabase::class);
@@ -32,6 +31,10 @@ beforeEach(function (): void {
         'name' => RoleEnum::USER->value,
         'display_name' => 'کاربر شرکت',
     ]);
+    $this->companyManagerRole = Role::query()->create([
+        'name' => RoleEnum::COMPANY_MANAGER->value,
+        'display_name' => 'مدیر شرکت',
+    ]);
 
     $adminCompanyStorePermission = Permission::query()->create([
         'name' => 'admin.companies.store',
@@ -51,6 +54,7 @@ beforeEach(function (): void {
         $adminCompanyLoginAsPermission->id,
     ]);
     $this->companyUserRole->permissions()->attach($companyDriverStorePermission);
+    $this->companyManagerRole->permissions()->attach($companyDriverStorePermission);
     $this->admin->roles()->attach($this->adminRole);
 
     $state = State::query()->forceCreate([
@@ -66,44 +70,15 @@ beforeEach(function (): void {
     Sanctum::actingAs($this->admin, ['*']);
 });
 
-test('admin creates a company account and the company user can manage its drivers', function () {
+test('admin can create a company without creating a company user', function () {
     $createResponse = $this->postJson('/api/admin/companies', companyCreationPayload())
         ->assertCreated()
         ->assertJsonPath('data.name', 'شرکت حمل‌ونقل تست')
-        ->assertJsonPath('data.account.username', 'company-user')
-        ->assertJsonPath('data.account.company_id', fn (int $companyId): bool => $companyId > 0);
+        ->assertJsonPath('data.account', null);
 
     $companyId = $createResponse->json('data.id');
-    $companyUser = User::query()->where('username', 'company-user')->firstOrFail();
 
-    expect($companyUser->company_id)->toBe($companyId)
-        ->and($companyUser->hasRole(RoleEnum::USER->value))->toBeTrue();
-
-    app('auth')->forgetGuards();
-    $loginResponse = $this->postJson('/api/auth/login', [
-        'username' => 'company-user',
-        'password' => 'company-password',
-    ])
-        ->assertSuccessful()
-        ->assertJsonPath('data.user.company_id', $companyId)
-        ->assertJsonPath('data.role', RoleEnum::USER->value)
-        ->assertJsonPath('data.auth_mode', 'company')
-        ->assertJsonPath('data.company_access.company.id', $companyId);
-
-    $companyToken = $loginResponse->json('data.token');
-    $storedToken = PersonalAccessToken::findToken($companyToken);
-
-    expect($storedToken->abilities)->toContain('company-user', "company:{$companyId}");
-
-    app('auth')->forgetGuards();
-    $this->withToken($companyToken)
-        ->postJson('/api/user/drivers', driverPayload('1234567891', 'LIC-COMPANY'))
-        ->assertCreated()
-        ->assertJsonPath('data.license_number', 'LIC-COMPANY');
-
-    $this->assertDatabaseHas("company_{$companyId}_drivers", [
-        'license_number' => 'LIC-COMPANY',
-    ]);
+    expect(User::query()->where('company_id', $companyId)->exists())->toBeFalse();
 });
 
 test('admin can enter a company as support and manage the same company driver table', function () {
@@ -120,7 +95,7 @@ test('admin can enter a company as support and manage the same company driver ta
     $supportToken = $this->postJson("/api/admin/companies/{$company->id}/login-as")
         ->assertCreated()
         ->assertJsonPath('data.user.id', $this->admin->id)
-        ->assertJsonPath('data.role', RoleEnum::ADMIN->value)
+        ->assertJsonPath('data.role.name', RoleEnum::COMPANY_MANAGER->value)
         ->assertJsonPath('data.auth_mode', 'company_support')
         ->json('data.token');
 
@@ -152,15 +127,6 @@ function companyCreationPayload(): array
         'national_code' => '10000000002',
         'city_code' => 1101,
         'status' => 'active',
-        'account' => [
-            'first_name' => 'کاربر',
-            'last_name' => 'شرکت',
-            'phone' => '09120000002',
-            'national_code' => '1234567891',
-            'email' => 'company-user@example.com',
-            'username' => 'company-user',
-            'password' => 'company-password',
-        ],
     ];
 }
 
@@ -171,7 +137,7 @@ function driverPayload(string $nationalCode, string $licenseNumber): array
 {
     return [
         'national_code' => $nationalCode,
-        'name' => 'علی',
+        'first_name' => 'علی',
         'last_name' => 'احمدی',
         'father_name' => 'رضا',
         'license_number' => $licenseNumber,

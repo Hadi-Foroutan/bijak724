@@ -61,20 +61,12 @@ test('it creates a company and its configured tables', function () {
         'name' => 'Example Company',
         'national_code' => '10000000001',
         'city_code' => 1101,
-        'account' => [
-            'first_name' => 'کاربر',
-            'last_name' => 'شرکت',
-            'phone' => '09120000001',
-            'national_code' => '1234567891',
-            'username' => 'example-company',
-            'password' => 'company-password',
-        ],
     ];
 
     $this->postJson('/api/admin/companies', $payload)
         ->assertCreated()
         ->assertJsonPath('data.organization_code', 'ORG-1000')
-        ->assertJsonPath('data.account.username', 'example-company');
+        ->assertJsonPath('data.account', null);
 
     $company = Company::query()->where('organization_code', 'ORG-1000')->firstOrFail();
 
@@ -119,7 +111,6 @@ test('it validates company creation payloads', function () {
             'national_code',
             'city_code',
             'status',
-            'account',
         ]);
 });
 
@@ -134,14 +125,6 @@ test('it requires unique company identifiers', function () {
         'name' => 'Duplicate Code Company',
         'national_code' => '10000000002',
         'city_code' => 1101,
-        'account' => [
-            'first_name' => 'کاربر',
-            'last_name' => 'شرکت',
-            'phone' => '09120000002',
-            'national_code' => '1234567891',
-            'username' => 'duplicate-company',
-            'password' => 'company-password',
-        ],
     ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors('organization_code');
