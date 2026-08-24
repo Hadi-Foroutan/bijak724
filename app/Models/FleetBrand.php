@@ -3,8 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Cargo extends Model
+class FleetBrand extends Model
 {
     /**
      * The attributes that are mass assignable.
@@ -13,9 +14,13 @@ class Cargo extends Model
      */
     protected $fillable = [
         'name',
-        'code',
-        'description',
+        'brand_code',
     ];
+
+    public function fleetTypes(): HasMany
+    {
+        return $this->hasMany(FleetType::class, 'brand_code', 'brand_code');
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -25,7 +30,7 @@ class Cargo extends Model
     protected function casts(): array
     {
         return [
-            'code' => 'integer',
+            'brand_code' => 'integer',
         ];
     }
 }

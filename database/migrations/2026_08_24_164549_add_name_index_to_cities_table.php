@@ -11,9 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('capacities', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::table('cities', function (Blueprint $table) {
+            $table->index('name');
         });
     }
 
@@ -22,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('capacities');
+        Schema::table('cities', function (Blueprint $table) {
+            $table->dropIndex(['name']);
+        });
     }
 };

@@ -32,4 +32,19 @@ class City extends Model
     {
         return $this->belongsTo(State::class);
     }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'code' => 'integer',
+            'state_id' => 'integer',
+            'tax_id' => 'integer',
+            'tax_ostan' => 'integer',
+        ];
+    }
 }

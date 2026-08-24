@@ -3,13 +3,15 @@
 namespace Database\Seeders;
 
 use App\Services\Company\CompanyService;
+use App\Services\Company\CompanyTableService;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class CompanySeeder extends Seeder
 {
     public function __construct(
-        protected CompanyService $companyService
+        protected CompanyService $companyService,
+        protected CompanyTableService $companyTableService,
     )
     {
     }
@@ -39,7 +41,11 @@ class CompanySeeder extends Seeder
         ];
 
         foreach ($companies as $company) {
-            $this->companyService->create($company);
+            $company = $this->companyService->create($company);
+            $this->companyTableService->createCompanyTables(
+                $company->data['id'],
+                config('company_tables'),
+            );
         }
     }
 }

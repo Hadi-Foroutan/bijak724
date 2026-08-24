@@ -13,8 +13,7 @@ class DriverService
 
     public function __construct(
         protected CompanyDataRepositoryInterface $companyDataRepository,
-    ) {
-    }
+    ) {}
 
     public function index(int $companyId, array $params): ServiceResult
     {
@@ -61,6 +60,16 @@ class DriverService
     public function show(int $companyId, int $driverId): ServiceResult
     {
         return ServiceResult::success($this->findDriver($companyId, $driverId));
+    }
+
+    public function findByNationalCode(int $companyId, string $nationalCode): ServiceResult
+    {
+        $driver = $this->companyDataRepository
+            ->query($companyId, self::TABLE)
+            ->where('national_code', $nationalCode)
+            ->firstOrFail();
+
+        return ServiceResult::success($driver);
     }
 
     public function update(int $companyId, int $driverId, array $data): ServiceResult

@@ -43,8 +43,6 @@ class StatesSeeder extends Seeder
             ['name' => 'گلستان', 'code' => 97],
         ];
 
-        foreach ($states as $state) {
-            State::create($state);
-        }
+        State::query()->upsert($states, ['code'], ['name']);
     }
 }

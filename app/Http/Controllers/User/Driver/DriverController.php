@@ -4,8 +4,10 @@ namespace App\Http\Controllers\User\Driver;
 
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Driver\FindDriverByNationalCodeRequest;
 use App\Http\Requests\Driver\StoreDriverRequest;
 use App\Http\Requests\Driver\UpdateDriverRequest;
+use App\Http\Resources\DriverResource;
 use App\Services\Company\Driver\DriverService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -42,6 +44,18 @@ class DriverController extends Controller
         return ResponseHandler::success($result->data);
     }
 
+    public function inquiry(FindDriverByNationalCodeRequest $request): JsonResponse
+    {
+        $result = $this->driverService->findByNationalCode(
+            $this->companyId($request),
+            $request->validated('national_code'),
+        );
+
+        return ResponseHandler::success(
+            DriverResource::make($result->data)->resolve($request),
+        );
+    }
+
     public function update(
         UpdateDriverRequest $request,
         int $driver,
@@ -64,5 +78,4 @@ class DriverController extends Controller
 
         return ResponseHandler::success([], $result->data);
     }
-
 }

@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Cargo extends Model
+class DriverLicenseType extends Model
 {
     /**
      * The attributes that are mass assignable.
@@ -14,7 +14,6 @@ class Cargo extends Model
     protected $fillable = [
         'name',
         'code',
-        'description',
     ];
 
     /**
