@@ -73,6 +73,23 @@ class Company extends Model
         'status',
     ];
 
+    protected array $globalSearchFields = [
+        'organization_code',
+        'panel_code',
+        'name',
+        'national_code',
+        'contact_code1',
+        'contact_code2',
+        'contact_code3',
+        'technical_contact_first_name',
+        'technical_contact_last_name',
+        'technical_contact_phone',
+        'address',
+        'postal_code',
+        'email',
+        'brand',
+    ];
+
     /*
     |--------------------------------------------------------------------------
     | Relationships

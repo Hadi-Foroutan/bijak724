@@ -17,6 +17,13 @@ class City extends Model
         'tax_id',
         'tax_ostan',
         'anbar_code',
+        'state__name',
+    ];
+
+    protected array $globalSearchFields = [
+        'name',
+        'code',
+        'anbar_code',
     ];
 
     protected array $searchableFields = [

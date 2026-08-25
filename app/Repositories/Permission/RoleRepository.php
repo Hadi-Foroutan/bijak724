@@ -10,9 +10,10 @@ class RoleRepository implements RoleInterface
 {
     public function all(array $params)
     {
-        $roles = Role::searchRecords($params)->addedQuery(function ($query) {
-            return $query->with(['permissions:id']);
-        });
+        $roles = Role::searchRecords(
+            $params,
+            fn ($query) => $query->with(['permissions:id']),
+        );
 
         $roles->each(function (Role $role): void {
             $permissionIds = $role->permissions->modelKeys();
@@ -42,6 +43,7 @@ class RoleRepository implements RoleInterface
     public function update(Role $role, array $data): ?Role
     {
         $role->update($data);
+
         return $role->fresh();
     }
 

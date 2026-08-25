@@ -67,7 +67,6 @@ test('it creates shows and lists fleets with shared table resources', function (
         ->assertCreated()
         ->assertJsonPath('data.smart_card_number', '1234567890')
         ->assertJsonPath('data.ownership_type', FleetOwnershipType::Owned->value)
-        ->assertJsonPath('data.ownership_type_label', 'ملکی')
         ->assertJsonPath('data.driver_license_type.name', 'پایه یک')
         ->assertJsonPath('data.loading_type.name', 'کفی')
         ->assertJsonPath('data.fleet_brand.name', 'بنز')

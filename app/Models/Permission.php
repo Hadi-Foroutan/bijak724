@@ -9,6 +9,22 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Permission extends Model
 {
     use AdvancedSearch,SoftDeletes;
+
+    protected array $searchableFields = [
+        'id',
+        'name',
+        'display_name',
+        'description',
+        'status',
+        'is_default',
+    ];
+
+    protected array $globalSearchFields = [
+        'name',
+        'display_name',
+        'description',
+    ];
+
     protected $fillable = [
         'name',
         'display_name',

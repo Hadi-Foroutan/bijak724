@@ -11,7 +11,8 @@ class CityRepository implements CityRepositoryInterface
 {
     public function all(array $params): Collection|LengthAwarePaginator
     {
-        return City::searchRecords($params)->addedQuery(
+        return City::searchRecords(
+            $params,
             fn ($query) => $query->with('state')
         );
     }

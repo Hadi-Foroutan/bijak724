@@ -17,35 +17,12 @@ class DriverService
 
     public function index(int $companyId, array $params): ServiceResult
     {
-        $query = $this->companyDataRepository
-            ->query($companyId, self::TABLE)
-            ->when(
-                $params['search'] ?? null,
-                function ($query, string $search): void {
-                    $query->where(function ($query) use ($search): void {
-                        $query->where('name', 'like', "%{$search}%")
-                            ->orWhere('last_name', 'like', "%{$search}%")
-                            ->orWhere('national_code', 'like', "%{$search}%")
-                            ->orWhere('license_number', 'like', "%{$search}%")
-                            ->orWhere('phone_number_1', 'like', "%{$search}%")
-                            ->orWhere('phone_number_2', 'like', "%{$search}%")
-                            ->orWhere('phone_number_3', 'like', "%{$search}%");
-                    });
-                },
-            )
-            ->when(
-                isset($params['status']),
-                fn ($query) => $query->where('status', $params['status']),
-            )
-            ->when(
-                isset($params['license_type']),
-                fn ($query) => $query->where('license_type', $params['license_type']),
-            )
-            ->latest('id');
+        /*$params['paginate'] = true;
+        $params['itemsPerPage'] ??= $params['per_page'] ?? 15;*/
 
-        $perPage = min(max((int) ($params['per_page'] ?? 15), 1), 100);
-
-        return ServiceResult::success($query->paginate($perPage));
+        return ServiceResult::success(
+            $this->companyDataRepository->search($companyId, self::TABLE, $params),
+        );
     }
 
     public function create(int $companyId, array $data): ServiceResult

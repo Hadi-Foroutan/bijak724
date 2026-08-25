@@ -9,7 +9,7 @@ class CompanyRepository implements CompanyInterface
 {
     public function all(array $params)
     {
-        return Company::searchRecords($params)->addedQuery();
+        return Company::searchRecords($params);
     }
 
     public function create(array $data): Company
@@ -31,13 +31,11 @@ class CompanyRepository implements CompanyInterface
 
     public function findByOrganizationCode(string $code): ?Company
     {
-        return Company::query()->where('organization_code',$code)->first();
+        return Company::query()->where('organization_code', $code)->first();
     }
 
     public function findByNationalCode(string $code): ?Company
     {
-        return Company::query()->where('national_code',$code)->first();
+        return Company::query()->where('national_code', $code)->first();
     }
-
-
 }

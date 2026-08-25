@@ -2,140 +2,186 @@
 
 namespace App\Traits;
 
-use Carbon\Carbon;
+use Closure;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 
 trait AdvancedSearch
 {
-    private static $query = null;
-    private static $paginate = false;
-    private static $itemsPerPage = 10;
-
-    public static function searchRecords($filters, $getQuery = 0)
+    /**
+     * Search a regular Eloquent model and return its final result.
+     *
+     * @param  array<string, mixed>  $filters
+     * @param  null|Closure(Builder): (Builder|void)  $queryCallback
+     * @return Collection<int, static>|LengthAwarePaginator
+     */
+    public static function searchRecords(array $filters, ?Closure $queryCallback = null): Collection|LengthAwarePaginator
     {
-        $model = new static();
-        $query = $model->newQuery();
+        $model = new static;
+        $query = $model->newQuery()->advancedSearch($filters);
 
-        self::$paginate = $filters['paginate'] ?? false;
-        self::$itemsPerPage = $filters['itemsPerPage'] ?? 10;
+        if ($queryCallback !== null) {
+            $callbackResult = $queryCallback($query);
 
-        $query = self::applySearchFilters($filters, $model, $query);
-        $query = self::applyOrderBy($filters, $model, $query);
-        $query = self::sortOnRelationsByWith($filters, $model, $query);
-
-        if ($getQuery) {
-            return $query;
-        }
-
-        self::$query = $query;
-        return $model;
-    }
-
-    private static function applySearchFilters($filters, $model, $query)
-    {
-        foreach ($filters as $key => $value) {
-            $type = self::getFilterType($key);
-            if (in_array($key, $model->searchableFields ?? [])) {
-                $query = self::applyFilter($query, $key, $value, $type);
+            if ($callbackResult instanceof Builder) {
+                $query = $callbackResult;
             }
         }
+
+        return $model->advancedSearchResults($query, $filters);
+    }
+
+    /**
+     * Apply advanced search rules to an existing builder.
+     *
+     * This is the entry point used by both regular and dynamic models.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    public function scopeAdvancedSearch(Builder $query, array $filters): Builder
+    {
+        $model = $query->getModel();
+
+        $this->applyGlobalSearch($query, $filters, $model);
+        $this->applySearchFilters($query, $filters, $model);
+        $this->applyOrderBy($query, $filters, $model);
+        $this->sortOnRelations($query, $filters, $model);
+
         return $query;
     }
 
-    private static function applyFilter($query, $key, $value, $type)
+    /**
+     * Resolve an advanced-search builder to a collection or paginator.
+     *
+     * @param  array<string, mixed>  $filters
+     * @return Collection<int, Model>|LengthAwarePaginator
+     */
+    public function advancedSearchResults(Builder $query, array $filters): Collection|LengthAwarePaginator
     {
-        $mainTable = $query->getModel()->getTable();
+        if ($this->shouldPaginate($filters)) {
+            return $query->paginate($this->itemsPerPage($filters));
+        }
 
-        if (str_contains($key, "__")) {
-            // جدا کردن تمام بخش‌های رابطه و ستون (مثلا: ['panelLine', 'panel', 'name'])
-            $segments = explode("__", $key);
+        return $query->get();
+    }
 
-            // نام ستون همیشه آخرین بخش است
+    /** @param array<string, mixed> $filters */
+    private function applyGlobalSearch(Builder $query, array $filters, Model $model): void
+    {
+        $search = $filters['search'] ?? null;
+        $globalSearchFields = $this->globalSearchFields($model);
+
+        if ($search === null || $search === '' || $globalSearchFields === []) {
+            return;
+        }
+
+        $query->where(function (Builder $query) use ($globalSearchFields, $search): void {
+            foreach ($globalSearchFields as $index => $field) {
+                $method = $index === 0 ? 'where' : 'orWhere';
+                $query->{$method}($this->qualifySearchColumn($query, $field), 'like', "%{$search}%");
+            }
+        });
+    }
+
+    /** @param array<string, mixed> $filters */
+    private function applySearchFilters(Builder $query, array $filters, Model $model): void
+    {
+        $searchableFields = $this->searchableFields($model);
+
+        foreach ($filters as $filterKey => $value) {
+            $key = (string) $filterKey;
+            $type = $this->getFilterType($key);
+
+            if (! in_array($key, $searchableFields, true)) {
+                continue;
+            }
+
+            $this->applyFilter($query, $key, $value, $type);
+        }
+    }
+
+    private function applyFilter(Builder $query, string $key, mixed $value, string $type): void
+    {
+        if (str_contains($key, '__')) {
+            $segments = explode('__', $key);
             $column = array_pop($segments);
+            $relationPath = implode('.', $segments);
 
-            // نام رابطه‌ها با نقطه به هم متصل می‌شوند (مثلا: panelLine.panel)
-            $relationPath = implode(".", $segments);
-
-            return match ($type) {
-                'min' => $query->whereRelation($relationPath, $column, ">=", $value),
-                'max' => $query->whereRelation($relationPath, $column, "<=", $value),
+            match ($type) {
+                'min' => $query->whereRelation($relationPath, $column, '>=', $value),
+                'max' => $query->whereRelation($relationPath, $column, '<=', $value),
                 'equal' => $query->whereRelation($relationPath, $column, $value),
-                'notEqual' => $query->whereRelation($relationPath, $column, "!=", $value),
-                default => $query->whereRelation($relationPath, $column, "like", "%$value%"),
+                'notEqual' => $query->whereRelation($relationPath, $column, '!=', $value),
+                default => $query->whereRelation($relationPath, $column, 'like', "%{$value}%"),
             };
-        } else {
-            return match ($type) {
-                'min' => $query->where("{$mainTable}.{$key}", ">=", $value),
-                'max' => $query->where("{$mainTable}.{$key}", "<=", $value),
-                'equal' => $query->where("{$mainTable}.{$key}", $value),
-                'notEqual' => $query->whereNot("{$mainTable}.{$key}", $value),
-                'parent' => $query->when($value, fn($query) => $query->whereNull("{$mainTable}.parent_id")),
-                default => $query->where("{$mainTable}.{$key}", "like", "%$value%"),
-            };
-        }
-    }
 
-    private static function applyOrderBy($filters, $model, $query)
-    {
-        if (!isset($filters['order_field'])) {
-            return $query->orderBy("id", "DESC");
+            return;
         }
 
-        $orderField = $filters['order_field'] ?? "created_at";
-        $orderType = $filters['order_type'] ?? "DESC";
+        $column = $this->qualifySearchColumn($query, $key);
 
-        if (in_array($orderField, $model->searchableFields ?? ["id"]) && in_array($orderType, ["ASC", "DESC"])) {
-            return $query->orderBy($orderField, $orderType);
-        }
-
-        return $query;
-    }
-
-    public static function addedQuery(\Closure $closure = null)
-    {
-        $query = $closure ? $closure(self::$query) : self::$query;
-        return self::$paginate ? $query->paginate(self::$itemsPerPage) : $query->get();
-    }
-
-    private static function getFilterType(&$key): string
-    {
-        return match (true) {
-            str_contains($key, 'min-') => self::replaceFilterKey($key, 'min-', 'min'),
-            str_contains($key, 'max-') => self::replaceFilterKey($key, 'max-', 'max'),
-            str_contains($key, 'eq-') => self::replaceFilterKey($key, 'eq-', 'equal'),
-            str_contains($key, 'notEq-') => self::replaceFilterKey($key, 'notEq-', 'notEqual'),
-            $key === 'is_parent' => self::replaceFilterKey($key, 'is_parent', 'parent'),
-            default => 'like',
+        match ($type) {
+            'min' => $query->where($column, '>=', $value),
+            'max' => $query->where($column, '<=', $value),
+            'equal' => $query->where($column, $value),
+            'notEqual' => $query->where($column, '!=', $value),
+            'parent' => $query->when($value, fn (Builder $query) => $query->whereNull(
+                $this->qualifySearchColumn($query, 'parent_id'),
+            )),
+            default => $query->where($column, 'like', "%{$value}%"),
         };
     }
 
-    private static function replaceFilterKey(&$key, $prefix, $type): string
+    /** @param array<string, mixed> $filters */
+    private function applyOrderBy(Builder $query, array $filters, Model $model): void
     {
-        $key = str_replace($prefix, '', $key);
-        return $type;
-    }
+        $relationFields = $this->sortRelationFields($model);
+        $defaultOrderField = $model->getKeyName();
+        $orderField = (string) ($filters['order_field'] ?? $defaultOrderField);
 
-
-    private static function sortOnRelationsByWith($filters, $model, $query)
-    {
-        $relationFields = $model->sortRelationFields ?? [];
-
-        if (!isset($filters['order_field']) || !array_key_exists($filters['order_field'], $relationFields)) {
-            return $query;
+        if (array_key_exists($orderField, $relationFields)) {
+            return;
         }
 
-        $relation = $relationFields[$filters['order_field']];
-        $orderType = strtoupper($filters['order_type'] ?? 'DESC');
-        $orderType = in_array($orderType, ['ASC', 'DESC']) ? $orderType : 'DESC';
+        $sortableFields = array_unique([
+            $defaultOrderField,
+            ...array_filter(
+                $this->searchableFields($model),
+                fn (string $field): bool => ! str_contains($field, '__'),
+            ),
+        ]);
 
+        if (! in_array($orderField, $sortableFields, true)) {
+            $orderField = $defaultOrderField;
+        }
+
+        $query->orderBy(
+            $this->qualifySearchColumn($query, $orderField),
+            $this->orderType($filters),
+        );
+    }
+
+    /** @param array<string, mixed> $filters */
+    private function sortOnRelations(Builder $query, array $filters, Model $model): void
+    {
+        $relationFields = $this->sortRelationFields($model);
+        $orderField = $filters['order_field'] ?? null;
+
+        if (! is_string($orderField) || ! array_key_exists($orderField, $relationFields)) {
+            return;
+        }
+
+        $relation = $relationFields[$orderField];
         $relationName = $relation['relation'] ?? null;
         $field = $relation['field'] ?? null;
 
-        if (!$relationName || !$field) {
-            return $query;
+        if (! is_string($relationName) || ! is_string($field)) {
+            return;
         }
 
+        $orderType = $this->orderType($filters);
         $alias = "{$relationName}_{$orderType}_{$field}";
 
         if ($orderType === 'ASC') {
@@ -144,54 +190,82 @@ trait AdvancedSearch
             $query->withMax("{$relationName} as {$alias}", $field);
         }
 
-        $query->orderBy($alias,$orderType);
-        return $query;
+        $query->orderBy($alias, $orderType);
     }
 
-    private static function sortOnRelationsByJoin($filters, $model, $query)
+    private function getFilterType(string &$key): string
     {
-        $mainTable = $query->getModel()->getTable();
-        $relationFields = $model->sortRelationFields ?? [];
+        return match (true) {
+            str_starts_with($key, 'min-') => $this->replaceFilterKey($key, 'min-', 'min'),
+            str_starts_with($key, 'max-') => $this->replaceFilterKey($key, 'max-', 'max'),
+            str_starts_with($key, 'eq-') => $this->replaceFilterKey($key, 'eq-', 'equal'),
+            str_starts_with($key, 'notEq-') => $this->replaceFilterKey($key, 'notEq-', 'notEqual'),
+            $key === 'is_parent' => $this->replaceFilterKey($key, 'is_parent', 'parent'),
+            default => 'like',
+        };
+    }
 
-        if (isset($filters['order_field']) && array_key_exists($filters['order_field'], $relationFields)) {
-            $relation = $relationFields[$filters['order_field']];
+    private function replaceFilterKey(string &$key, string $prefix, string $type): string
+    {
+        $key = $prefix === 'is_parent'
+            ? 'parent_id'
+            : str_replace($prefix, '', $key);
 
-            $orderType = in_array($filters['order_type'] ?? 'DESC', ["ASC", "DESC"]) ? ($filters['order_type'] ?? 'DESC') : 'DESC';
-            $joins = $relation['joins'] ?? [];
+        return $type;
+    }
 
-            foreach ($joins as $join) {
+    private function qualifySearchColumn(Builder $query, string $column): string
+    {
+        return $query->getModel()->qualifyColumn($column);
+    }
 
-                $table       = $join['table'];
-                $first       = $join['first'];
-                $operator    = $join['operator'] ?? '=';
-                $second      = $join['second'];
-                $whereNull   = $join['where_null'] ?? null;
-                $where       = $join['where'] ?? null;
+    /**
+     * @return list<string>
+     */
+    private function searchableFields(Model $model): array
+    {
+        return property_exists($model, 'searchableFields')
+            ? array_values($model->searchableFields)
+            : [];
+    }
 
-                $alreadyJoined = collect($query->getQuery()->joins ?? [])->pluck('table')->contains($table);
-                if (! $alreadyJoined) {
-                    $query->leftJoin($table, function($q) use ($first, $operator, $second, $whereNull, $where) {
-                        $q->on($first, $operator, $second);
-                        if ($whereNull) {
-                            $q->whereNull($whereNull);
-                        }
-                        if($where){
-                            $q->where(function ($q) use ($where){
-                                $q->whereRaw($where);
-                            });
-                        }
-                    });
-                }
+    /**
+     * @return list<string>
+     */
+    private function globalSearchFields(Model $model): array
+    {
+        return property_exists($model, 'globalSearchFields')
+            ? array_values($model->globalSearchFields)
+            : [];
+    }
 
-            }
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    private function sortRelationFields(Model $model): array
+    {
+        return property_exists($model, 'sortRelationFields')
+            ? $model->sortRelationFields
+            : [];
+    }
 
+    /** @param array<string, mixed> $filters */
+    private function orderType(array $filters): string
+    {
+        $orderType = strtoupper((string) ($filters['order_type'] ?? 'DESC'));
 
-            $query->select("{$mainTable}.*");
-            $sortField = $relation['sort_field'];
-            $query->orderBy($sortField, $orderType);
-            $query->distinct();
-        }
+        return in_array($orderType, ['ASC', 'DESC'], true) ? $orderType : 'DESC';
+    }
 
-        return $query;
+    /** @param array<string, mixed> $filters */
+    private function shouldPaginate(array $filters): bool
+    {
+        return filter_var($filters['paginate'] ?? false, FILTER_VALIDATE_BOOL);
+    }
+
+    /** @param array<string, mixed> $filters */
+    private function itemsPerPage(array $filters): int
+    {
+        return min(max((int) ($filters['itemsPerPage'] ?? 10), 1), 100);
     }
 }

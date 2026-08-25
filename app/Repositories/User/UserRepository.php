@@ -9,9 +9,10 @@ class UserRepository implements UserInterface
 {
     public function all(array $params)
     {
-        return User::searchRecords($params)->addedQuery(function ($query) {
-            return $query->with(['roles']);
-        });
+        return User::searchRecords(
+            $params,
+            fn ($query) => $query->with(['roles']),
+        );
     }
 
     public function store(array $data): ?User

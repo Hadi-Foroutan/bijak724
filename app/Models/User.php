@@ -53,6 +53,17 @@ class User extends Authenticatable
         'status',
     ];
 
+    protected array $globalSearchFields = [
+        'national_code',
+        'full_name',
+        'first_name',
+        'last_name',
+        'print_name',
+        'phone',
+        'email',
+        'username',
+    ];
+
     protected $hidden = [
         'password',
         'created_at',

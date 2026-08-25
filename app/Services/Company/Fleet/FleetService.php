@@ -22,43 +22,9 @@ class FleetService
 
     public function index(int $companyId, array $params): ServiceResult
     {
-        $query = $this->companyDataRepository
-            ->query($companyId, self::TABLE)
-            ->when(
-                $params['search'] ?? null,
-                function ($query, string $search): void {
-                    $query->where(function ($query) use ($search): void {
-                        $query->where('smart_card_number', 'like', "%{$search}%")
-                            ->orWhere('owner_mobile', 'like', "%{$search}%")
-                            ->orWhere('chassis_number', 'like', "%{$search}%")
-                            ->orWhere('engine_number', 'like', "%{$search}%")
-                            ->orWhere('vin', 'like', "%{$search}%")
-                            ->orWhere('plate_two_digits', 'like', "%{$search}%")
-                            ->orWhere('plate_three_digits', 'like', "%{$search}%")
-                            ->orWhere('plate_ir_number', 'like', "%{$search}%");
-                    });
-                },
-            )
-            ->when(
-                isset($params['status']),
-                fn ($query) => $query->where('status', $params['status']),
-            )
-            ->when(
-                isset($params['ownership_type']),
-                fn ($query) => $query->where('ownership_type', $params['ownership_type']),
-            )
-            ->when(
-                isset($params['fleet_brand_id']),
-                fn ($query) => $query->where('fleet_brand_id', $params['fleet_brand_id']),
-            )
-            ->when(
-                isset($params['loading_type_id']),
-                fn ($query) => $query->where('loading_type_id', $params['loading_type_id']),
-            )
-            ->latest('id');
-
-        $perPage = min(max((int) ($params['per_page'] ?? 15), 1), 100);
-        $fleets = $query->paginate($perPage);
+        /*$params['paginate'] = true;
+        $params['itemsPerPage'] ??= $params['per_page'] ?? 15;*/
+        $fleets = $this->companyDataRepository->search($companyId, self::TABLE, $params);
 
         $this->loadReferences($fleets->getCollection());
 
