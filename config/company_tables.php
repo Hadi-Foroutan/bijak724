@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\FleetOwnershipType;
+use App\Enums\StatusEnum;
 use App\Enums\UserStatusEnum;
 
 return [
@@ -44,8 +46,64 @@ return [
         ['name' => 'national_code', 'type' => 'string'],
     ],
     'fleets' => [
-        ['name' => 'name', 'type' => 'string'],
-        ['name' => 'national_code', 'type' => 'string'],
+        ['name' => 'smart_card_number', 'type' => 'string', 'nullable' => false, 'unique' => true],
+        [
+            'name' => 'status',
+            'type' => 'enum',
+            'values' => StatusEnum::values(),
+            'default' => StatusEnum::ACTIVE->value,
+            'nullable' => false,
+        ],
+        [
+            'name' => 'ownership_type',
+            'type' => 'enum',
+            'values' => FleetOwnershipType::values(),
+            'default' => FleetOwnershipType::Unknown->value,
+            'nullable' => false,
+        ],
+        ['name' => 'plate_two_digits', 'type' => 'string', 'length' => 2, 'nullable' => false],
+        ['name' => 'plate_letter', 'type' => 'string', 'length' => 1, 'nullable' => false],
+        ['name' => 'plate_three_digits', 'type' => 'string', 'length' => 3, 'nullable' => false],
+        ['name' => 'plate_ir_number', 'type' => 'string', 'length' => 2, 'nullable' => false],
+        ['name' => 'manufacture_year', 'type' => 'unsignedSmallInteger', 'nullable' => false],
+        [
+            'name' => 'driver_license_type_id',
+            'type' => 'unsignedBigInteger',
+            'nullable' => false,
+            'index' => true,
+            'foreign' => ['table' => 'driver_license_types', 'column' => 'id'],
+        ],
+        ['name' => 'owner_mobile', 'type' => 'string', 'length' => 20, 'nullable' => false],
+        [
+            'name' => 'loading_type_id',
+            'type' => 'unsignedBigInteger',
+            'nullable' => false,
+            'index' => true,
+            'foreign' => ['table' => 'loading_types', 'column' => 'id'],
+        ],
+        ['name' => 'is_loading_type_fixed', 'type' => 'boolean', 'default' => false, 'nullable' => false],
+        ['name' => 'insurance_policy_number', 'type' => 'string', 'nullable' => false],
+        ['name' => 'chassis_number', 'type' => 'string', 'nullable' => false],
+        ['name' => 'engine_number', 'type' => 'string', 'nullable' => false],
+        ['name' => 'vin', 'type' => 'string', 'length' => 50, 'nullable' => false],
+        [
+            'name' => 'fleet_brand_id',
+            'type' => 'unsignedBigInteger',
+            'nullable' => false,
+            'index' => true,
+            'foreign' => ['table' => 'fleet_brands', 'column' => 'id'],
+        ],
+        [
+            'name' => 'fleet_type_code',
+            'type' => 'unsignedBigInteger',
+            'index' => true,
+            'foreign' => ['table' => 'fleet_types', 'column' => 'tip_code'],
+        ],
+        ['name' => 'document_date', 'type' => 'date', 'nullable' => false],
+        ['name' => 'document_number', 'type' => 'string', 'nullable' => false],
+        ['name' => 'insurance_date', 'type' => 'date', 'nullable' => false],
+        ['name' => 'technical_inspection_valid_until', 'type' => 'date', 'nullable' => false],
+        ['name' => 'has_violation', 'type' => 'boolean', 'default' => false, 'nullable' => false],
     ],
     'cargos' => [
         ['name' => 'name', 'type' => 'string'],

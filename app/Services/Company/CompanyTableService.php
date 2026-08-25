@@ -10,8 +10,7 @@ class CompanyTableService
 {
     public function __construct(
         protected CompanyDataRepositoryInterface $companyDataRepository,
-    ) {
-    }
+    ) {}
 
     public function createCompanyTables(int $companyId, array $schemas): void
     {
@@ -40,6 +39,8 @@ class CompanyTableService
             'boolean' => $table->boolean($column['name']),
             'date' => $table->date($column['name']),
             'enum' => $table->enum($column['name'], $column['values']),
+            'unsignedBigInteger' => $table->unsignedBigInteger($column['name']),
+            'unsignedSmallInteger' => $table->unsignedSmallInteger($column['name']),
             default => throw new \InvalidArgumentException("Unsupported company table column type [{$column['type']}]."),
         };
 
@@ -55,6 +56,15 @@ class CompanyTableService
 
         if ($column['unique'] ?? false) {
             $definition->unique();
+        } elseif ($column['index'] ?? false) {
+            $definition->index();
+        }
+
+        if (isset($column['foreign'])) {
+            $table->foreign($column['name'])
+                ->references($column['foreign']['column'])
+                ->on($column['foreign']['table'])
+                ->restrictOnDelete();
         }
     }
 }
