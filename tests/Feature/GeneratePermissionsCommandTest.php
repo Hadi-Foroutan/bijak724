@@ -14,6 +14,7 @@ uses(LazilyRefreshDatabase::class);
 test('it resets and regenerates route permissions with groups and role links', function () {
     config()->set('permission_groups.non_default_permissions', [
         'admin.users.destroy',
+        'user.users.destroy',
         'user.fleets.destroy',
     ]);
 
@@ -143,8 +144,10 @@ test('it resets and regenerates route permissions with groups and role links', f
 
     expect($user->permissions()->where('name', 'user.drivers.index')->exists())->toBeTrue();
     expect($user->permissions()->where('name', 'user.fleets.destroy')->exists())->toBeFalse();
+    expect($user->permissions()->where('name', 'user.users.destroy')->exists())->toBeFalse();
     expect($user->permissions()->where('name', 'admin.users.index')->exists())->toBeTrue();
     expect($companyManager->permissions()->where('name', 'user.fleets.destroy')->exists())->toBeTrue();
+    expect($companyManager->permissions()->where('name', 'user.users.destroy')->exists())->toBeTrue();
     expect($companyManager->permissions()->count())
         ->toBe($companyManagerRole->fresh()->permissions()->count());
 });

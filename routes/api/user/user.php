@@ -1,11 +1,14 @@
 <?php
 
+use App\Http\Controllers\User\CompanyUserController;
 use App\Http\Controllers\User\Dashboard\DashboardController;
 use App\Http\Controllers\User\Driver\DriverController;
 use App\Http\Controllers\User\Fleet\FleetController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+
+Route::apiResource('users', CompanyUserController::class);
 
 Route::apiResource('drivers', DriverController::class);
 Route::prefix('drivers')->name('drivers.')->group(function () {

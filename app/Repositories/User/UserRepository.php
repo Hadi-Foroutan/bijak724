@@ -15,6 +15,16 @@ class UserRepository implements UserInterface
         );
     }
 
+    public function allForCompany(int $companyId, array $params)
+    {
+        return User::searchRecords(
+            $params,
+            fn ($query) => $query
+                ->where('company_id', $companyId)
+                ->with(['roles']),
+        );
+    }
+
     public function store(array $data): ?User
     {
         return User::create($data);
@@ -35,5 +45,13 @@ class UserRepository implements UserInterface
     public function findByUsername(string $username): ?User
     {
         return User::query()->where('username', $username)->first();
+    }
+
+    public function findForCompany(int $companyId, int $userId): User
+    {
+        return User::query()
+            ->where('company_id', $companyId)
+            ->with('roles')
+            ->findOrFail($userId);
     }
 }

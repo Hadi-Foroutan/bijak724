@@ -39,6 +39,12 @@ return [
     // User Permissions
     'user.dashboard.index' => 'کاربر داشبورد ادمین',
 
+    'user.users.index' => 'مشاهده لیست کاربران شرکت',
+    'user.users.store' => 'ایجاد کاربر جدید در شرکت',
+    'user.users.show' => 'مشاهده اطلاعات کاربر شرکت',
+    'user.users.update' => 'ویرایش اطلاعات کاربر شرکت',
+    'user.users.destroy' => 'حذف کاربر از شرکت',
+
     'user.drivers.index' => 'مشاهده لیست راننده ها کاربر',
     'user.drivers.store' => 'ایجاد راننده جدید کاربر',
     'user.drivers.show' => 'نمایش راننده کاربر',
