@@ -55,7 +55,6 @@ class UserService
         }
 
         $this->roleRepository->assignRoleToUser($role, $user);
-        $this->roleRepository->syncDefaultPermissionsToUser($user, $role);
         $user->load('roles');
 
         // if has image
@@ -101,11 +100,6 @@ class UserService
             $user = $this->userRepository->update($data, $user);
 
             $this->roleRepository->assignRoleToUser($role, $user);
-
-            $this->roleRepository->syncDefaultPermissionsToUser(
-                $user,
-                $role
-            );
 
             $user->load('roles');
 

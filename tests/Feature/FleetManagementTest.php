@@ -79,11 +79,17 @@ test('it creates shows and lists fleets with shared table resources', function (
         ->assertJsonPath('data.vin', 'IR123456789012345')
         ->assertJsonPath('data.is_loading_type_fixed', true);
 
-    $this->getJson('/api/user/fleets?search=1234567890')
+    $this->getJson('/api/user/fleets?search=1234567890&paginate=1')
         ->assertSuccessful()
         ->assertJsonPath('data.total', 1)
         ->assertJsonPath('data.data.0.id', $fleetId)
         ->assertJsonPath('data.data.0.fleet_brand.brand_code', 10);
+
+    $this->getJson('/api/user/fleets?search=1234567890')
+        ->assertSuccessful()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $fleetId)
+        ->assertJsonPath('data.0.fleet_brand.brand_code', 10);
 });
 
 test('it updates and deletes a fleet', function () {

@@ -10,9 +10,7 @@ class UserObserver
 {
     public function __construct(
         protected RoleInterface $roleRepository,
-    )
-    {
-    }
+    ) {}
 
     /**
      * Handle the User "created" event.
@@ -22,7 +20,6 @@ class UserObserver
         $role = $this->roleRepository->findByName(RoleEnum::USER->value);
         if ($role) {
             $this->roleRepository->assignRoleToUser($role, $user);
-            $this->roleRepository->syncDefaultPermissionsToUser($user, $role);
         }
     }
 

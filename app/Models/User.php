@@ -143,11 +143,8 @@ class User extends Authenticatable
             return Permission::pluck('name')->toArray();
         }
 
-        // همه permission های رول‌ها
-        return $this->roles()
-            ->with('permissions')
-            ->get()
-            ->flatMap(fn ($role) => $role->permissions->pluck('name'))
+        return $this->permissions()
+            ->pluck('name')
             ->unique()
             ->values()
             ->toArray();

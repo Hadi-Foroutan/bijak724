@@ -14,6 +14,7 @@ uses(LazilyRefreshDatabase::class);
 test('it resets and regenerates route permissions with groups and role links', function () {
     config()->set('permission_groups.non_default_permissions', [
         'admin.users.destroy',
+        'user.fleets.destroy',
     ]);
 
     $superAdminRole = Role::query()->create([
@@ -26,14 +27,24 @@ test('it resets and regenerates route permissions with groups and role links', f
         'display_name' => 'Admin',
     ]);
 
-    Role::query()->create([
+    $userRole = Role::query()->create([
         'name' => RoleEnum::USER->value,
         'display_name' => 'User',
+    ]);
+
+    $companyManagerRole = Role::query()->create([
+        'name' => RoleEnum::COMPANY_MANAGER->value,
+        'display_name' => 'Company Manager',
     ]);
 
     $stalePermission = Permission::query()->create([
         'name' => 'stale.permission',
         'display_name' => 'Stale Permission',
+    ]);
+
+    $existingCustomPermission = Permission::query()->create([
+        'name' => 'admin.users.index',
+        'display_name' => 'Existing Custom Permission',
     ]);
 
     $staleGroup = PermissionGroup::query()->create([
@@ -66,16 +77,30 @@ test('it resets and regenerates route permissions with groups and role links', f
         'updated_at' => now(),
     ]);
 
+    $user->roles()->sync([$userRole->id]);
+    $user->permissions()->attach($existingCustomPermission);
+
+    $companyManager = User::query()->forceCreate([
+        'national_code' => '1234567891',
+        'first_name' => 'Company',
+        'last_name' => 'Manager',
+        'phone' => '09123456780',
+        'email' => 'manager@example.com',
+        'username' => 'company-manager',
+        'password' => 'password',
+    ]);
+    $companyManager->roles()->sync([$companyManagerRole->id]);
+
     $this->artisan('generate-permissions')
         ->expectsOutputToContain('Permission groups:')
         ->assertSuccessful();
 
     expect(Permission::query()->where('name', 'stale.permission')->exists())->toBeFalse();
-    expect(DB::table((new UserPermission)->getTable())->count())->toBe(0);
     expect(Permission::query()->min('id'))->toBe(1);
     expect(PermissionGroup::query()->min('id'))->toBe(1);
     expect(DB::table('permissions_groups')->min('id'))->toBe(1);
     expect(DB::table('role_permissions')->min('id'))->toBe(1);
+    expect(DB::table((new UserPermission)->getTable())->min('id'))->toBe(1);
 
     $permission = Permission::query()
         ->where('name', 'admin.users.index')
@@ -99,12 +124,27 @@ test('it resets and regenerates route permissions with groups and role links', f
     expect($permission->is_default)->toBeTrue();
     expect($nonDefaultPermission->is_default)->toBeFalse();
 
-    $userPermissionId = DB::table((new UserPermission)->getTable())->insertGetId([
-        'user_id' => $user->id,
-        'permission_id' => $permission->id,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
+    $dashboardGroup = PermissionGroup::query()
+        ->where('name', 'مدیریت داشبورد کاربر')
+        ->firstOrFail();
+    $driverGroup = PermissionGroup::query()
+        ->where('name', 'مدیریت رانندگان')
+        ->firstOrFail();
+    $fleetGroup = PermissionGroup::query()
+        ->where('name', 'مدیریت ناوگان')
+        ->firstOrFail();
 
-    expect($userPermissionId)->toBe(1);
+    expect($dashboardGroup->permissions()->pluck('name')->all())
+        ->toBe(['user.dashboard.index']);
+    expect($driverGroup->permissions()->count())->toBe(6)
+        ->and($driverGroup->permissions()->where('name', 'user.drivers.inquiry')->exists())->toBeTrue();
+    expect($fleetGroup->permissions()->count())->toBe(6)
+        ->and($fleetGroup->permissions()->where('name', 'user.fleets.inquiry')->exists())->toBeTrue();
+
+    expect($user->permissions()->where('name', 'user.drivers.index')->exists())->toBeTrue();
+    expect($user->permissions()->where('name', 'user.fleets.destroy')->exists())->toBeFalse();
+    expect($user->permissions()->where('name', 'admin.users.index')->exists())->toBeTrue();
+    expect($companyManager->permissions()->where('name', 'user.fleets.destroy')->exists())->toBeTrue();
+    expect($companyManager->permissions()->count())
+        ->toBe($companyManagerRole->fresh()->permissions()->count());
 });

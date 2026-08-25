@@ -151,7 +151,7 @@ class AuthService
 
         if ($this->supportTokenService->isSupportAccessToken($token)) {
             $data['role'] = $this->supportTokenService->supportRole();
-            $data['permissions'] = $this->supportTokenService->permissionsFromToken($token);
+            $data['permissions'] = $this->supportTokenService->permissionsForToken($token);
             $data['auth_mode'] = 'company_support';
             $data['support_access'] = $companyContext;
 

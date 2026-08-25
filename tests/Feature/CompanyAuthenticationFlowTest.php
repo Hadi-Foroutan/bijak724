@@ -56,6 +56,10 @@ beforeEach(function (): void {
     $this->companyUserRole->permissions()->attach($companyDriverStorePermission);
     $this->companyManagerRole->permissions()->attach($companyDriverStorePermission);
     $this->admin->roles()->attach($this->adminRole);
+    $this->admin->permissions()->attach([
+        $adminCompanyStorePermission->id,
+        $adminCompanyLoginAsPermission->id,
+    ]);
 
     $state = State::query()->forceCreate([
         'name' => 'تهران',

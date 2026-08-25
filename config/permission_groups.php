@@ -7,7 +7,9 @@ return [
         'admin.users.' => 'مدیریت کاربران ادمین',
         'admin.permissions.' => 'مدیریت پرمیشن‌های ادمین',
         'admin.roles.' => 'مدیریت نقش‌های ادمین',
-        'user.' => 'مدیریت پنل کاربر',
+        'user.dashboard.' => 'مدیریت داشبورد کاربر',
+        'user.drivers.' => 'مدیریت رانندگان',
+        'user.fleets.' => 'مدیریت ناوگان',
         'profile.' => 'مدیریت پروفایل کاربر',
     ],
 
@@ -18,7 +20,11 @@ return [
         'user' => ['user.*', 'profile.*'],
     ],
 
-    'non_default_permissions' => [
+    'default_only_roles' => [
+        'user',
+    ],
 
+    'non_default_permissions' => [
+        //        'user.fleets.*'
     ],
 ];

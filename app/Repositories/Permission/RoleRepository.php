@@ -55,6 +55,14 @@ class RoleRepository implements RoleInterface
     public function assignRoleToUser(Role $role, User $user): void
     {
         $user->roles()->sync([$role->id]);
+
+        if (in_array($role->name, config('permission_groups.default_only_roles', []), true)) {
+            $this->syncDefaultPermissionsToUser($user, $role);
+
+            return;
+        }
+
+        $this->syncPermissionsToUser($user, $role);
     }
 
     public function syncDefaultPermissionsToUser(User $user, Role $role): void
@@ -69,11 +77,11 @@ class RoleRepository implements RoleInterface
 
     public function syncPermissionsToUser(User $user, Role $role): void
     {
-        $defaultPermissionIds = $role->permissions()
+        $permissionIds = $role->permissions()
             ->pluck('permissions.id')
             ->all();
 
-        $user->permissions()->sync($defaultPermissionIds);
+        $user->permissions()->sync($permissionIds);
     }
 
     public function syncRolePermissions(Role $role, array $permissions): void

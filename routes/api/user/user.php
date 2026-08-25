@@ -9,12 +9,12 @@ Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.
 
 Route::apiResource('drivers', DriverController::class);
 Route::prefix('drivers')->name('drivers.')->group(function () {
-    Route::get('/inquiry/{nationalCode}', [DriverController::class, 'inquiry'])
+    Route::post('/inquiry/{nationalCode}', [DriverController::class, 'inquiry'])
         ->name('inquiry');
 });
 
 Route::apiResource('fleets', FleetController::class);
 Route::prefix('fleets')->name('fleets.')->group(function () {
-    Route::get('/inquiry/{smartCardNumber}', [FleetController::class, 'inquiry'])
+    Route::post('/inquiry/{smartCardNumber}', [FleetController::class, 'inquiry'])
         ->name('inquiry');
 });

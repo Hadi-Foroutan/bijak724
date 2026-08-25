@@ -42,7 +42,6 @@ class CompanySupportTokenService
         return [
             self::SUPPORT_ABILITY,
             $this->companyAbility($company->id),
-            ...$this->supportPermissions(),
         ];
     }
 
@@ -51,10 +50,21 @@ class CompanySupportTokenService
      */
     public function supportPermissions(): array
     {
-        return $this->supportRole()?->permissions
+        return $this->supportRole()?->permissions()
+            ->where('status', StatusEnum::ACTIVE->value)
+            ->orderBy('name')
             ->pluck('name')
             ->values()
             ->all() ?? [];
+    }
+
+    public function canAccessSupportPermission(PersonalAccessToken $token, string $permission): bool
+    {
+        if (! $this->isSupportAccessToken($token)) {
+            return false;
+        }
+
+        return in_array($permission, $this->supportPermissions(), true);
     }
 
     public function supportRole(): ?Role
@@ -139,7 +149,7 @@ class CompanySupportTokenService
                 'id' => $admin->id,
                 'full_name' => $admin->full_name,
             ],
-            'permissions' => $this->permissionsFromToken($token),
+            'permissions' => $this->permissionsForToken($token),
             'expires_at' => $token->expires_at?->toIso8601String(),
         ];
     }
@@ -147,8 +157,12 @@ class CompanySupportTokenService
     /**
      * @return array<int, string>
      */
-    public function permissionsFromToken(PersonalAccessToken $token): array
+    public function permissionsForToken(PersonalAccessToken $token): array
     {
+        if ($this->isSupportAccessToken($token)) {
+            return $this->supportPermissions();
+        }
+
         return array_values(array_filter(
             $this->accessTokenService->abilities($token),
             fn (string $ability): bool => Str::is(['user.*', 'profile.*'], $ability),

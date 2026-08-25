@@ -42,6 +42,7 @@ beforeEach(function (): void {
     ]);
     $this->adminRole->permissions()->attach($loginAsPermission);
     $this->companyManagerRole->permissions()->attach($companyPermission);
+    $this->admin->permissions()->attach($loginAsPermission);
 
     $this->company = createSupportTestCompany('شرکت مقصد', '10001', 'ORG-10001', '10000000001');
     $this->otherCompany = createSupportTestCompany('شرکت دیگر', '10002', 'ORG-10002', '10000000002');
@@ -61,7 +62,7 @@ test('an admin can issue a temporary company support token', function () {
     $token = PersonalAccessToken::findToken($plainTextToken);
 
     expect($token)->not->toBeNull()
-        ->and($token->abilities)->toContain('company-support', "company:{$this->company->id}", 'user.drivers.index')
+        ->and($token->abilities)->toBe(['company-support', "company:{$this->company->id}"])
         ->and($token->expires_at->timestamp)->toBeGreaterThan(now()->addHours(23)->timestamp)
         ->and($token->expires_at->timestamp)->toBeLessThanOrEqual(now()->addDay()->timestamp);
 
@@ -90,7 +91,7 @@ test('login as and check token share the same authentication response contract',
     expect($checkTokenData)->toBe($loginAsData);
 });
 
-test('a support token cannot use a company permission that was not granted when issued', function () {
+test('a support token cannot use a permission that is not assigned to company manager role', function () {
     $supportToken = issueSupportToken($this, $this->adminToken, $this->company);
 
     Permission::query()->create([
@@ -101,6 +102,25 @@ test('a support token cannot use a company permission that was not granted when 
     withFreshBearerToken($this, $supportToken)
         ->postJson('/api/user/drivers', [])
         ->assertForbidden();
+});
+
+test('support token permissions follow current company manager role permissions', function () {
+    $supportToken = issueSupportToken($this, $this->adminToken, $this->company);
+
+    $newPermission = Permission::query()->create([
+        'name' => 'user.drivers.store',
+        'display_name' => 'ساخت راننده شرکت',
+    ]);
+    $this->companyManagerRole->permissions()->attach($newPermission);
+
+    withFreshBearerToken($this, $supportToken)
+        ->getJson('/api/auth/checkToken')
+        ->assertSuccessful()
+        ->assertJsonPath('data.permissions.1', 'user.drivers.store');
+
+    withFreshBearerToken($this, $supportToken)
+        ->postJson('/api/user/drivers', [])
+        ->assertUnprocessable();
 });
 
 test('a support token is restricted to its own company', function () {
@@ -150,6 +170,9 @@ test('different admins can independently enter the same company panel', function
         'password' => 'password',
     ]);
     $otherAdmin->roles()->attach($this->adminRole);
+    $otherAdmin->permissions()->attach(
+        $this->adminRole->permissions()->pluck('permissions.id')->all()
+    );
     $otherAdminMainToken = $otherAdmin->createToken('other-admin-session', ['*'])->plainTextToken;
     $otherAdminSupportToken = issueSupportToken($this, $otherAdminMainToken, $this->company);
 

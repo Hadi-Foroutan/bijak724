@@ -10,6 +10,7 @@ use App\Models\DynamicModel;
 use App\Models\FleetBrand;
 use App\Models\FleetType;
 use App\Models\LoadingType;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 class FleetService
@@ -22,11 +23,14 @@ class FleetService
 
     public function index(int $companyId, array $params): ServiceResult
     {
-        /*$params['paginate'] = true;
-        $params['itemsPerPage'] ??= $params['per_page'] ?? 15;*/
+        $params['itemsPerPage'] ??= $params['per_page'] ?? 15;
         $fleets = $this->companyDataRepository->search($companyId, self::TABLE, $params);
 
-        $this->loadReferences($fleets->getCollection());
+        $fleetCollection = $fleets instanceof LengthAwarePaginator
+            ? $fleets->getCollection()
+            : $fleets;
+
+        $this->loadReferences($fleetCollection);
 
         return ServiceResult::success($fleets);
     }
