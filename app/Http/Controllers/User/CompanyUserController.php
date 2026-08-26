@@ -13,7 +13,6 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Symfony\Component\HttpFoundation\Response;
 
 class CompanyUserController extends Controller
 {
@@ -37,7 +36,6 @@ class CompanyUserController extends Controller
         return ResponseHandler::success(
             UserResource::make($result->data),
             __('public.created_success', ['attribute' => 'کاربر']),
-            Response::HTTP_CREATED,
         );
     }
 

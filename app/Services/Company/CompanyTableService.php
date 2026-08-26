@@ -17,11 +17,15 @@ class CompanyTableService
         foreach ($schemas as $tableKey => $columns) {
             $tableName = $this->companyDataRepository->table($companyId, $tableKey);
 
-            Schema::create($tableName, function (Blueprint $table) use ($columns) {
+            if (Schema::hasTable($tableName)) {
+                continue;
+            }
+
+            Schema::create($tableName, function (Blueprint $table) use ($columns, $companyId) {
                 $table->id();
 
                 foreach ($columns as $column) {
-                    $this->addColumn($table, $column);
+                    $this->addColumn($table, $column, $companyId);
                 }
 
                 $table->timestamps();
@@ -29,7 +33,7 @@ class CompanyTableService
         }
     }
 
-    private function addColumn(Blueprint $table, array $column): void
+    private function addColumn(Blueprint $table, array $column, int $companyId): void
     {
         $definition = match ($column['type']) {
             'string' => $table->string($column['name'], $column['length'] ?? 255),
@@ -40,6 +44,7 @@ class CompanyTableService
             'date' => $table->date($column['name']),
             'enum' => $table->enum($column['name'], $column['values']),
             'unsignedBigInteger' => $table->unsignedBigInteger($column['name']),
+            'unsignedInteger' => $table->unsignedInteger($column['name']),
             'unsignedSmallInteger' => $table->unsignedSmallInteger($column['name']),
             default => throw new \InvalidArgumentException("Unsupported company table column type [{$column['type']}]."),
         };
@@ -61,10 +66,19 @@ class CompanyTableService
         }
 
         if (isset($column['foreign'])) {
-            $table->foreign($column['name'])
+            $foreignTable = isset($column['foreign']['company_table'])
+                ? $this->companyDataRepository->table($companyId, $column['foreign']['company_table'])
+                : $column['foreign']['table'];
+
+            $foreignKey = $table->foreign($column['name'])
                 ->references($column['foreign']['column'])
-                ->on($column['foreign']['table'])
-                ->restrictOnDelete();
+                ->on($foreignTable);
+
+            match ($column['foreign']['on_delete'] ?? 'restrict') {
+                'cascade' => $foreignKey->cascadeOnDelete(),
+                'null' => $foreignKey->nullOnDelete(),
+                default => $foreignKey->restrictOnDelete(),
+            };
         }
     }
 }

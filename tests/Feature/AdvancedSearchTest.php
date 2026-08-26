@@ -3,6 +3,7 @@
 use App\Interfaces\CompanyDataRepositoryInterface;
 use App\Models\City;
 use App\Models\Company;
+use App\Models\DriverLicenseType;
 use App\Models\State;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -69,18 +70,24 @@ test('the same advanced search rules work on company dynamic tables', function (
     ]);
 
     $repository = app(CompanyDataRepositoryInterface::class);
+    $licenseType = DriverLicenseType::query()->create([
+        'name' => 'پایه یک',
+        'code' => 1,
+    ]);
 
     $repository->create($company->id, 'drivers', dynamicDriverPayload(
         nationalCode: '1234567891',
         firstName: 'علی',
         lastName: 'احمدی',
         status: 'active',
+        licenseTypeId: $licenseType->id,
     ));
     $repository->create($company->id, 'drivers', dynamicDriverPayload(
         nationalCode: '1234567892',
         firstName: 'رضا',
         lastName: 'محمدی',
         status: 'inactive',
+        licenseTypeId: $licenseType->id,
     ));
 
     $drivers = $repository->search($company->id, 'drivers', [
@@ -104,6 +111,7 @@ function dynamicDriverPayload(
     string $firstName,
     string $lastName,
     string $status,
+    int $licenseTypeId,
 ): array {
     return [
         'national_code' => $nationalCode,
@@ -111,7 +119,7 @@ function dynamicDriverPayload(
         'last_name' => $lastName,
         'father_name' => 'حسن',
         'license_number' => "LIC-{$nationalCode}",
-        'license_type' => 'پایه یک',
+        'license_type' => $licenseTypeId,
         'license_expiry_date' => '2028-01-01',
         'phone_number_1' => '09121234567',
         'phone_number_2' => null,

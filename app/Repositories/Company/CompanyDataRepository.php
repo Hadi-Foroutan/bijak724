@@ -9,6 +9,8 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
+use LogicException;
 
 class CompanyDataRepository implements CompanyDataRepositoryInterface
 {
@@ -37,9 +39,14 @@ class CompanyDataRepository implements CompanyDataRepositoryInterface
             ->values()
             ->all();
 
-        return (new DynamicModel)->setTableName(
-            $this->table($companyId, $table)
-        )->setSearchableFields($searchableFields)
+        $model = app($this->modelClass($table));
+
+        if (! $model instanceof DynamicModel) {
+            throw new LogicException("Company model for [{$table}] must extend DynamicModel.");
+        }
+
+        return $model->forCompany($companyId, $table)
+            ->setSearchableFields($searchableFields)
             ->setGlobalSearchFields($globalSearchFields);
     }
 
@@ -104,5 +111,15 @@ class CompanyDataRepository implements CompanyDataRepositoryInterface
     public function create(int $companyId, string $tableKey, array $data): DynamicModel
     {
         return $this->model($companyId, $tableKey)->create($data);
+    }
+
+    /** @return class-string<DynamicModel> */
+    private function modelClass(string $tableKey): string
+    {
+        $modelClass = 'App\\Models\\Company\\'.Str::studly(Str::singular($tableKey));
+
+        return is_subclass_of($modelClass, DynamicModel::class)
+            ? $modelClass
+            : DynamicModel::class;
     }
 }

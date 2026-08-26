@@ -8,12 +8,9 @@ use App\Http\Requests\Fleet\FindFleetBySmartCardNumberRequest;
 use App\Http\Requests\Fleet\StoreFleetRequest;
 use App\Http\Requests\Fleet\UpdateFleetRequest;
 use App\Http\Resources\FleetResource;
-use App\Models\DynamicModel;
 use App\Services\Company\Fleet\FleetService;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Symfony\Component\HttpFoundation\Response;
 
 class FleetController extends Controller
@@ -27,7 +24,7 @@ class FleetController extends Controller
         $result = $this->fleetService->index($this->companyId($request), $request->all());
 
         return ResponseHandler::success(
-            $this->fleetCollectionResource($result->data, $request),
+            $this->resourceCollection($result->data, FleetResource::class, $request),
         );
     }
 
@@ -85,20 +82,5 @@ class FleetController extends Controller
         $result = $this->fleetService->delete($this->companyId($request), $fleet);
 
         return ResponseHandler::success([], $result->data);
-    }
-
-    private function fleetCollectionResource(
-        Collection|LengthAwarePaginator $fleets,
-        Request $request,
-    ): Collection|LengthAwarePaginator {
-        if ($fleets instanceof LengthAwarePaginator) {
-            return $fleets->through(
-                fn (DynamicModel $fleet): array => FleetResource::make($fleet)->resolve($request),
-            );
-        }
-
-        return $fleets->map(
-            fn (DynamicModel $fleet): array => FleetResource::make($fleet)->resolve($request),
-        );
     }
 }

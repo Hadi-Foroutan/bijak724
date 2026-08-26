@@ -239,6 +239,9 @@ return [
         'role_id' => 'نقش',
         'permission_ids.*' => 'دسترسی',
         'national_code' => 'کد ملی',
+        'min_commission_percentage' => 'حداقل درصد کمیسیون',
+        'max_commission_percentage' => 'حداکثر درصد کمیسیون',
+        'status' => 'وضعیت',
     ],
 
 ];

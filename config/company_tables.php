@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\FleetOwnershipType;
+use App\Enums\ShipmentPartyType;
 use App\Enums\StatusEnum;
 use App\Enums\UserStatusEnum;
 
@@ -21,13 +22,21 @@ return [
         ['name' => 'national_code', 'type' => 'string', 'nullable' => false],
         ['name' => 'first_name', 'type' => 'string', 'nullable' => false],
         ['name' => 'last_name', 'type' => 'string', 'nullable' => false],
+        ['name' => 'full_name', 'type' => 'string', 'nullable' => false],
         ['name' => 'father_name', 'type' => 'string', 'nullable' => false],
         ['name' => 'license_number', 'type' => 'string', 'nullable' => false],
-        ['name' => 'license_type', 'type' => 'string', 'nullable' => false],
+        [
+            'name' => 'license_type',
+            'type' => 'unsignedBigInteger',
+            'nullable' => false,
+            'index' => true,
+            'foreign' => ['table' => 'driver_license_types', 'column' => 'id'],
+        ],
         ['name' => 'license_expiry_date', 'type' => 'date', 'nullable' => false],
         ['name' => 'phone_number_1', 'type' => 'string'],
         ['name' => 'phone_number_2', 'type' => 'string'],
         ['name' => 'phone_number_3', 'type' => 'string'],
+        ['name' => 'profile_image_path', 'type' => 'string'],
         ['name' => 'description', 'type' => 'text'],
         [
             'name' => 'status',
@@ -37,13 +46,53 @@ return [
             'nullable' => false,
         ],
     ],
-    'sender_receivers' => [
-        ['name' => 'name', 'type' => 'string'],
-        ['name' => 'national_code', 'type' => 'string'],
+    'shipment_parties' => [
+        ['name' => 'national_identifier', 'type' => 'string', 'length' => 20, 'nullable' => false, 'unique' => true],
+        [
+            'name' => 'type',
+            'type' => 'enum',
+            'values' => ShipmentPartyType::values(),
+            'nullable' => false,
+        ],
+        [
+            'name' => 'status',
+            'type' => 'enum',
+            'values' => StatusEnum::values(),
+            'default' => StatusEnum::ACTIVE->value,
+            'nullable' => false,
+        ],
+        ['name' => 'title', 'type' => 'string'],
+        ['name' => 'first_name', 'type' => 'string'],
+        ['name' => 'last_name', 'type' => 'string'],
+        ['name' => 'mobile', 'type' => 'string', 'length' => 20],
+        ['name' => 'landline', 'type' => 'string', 'length' => 20],
+        ['name' => 'intermediary_code', 'type' => 'string', 'index' => true],
+        ['name' => 'transportation_code', 'type' => 'string', 'index' => true],
+        ['name' => 'email', 'type' => 'string'],
+        ['name' => 'description', 'type' => 'text'],
     ],
-    'addresses' => [
-        ['name' => 'name', 'type' => 'string'],
-        ['name' => 'national_code', 'type' => 'string'],
+    'shipment_party_addresses' => [
+        [
+            'name' => 'shipment_party_id',
+            'type' => 'unsignedBigInteger',
+            'nullable' => false,
+            'index' => true,
+            'foreign' => [
+                'company_table' => 'shipment_parties',
+                'column' => 'id',
+                'on_delete' => 'cascade',
+            ],
+        ],
+        ['name' => 'postal_code', 'type' => 'string', 'length' => 20, 'nullable' => false],
+        [
+            'name' => 'city_code',
+            'type' => 'unsignedInteger',
+            'nullable' => false,
+            'index' => true,
+            'foreign' => ['table' => 'cities', 'column' => 'code'],
+        ],
+        ['name' => 'address', 'type' => 'text', 'nullable' => false],
+        ['name' => 'description', 'type' => 'text'],
     ],
     'fleets' => [
         ['name' => 'smart_card_number', 'type' => 'string', 'nullable' => false, 'unique' => true],

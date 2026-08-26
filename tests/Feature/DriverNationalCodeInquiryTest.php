@@ -4,6 +4,7 @@ use App\Enums\StatusEnum;
 use App\Http\Middleware\CheckPermission;
 use App\Interfaces\CompanyDataRepositoryInterface;
 use App\Models\Company;
+use App\Models\DriverLicenseType;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 
@@ -38,13 +39,18 @@ beforeEach(function (): void {
     )->plainTextToken;
 
     $this->withToken($token);
+
+    $this->driverLicenseType = DriverLicenseType::query()->create([
+        'name' => 'پایه یک',
+        'code' => 1,
+    ]);
 });
 
 test('it returns a company driver by national code using the driver resource', function () {
     $driver = app(CompanyDataRepositoryInterface::class)->create(
         $this->company->id,
         'drivers',
-        driverInquiryPayload(),
+        driverInquiryPayload($this->driverLicenseType->id),
     );
 
     $this->getJson('/api/user/drivers/inquiry/1234567891')
@@ -75,14 +81,14 @@ test('it does not return a driver from another company', function () {
     app(CompanyDataRepositoryInterface::class)->create(
         $otherCompany->id,
         'drivers',
-        driverInquiryPayload(),
+        driverInquiryPayload($this->driverLicenseType->id),
     );
 
     $this->getJson('/api/user/drivers/inquiry/1234567891')
         ->assertNotFound();
 });
 
-function driverInquiryPayload(): array
+function driverInquiryPayload(int $licenseTypeId): array
 {
     return [
         'national_code' => '1234567891',
@@ -90,7 +96,7 @@ function driverInquiryPayload(): array
         'last_name' => 'احمدی',
         'father_name' => 'رضا',
         'license_number' => 'LIC-1001',
-        'license_type' => 'پایه یک',
+        'license_type' => $licenseTypeId,
         'license_expiry_date' => '2028-08-17',
         'phone_number_1' => '09121234567',
         'phone_number_2' => null,

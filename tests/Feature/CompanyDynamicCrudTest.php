@@ -1,0 +1,147 @@
+<?php
+
+use App\Enums\ShipmentPartyType;
+use App\Enums\StatusEnum;
+use App\Http\Middleware\CheckPermission;
+use App\Models\City;
+use App\Models\Company;
+use App\Models\State;
+use App\Models\User;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+
+uses(LazilyRefreshDatabase::class);
+
+beforeEach(function (): void {
+    $this->withoutMiddleware(CheckPermission::class);
+
+    $this->user = User::query()->forceCreate([
+        'national_code' => fake()->unique()->numerify('##########'),
+        'first_name' => 'Test',
+        'last_name' => 'User',
+        'phone' => fake()->unique()->numerify('09#########'),
+        'email' => fake()->unique()->safeEmail(),
+        'username' => fake()->unique()->userName(),
+        'password' => 'password',
+    ]);
+    $this->company = Company::query()->forceCreate([
+        'parent_type' => 'original',
+        'panel_code' => fake()->unique()->numerify('#####'),
+        'organization_code' => fake()->unique()->numerify('##########'),
+        'name' => 'شرکت CRUD تست',
+        'national_code' => fake()->unique()->numerify('###########'),
+        'city_code' => '1101',
+    ]);
+
+    $token = $this->user->createToken(
+        'company-session',
+        ['company-support', "company:{$this->company->id}"],
+        now()->addMinutes(30),
+    )->plainTextToken;
+
+    $this->withToken($token);
+});
+
+test('shipment parties and their nested addresses have complete company scoped crud', function () {
+    $state = State::query()->forceCreate(['name' => 'تهران', 'code' => 11]);
+    $city = City::query()->forceCreate([
+        'name' => 'تهران',
+        'code' => 1101,
+        'state_id' => $state->id,
+    ]);
+
+    $partyId = $this->postJson('/api/user/shipment-parties', [
+        'national_identifier' => '12345678901',
+        'type' => ShipmentPartyType::Sender->value,
+        'title' => 'فرستنده تست',
+        'first_name' => 'علی',
+        'last_name' => 'احمدی',
+        'mobile' => '09121234567',
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.status', StatusEnum::ACTIVE->value)
+        ->assertJsonPath('data.type', ShipmentPartyType::Sender->value)
+        ->assertJsonCount(0, 'data.addresses')
+        ->json('data.id');
+
+    $addressId = $this->postJson("/api/user/shipment-parties/{$partyId}/addresses", [
+        'postal_code' => '1234567890',
+        'city_code' => $city->code,
+        'address' => 'تهران، خیابان تست',
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.shipment_party_id', $partyId)
+        ->assertJsonPath('data.city.name', 'تهران')
+        ->json('data.id');
+
+    $this->getJson("/api/user/shipment-parties/{$partyId}/addresses?paginate=1&itemsPerPage=1")
+        ->assertSuccessful()
+        ->assertJsonPath('data.total', 1)
+        ->assertJsonPath('data.data.0.id', $addressId);
+
+    $this->patchJson("/api/user/shipment-parties/{$partyId}/addresses/{$addressId}", [
+        'description' => 'آدرس ویرایش شده',
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.description', 'آدرس ویرایش شده');
+
+    $this->getJson("/api/user/shipment-parties/{$partyId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.addresses.0.id', $addressId);
+
+    $this->deleteJson("/api/user/shipment-parties/{$partyId}")->assertSuccessful();
+
+    $this->assertDatabaseMissing("company_{$this->company->id}_shipment_party_addresses", [
+        'id' => $addressId,
+    ]);
+});
+
+test('waybills have complete crud and preserve paginated and unpaginated responses', function () {
+    $waybillId = $this->postJson('/api/user/waybills', [
+        'tracking_code' => 'WB-1001',
+        'company_code' => 10,
+        'meta' => ['source' => 'api'],
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.tracking_code', 'WB-1001')
+        ->assertJsonPath('data.meta.source', 'api')
+        ->json('data.id');
+
+    $this->getJson('/api/user/waybills?paginate=1&itemsPerPage=1')
+        ->assertSuccessful()
+        ->assertJsonPath('data.total', 1)
+        ->assertJsonPath('data.data.0.id', $waybillId);
+
+    $this->getJson('/api/user/waybills')
+        ->assertSuccessful()
+        ->assertJsonCount(1, 'data');
+
+    $this->patchJson("/api/user/waybills/{$waybillId}", ['tracking_code' => 'WB-2002'])
+        ->assertSuccessful()
+        ->assertJsonPath('data.tracking_code', 'WB-2002');
+
+    $this->deleteJson("/api/user/waybills/{$waybillId}")->assertSuccessful();
+});
+
+test('company cargos and product owners have complete crud', function (string $endpoint) {
+    $recordId = $this->postJson("/api/user/{$endpoint}", [
+        'name' => 'رکورد تست',
+        'national_code' => '1234567890',
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.name', 'رکورد تست')
+        ->json('data.id');
+
+    $this->getJson("/api/user/{$endpoint}/{$recordId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.national_code', '1234567890');
+
+    $this->patchJson("/api/user/{$endpoint}/{$recordId}", ['name' => 'رکورد ویرایش‌شده'])
+        ->assertSuccessful()
+        ->assertJsonPath('data.name', 'رکورد ویرایش‌شده');
+
+    $this->getJson("/api/user/{$endpoint}?paginate=1")
+        ->assertSuccessful()
+        ->assertJsonPath('data.total', 1);
+
+    $this->deleteJson("/api/user/{$endpoint}/{$recordId}")->assertSuccessful();
+})->with(['cargos', 'product-owners']);

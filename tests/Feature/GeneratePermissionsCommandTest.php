@@ -134,6 +134,18 @@ test('it resets and regenerates route permissions with groups and role links', f
     $fleetGroup = PermissionGroup::query()
         ->where('name', 'مدیریت ناوگان')
         ->firstOrFail();
+    $shipmentPartyGroup = PermissionGroup::query()
+        ->where('name', 'مدیریت فرستندگان و گیرندگان')
+        ->firstOrFail();
+    $waybillGroup = PermissionGroup::query()
+        ->where('name', 'مدیریت بارنامه‌ها')
+        ->firstOrFail();
+    $cargoGroup = PermissionGroup::query()
+        ->where('name', 'مدیریت محموله‌ها')
+        ->firstOrFail();
+    $productOwnerGroup = PermissionGroup::query()
+        ->where('name', 'مدیریت صاحبان کالا')
+        ->firstOrFail();
 
     expect($dashboardGroup->permissions()->pluck('name')->all())
         ->toBe(['user.dashboard.index']);
@@ -141,6 +153,10 @@ test('it resets and regenerates route permissions with groups and role links', f
         ->and($driverGroup->permissions()->where('name', 'user.drivers.inquiry')->exists())->toBeTrue();
     expect($fleetGroup->permissions()->count())->toBe(6)
         ->and($fleetGroup->permissions()->where('name', 'user.fleets.inquiry')->exists())->toBeTrue();
+    expect($shipmentPartyGroup->permissions()->count())->toBe(10)
+        ->and($waybillGroup->permissions()->count())->toBe(5)
+        ->and($cargoGroup->permissions()->count())->toBe(5)
+        ->and($productOwnerGroup->permissions()->count())->toBe(5);
 
     expect($user->permissions()->where('name', 'user.drivers.index')->exists())->toBeTrue();
     expect($user->permissions()->where('name', 'user.fleets.destroy')->exists())->toBeFalse();

@@ -23,7 +23,9 @@ class DriverController extends Controller
     {
         $result = $this->driverService->index($this->companyId($request), $request->all());
 
-        return ResponseHandler::success($result->data);
+        return ResponseHandler::success(
+            $this->resourceCollection($result->data, DriverResource::class, $request),
+        );
     }
 
     public function store(StoreDriverRequest $request): JsonResponse
@@ -31,7 +33,7 @@ class DriverController extends Controller
         $result = $this->driverService->create($this->companyId($request), $request->validated());
 
         return ResponseHandler::success(
-            $result->data,
+            DriverResource::make($result->data),
             __('public.created_success', ['attribute' => 'راننده']),
             Response::HTTP_CREATED,
         );
@@ -41,7 +43,7 @@ class DriverController extends Controller
     {
         $result = $this->driverService->show($this->companyId($request), $driver);
 
-        return ResponseHandler::success($result->data);
+        return ResponseHandler::success(DriverResource::make($result->data));
     }
 
     public function inquiry(FindDriverByNationalCodeRequest $request): JsonResponse
@@ -67,7 +69,7 @@ class DriverController extends Controller
         );
 
         return ResponseHandler::success(
-            $result->data,
+            DriverResource::make($result->data),
             __('public.update_success', ['attribute' => 'راننده']),
         );
     }
