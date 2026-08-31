@@ -4,6 +4,8 @@ namespace App\Repositories\Company;
 
 use App\Interfaces\Company\FleetRepositoryInterface;
 use App\Models\Company\Fleet;
+use App\Models\FleetBrand;
+use App\Models\FleetType;
 use App\Services\Company\DynamicRelationLoader;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,6 +17,8 @@ class FleetRepository extends CompanyModelRepository implements FleetRepositoryI
 
     public function __construct(
         protected Fleet $fleet,
+        protected FleetBrand $fleetBrand,
+        protected FleetType $fleetType,
         DynamicRelationLoader $relationLoader,
     ) {
         parent::__construct($relationLoader);
@@ -62,5 +66,20 @@ class FleetRepository extends CompanyModelRepository implements FleetRepositoryI
 
         /** @var Fleet */
         return $this->loadRelations($companyId, $fleet);
+    }
+
+    public function systemIdForTipCode(int $tipCode): ?int
+    {
+        $systemId = $this->fleetType->newQuery()
+            ->whereKey($tipCode)
+            ->join(
+                $this->fleetBrand->getTable(),
+                $this->fleetType->qualifyColumn('brand_code'),
+                '=',
+                $this->fleetBrand->qualifyColumn('brand_code'),
+            )
+            ->value($this->fleetBrand->qualifyColumn('id'));
+
+        return $systemId === null ? null : (int) $systemId;
     }
 }

@@ -33,8 +33,8 @@ class RoleSeeder extends Seeder
             ],
             [
                 'name' => 'user',
-                'display_name' => 'کاربر',
-                'description' => 'کاربر عادی سیستم',
+                'display_name' => 'کاربر حمل و نقل',
+                'description' => 'کاربر عادی شرکت',
             ],
         ];
 

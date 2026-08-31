@@ -54,9 +54,8 @@ class CompanyUserService
     public function update(int $companyId, int $userId, array $data): ServiceResult
     {
         $user = $this->userRepository->findForCompany($companyId, $userId);
-        $user = $this->userRepository->update($data, $user);
 
-        return ServiceResult::success($user?->load('roles'));
+        return $this->userService->update($data, $user);
     }
 
     public function destroy(int $companyId, int $userId, int $actorId): ServiceResult
@@ -70,10 +69,6 @@ class CompanyUserService
             );
         }
 
-        $this->userRepository->destroy($user);
-
-        return ServiceResult::success(
-            __('public.delete_success', ['attribute' => 'کاربر']),
-        );
+        return $this->userService->destroy($user);
     }
 }

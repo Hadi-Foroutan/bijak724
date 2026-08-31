@@ -27,6 +27,22 @@ class StoreCompanyUserRequest extends BaseRequest
             'min_commission_percentage' => ['sometimes', 'numeric', 'min:0', 'max:100'],
             'max_commission_percentage' => ['sometimes', 'numeric', 'min:0', 'max:100'],
             'address' => ['nullable', 'string'],
+            'profile_image' => [
+                'sometimes',
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:'.config('company_uploads.image_max_size_kb', 5120),
+            ],
+            'signature_image' => [
+                'sometimes',
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:'.config('company_uploads.image_max_size_kb', 5120),
+            ],
+            'remove_profile_image' => ['sometimes', 'boolean'],
+            'remove_signature_image' => ['sometimes', 'boolean'],
             'description' => ['nullable', 'string'],
             'status' => ['sometimes', 'string', Rule::enum(UserStatusEnum::class)],
         ];

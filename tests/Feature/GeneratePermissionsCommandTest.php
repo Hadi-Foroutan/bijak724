@@ -14,7 +14,7 @@ uses(LazilyRefreshDatabase::class);
 test('it resets and regenerates route permissions with groups and role links', function () {
     config()->set('permission_groups.non_default_permissions', [
         'admin.users.destroy',
-        'user.users.destroy',
+        'user.users.*',
         'user.fleets.destroy',
     ]);
 
@@ -48,6 +48,12 @@ test('it resets and regenerates route permissions with groups and role links', f
         'display_name' => 'Existing Custom Permission',
     ]);
 
+    $existingNonDefaultPermission = Permission::query()->create([
+        'name' => 'user.fleets.destroy',
+        'display_name' => 'Existing Non-default Permission',
+        'is_default' => false,
+    ]);
+
     $staleGroup = PermissionGroup::query()->create([
         'name' => 'Stale Group',
     ]);
@@ -79,7 +85,10 @@ test('it resets and regenerates route permissions with groups and role links', f
     ]);
 
     $user->roles()->sync([$userRole->id]);
-    $user->permissions()->attach($existingCustomPermission);
+    $user->permissions()->attach([
+        $existingCustomPermission->id,
+        $existingNonDefaultPermission->id,
+    ]);
 
     $companyManager = User::query()->forceCreate([
         'national_code' => '1234567891',
@@ -122,6 +131,8 @@ test('it resets and regenerates route permissions with groups and role links', f
 
     expect($adminRole->fresh()->permissions()->where('name', 'admin.users.index')->exists())->toBeTrue();
     expect($superAdminRole->fresh()->permissions()->count())->toBe(Permission::query()->count());
+    expect($userRole->fresh()->permissions()->where('is_default', false)->exists())->toBeFalse();
+    expect($userRole->fresh()->permissions()->where('name', 'like', 'user.users.%')->exists())->toBeFalse();
     expect($permission->is_default)->toBeTrue();
     expect($nonDefaultPermission->is_default)->toBeFalse();
 

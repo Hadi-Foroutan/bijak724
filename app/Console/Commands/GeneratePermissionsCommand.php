@@ -255,6 +255,8 @@ class GeneratePermissionsCommand extends Command
      */
     private function syncRolePermissions(Collection $permissions): void
     {
+        $defaultOnlyRoles = config('permission_groups.default_only_roles', []);
+
         foreach ($this->rolePermissionPatterns() as $roleName => $patterns) {
             $role = Role::query()->where('name', $roleName)->first();
 
@@ -264,8 +266,14 @@ class GeneratePermissionsCommand extends Command
                 continue;
             }
 
+            $rolePermissions = $permissions;
+
+            if (in_array($roleName, $defaultOnlyRoles, true)) {
+                $rolePermissions = $rolePermissions->where('is_default', true);
+            }
+
             $permissionIds = collect($patterns)
-                ->flatMap(fn (string $pattern): Collection => $this->permissionsMatchingPattern($permissions, $pattern)->pluck('id'))
+                ->flatMap(fn (string $pattern): Collection => $this->permissionsMatchingPattern($rolePermissions, $pattern)->pluck('id'))
                 ->unique()
                 ->values()
                 ->all();
@@ -287,6 +295,10 @@ class GeneratePermissionsCommand extends Command
             ->with('roles.permissions:id,name,is_default')
             ->get()
             ->each(function (User $user) use ($permissions, $existingUserPermissions, $defaultOnlyRoles): void {
+                $hasDefaultOnlyRole = $user->roles->contains(
+                    fn (Role $role): bool => in_array($role->name, $defaultOnlyRoles, true)
+                );
+
                 $rolePermissionIds = $user->roles->flatMap(function (Role $role) use ($defaultOnlyRoles): Collection {
                     $rolePermissions = $role->permissions;
 
@@ -297,7 +309,13 @@ class GeneratePermissionsCommand extends Command
                     return $rolePermissions->pluck('id');
                 });
 
-                $existingPermissionIds = $permissions
+                $existingPermissions = $permissions;
+
+                if ($hasDefaultOnlyRole) {
+                    $existingPermissions = $existingPermissions->where('is_default', true);
+                }
+
+                $existingPermissionIds = $existingPermissions
                     ->only($existingUserPermissions->get($user->id, []))
                     ->pluck('id');
 

@@ -23,4 +23,6 @@ interface FleetRepositoryInterface extends CompanyModelRepositoryInterface
     public function delete(int $companyId, int $id): void;
 
     public function findBySmartCardNumber(int $companyId, string $smartCardNumber): Fleet;
+
+    public function systemIdForTipCode(int $tipCode): ?int;
 }

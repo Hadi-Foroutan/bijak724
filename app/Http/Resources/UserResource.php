@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\Uploads\UserImageUploader;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -15,7 +16,7 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'company_id' => $this->company_id,
-            //            'role' => $this->whenLoaded('roles', fn () => $this->roles->first()),
+            'role' => $this->whenLoaded('roles', fn () => $this->roles->first()),
             'full_name' => $this->full_name,
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
@@ -27,6 +28,8 @@ class UserResource extends JsonResource
             'min_commission_percentage' => $this->min_commission_percentage,
             'max_commission_percentage' => $this->max_commission_percentage,
             'address' => $this->address,
+            'profile_image_url' => app(UserImageUploader::class)->url($this->profile_image),
+            'signature_image_url' => app(UserImageUploader::class)->url($this->signature_image),
             'description' => $this->description,
             'status' => $this->status,
         ];

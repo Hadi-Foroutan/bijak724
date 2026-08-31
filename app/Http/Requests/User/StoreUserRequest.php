@@ -18,7 +18,7 @@ class StoreUserRequest extends BaseRequest
             'company_id' => [
                 'nullable',
                 'exists:companies,id',
-                new CompanyRequiredForRole()
+                new CompanyRequiredForRole,
             ],
 
             'first_name' => [
@@ -51,7 +51,7 @@ class StoreUserRequest extends BaseRequest
                 'required',
                 'string',
                 Rule::unique('users', 'national_code')->ignore($user),
-//                new NationalCodeRule(),
+                //                new NationalCodeRule(),
             ],
 
             'email' => [
@@ -90,11 +90,25 @@ class StoreUserRequest extends BaseRequest
                 'string',
             ],
 
-            'signature' => [
+            'signature_image' => [
+                'sometimes',
                 'nullable',
                 'image',
-                'mimes:jpeg,jpg,png',
+                'mimes:jpeg,jpg,png,webp',
+                'max:'.config('company_uploads.image_max_size_kb', 5120),
             ],
+
+            'profile_image' => [
+                'sometimes',
+                'nullable',
+                'image',
+                'mimes:jpeg,jpg,png,webp',
+                'max:'.config('company_uploads.image_max_size_kb', 5120),
+            ],
+
+            'remove_profile_image' => ['sometimes', 'boolean'],
+
+            'remove_signature_image' => ['sometimes', 'boolean'],
 
             'description' => [
                 'nullable',
@@ -104,7 +118,7 @@ class StoreUserRequest extends BaseRequest
             'status' => [
                 'required',
                 'string',
-                'in:' . implode(',', UserStatusEnum::values()),
+                'in:'.implode(',', UserStatusEnum::values()),
             ],
         ];
     }

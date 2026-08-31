@@ -32,11 +32,11 @@ class Fleet extends DynamicModel
 
     public function fleetBrand(): BelongsTo
     {
-        return $this->belongsTo(FleetBrand::class, 'fleet_brand_id');
+        return $this->belongsTo(FleetBrand::class, 'system_id');
     }
 
     public function fleetType(): BelongsTo
     {
-        return $this->belongsTo(FleetType::class, 'fleet_type_code', 'tip_code');
+        return $this->belongsTo(FleetType::class, 'tip_code', 'tip_code');
     }
 }
