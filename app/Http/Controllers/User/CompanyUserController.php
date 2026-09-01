@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\User\StoreCompanyUserRequest;
 use App\Http\Requests\User\UpdateCompanyUserRequest;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\Users\TreeUsersResource;
 use App\Models\User;
 use App\Services\User\CompanyUserService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -22,6 +23,12 @@ class CompanyUserController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        if ($request->boolean('tree')) {
+            $result = $this->companyUserService->tree($this->companyId($request), $request->all());
+
+            return ResponseHandler::success(TreeUsersResource::collection($result->data));
+        }
+
         $result = $this->companyUserService->all($this->companyId($request), $request->all());
 
         return ResponseHandler::success(

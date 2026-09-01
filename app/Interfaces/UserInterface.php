@@ -3,12 +3,19 @@
 namespace App\Interfaces;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 
 interface UserInterface
 {
     public function all(array $params);
 
     public function allForCompany(int $companyId, array $params);
+
+    /** @return Collection<int, User> */
+    public function tree(array $params): Collection;
+
+    /** @return Collection<int, User> */
+    public function treeForCompany(int $companyId, array $params): Collection;
 
     public function store(array $data): ?User;
 

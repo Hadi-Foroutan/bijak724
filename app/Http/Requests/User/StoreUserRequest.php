@@ -21,6 +21,13 @@ class StoreUserRequest extends BaseRequest
                 new CompanyRequiredForRole,
             ],
 
+            'parent_id' => [
+                'sometimes',
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->whereNull('deleted_at'),
+            ],
+
             'first_name' => [
                 'required',
                 'string',

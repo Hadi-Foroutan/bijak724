@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Permission\SyncPermissionsRequest;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\Users\TreeUsersResource;
 use App\Models\User;
 use App\Services\Permission\PermissionService;
 use App\Services\User\UserService;
@@ -21,6 +22,12 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
+        if ($request->boolean('tree')) {
+            $res = $this->userService->tree($request->all());
+
+            return ResponseHandler::success(TreeUsersResource::collection($res->data));
+        }
+
         $res = $this->userService->all($request->all());
 
         return ResponseHandler::success($this->resourceCollection(

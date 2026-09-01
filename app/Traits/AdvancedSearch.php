@@ -61,7 +61,9 @@ trait AdvancedSearch
     public function advancedSearchResults(Builder $query, array $filters): Collection|LengthAwarePaginator
     {
         if ($this->shouldPaginate($filters)) {
-            return $query->paginate($this->itemsPerPage($filters));
+            return $query
+                ->paginate($this->itemsPerPage($filters))
+                ->withQueryString();
         }
 
         return $query->get();
@@ -70,7 +72,7 @@ trait AdvancedSearch
     /** @param array<string, mixed> $filters */
     private function applyGlobalSearch(Builder $query, array $filters, Model $model): void
     {
-        $search = $filters['search'] ?? null;
+        $search = $this->normalizeSearchValue($filters['search'] ?? null);
         $globalSearchFields = $this->globalSearchFields($model);
 
         if ($search === null || $search === '' || $globalSearchFields === []) {
@@ -91,10 +93,16 @@ trait AdvancedSearch
         $searchableFields = $this->searchableFields($model);
 
         foreach ($filters as $filterKey => $value) {
-            $key = (string) $filterKey;
+            $key = $filterKey;
             $type = $this->getFilterType($key);
 
             if (! in_array($key, $searchableFields, true)) {
+                continue;
+            }
+
+            $value = $this->normalizeSearchValue($value);
+
+            if ($type === 'like' && $value === '') {
                 continue;
             }
 
@@ -267,5 +275,14 @@ trait AdvancedSearch
     private function itemsPerPage(array $filters): int
     {
         return min(max((int) ($filters['itemsPerPage'] ?? 10), 1), 100);
+    }
+
+    private function normalizeSearchValue(mixed $value): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        return preg_replace('/[\s\p{Z}]+/u', ' ', trim($value)) ?? trim($value);
     }
 }

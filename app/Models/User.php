@@ -9,6 +9,7 @@ use App\Traits\AdvancedSearch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
@@ -19,6 +20,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'company_id',
+        'parent_id',
         'national_code',
         'full_name',
         'first_name',
@@ -39,6 +41,7 @@ class User extends Authenticatable
 
     protected array $searchableFields = [
         'company_id',
+        'parent_id',
         'national_code',
         'full_name',
         'first_name',
@@ -104,6 +107,16 @@ class User extends Authenticatable
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id')->with('children');
     }
 
     public function permissions(): BelongsToMany

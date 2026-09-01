@@ -16,6 +16,12 @@ class StoreCompanyUserRequest extends BaseRequest
         $userId = $this->route('user');
 
         return [
+            'parent_id' => [
+                'sometimes',
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->whereNull('deleted_at'),
+            ],
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'print_name' => ['nullable', 'string', 'max:255'],

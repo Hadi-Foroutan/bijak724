@@ -25,6 +25,13 @@ class CompanyUserService
         );
     }
 
+    public function tree(int $companyId, array $params): ServiceResult
+    {
+        return ServiceResult::success(
+            $this->userRepository->treeForCompany($companyId, $params),
+        );
+    }
+
     public function store(int $companyId, array $data): ServiceResult
     {
         $role = $this->roleRepository->findByName(RoleEnum::USER->value);
