@@ -4,6 +4,7 @@ namespace App\Repositories\Company;
 
 use App\Interfaces\CompanyDataRepositoryInterface;
 use App\Models\DynamicModel;
+use App\Services\Company\CompanyDataOwnerResolver;
 use Closure;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
@@ -14,9 +15,15 @@ use LogicException;
 
 class CompanyDataRepository implements CompanyDataRepositoryInterface
 {
+    public function __construct(
+        protected CompanyDataOwnerResolver $companyDataOwnerResolver,
+    ) {}
+
     public function table(int $companyId, string $table): string
     {
-        return "company_{$companyId}_{$table}";
+        $dataOwnerCompanyId = $this->companyDataOwnerResolver->resolveId($companyId);
+
+        return "company_{$dataOwnerCompanyId}_{$table}";
     }
 
     protected function model(int $companyId, string $table): DynamicModel

@@ -32,6 +32,7 @@ use App\Repositories\Company\WaybillRepository;
 use App\Repositories\Permission\PermissionRepository;
 use App\Repositories\Permission\RoleRepository;
 use App\Repositories\User\UserRepository;
+use App\Services\Company\CompanyDataOwnerResolver;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
@@ -44,7 +45,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->scoped(CompanyDataOwnerResolver::class);
     }
 
     /**

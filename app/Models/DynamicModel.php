@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Company\CompanyDataOwnerResolver;
 use App\Traits\AdvancedSearch;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -33,7 +34,9 @@ class DynamicModel extends Model
             throw new LogicException('A company table key must be provided.');
         }
 
-        return $this->setTableName("company_{$companyId}_{$resolvedTableKey}");
+        $dataOwnerCompanyId = app(CompanyDataOwnerResolver::class)->resolveId($companyId);
+
+        return $this->setTableName("company_{$dataOwnerCompanyId}_{$resolvedTableKey}");
     }
 
     public function setTableName(string $table): static

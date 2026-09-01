@@ -4,11 +4,16 @@ namespace App\Repositories\User;
 
 use App\Interfaces\UserInterface;
 use App\Models\User;
+use App\Services\TreeBuilder;
 use Closure;
 use Illuminate\Database\Eloquent\Collection;
 
 class UserRepository implements UserInterface
 {
+    public function __construct(
+        protected TreeBuilder $treeBuilder,
+    ) {}
+
     public function all(array $params)
     {
         return User::searchRecords(
@@ -29,12 +34,12 @@ class UserRepository implements UserInterface
 
     public function tree(array $params): Collection
     {
-        return $this->buildTree($this->usersForTree($params));
+        return $this->treeBuilder->build($this->usersForTree($params));
     }
 
     public function treeForCompany(int $companyId, array $params): Collection
     {
-        return $this->buildTree($this->usersForTree(
+        return $this->treeBuilder->build($this->usersForTree(
             $params,
             fn ($query) => $query->where('company_id', $companyId),
         ));
@@ -76,33 +81,5 @@ class UserRepository implements UserInterface
 
         /** @var Collection<int, User> */
         return User::searchRecords($params, $queryCallback);
-    }
-
-    /**
-     * @param  Collection<int, User>  $users
-     * @return Collection<int, User>
-     */
-    private function buildTree(Collection $users): Collection
-    {
-        $usersById = $users->keyBy(fn (User $user): int => (int) $user->id);
-        $roots = new Collection;
-
-        $users->each(fn (User $user) => $user->setRelation('children', new Collection));
-
-        foreach ($users as $user) {
-            $parent = $user->parent_id === null
-                ? null
-                : $usersById->get((int) $user->parent_id);
-
-            if ($parent instanceof User && (int) $parent->id !== (int) $user->id) {
-                $parent->children->push($user);
-
-                continue;
-            }
-
-            $roots->push($user);
-        }
-
-        return $roots->values();
     }
 }

@@ -17,6 +17,11 @@ class CompanyService
         return ServiceResult::success($this->companyRepository->all($params));
     }
 
+    public function tree(array $params): ServiceResult
+    {
+        return ServiceResult::success($this->companyRepository->tree($params));
+    }
+
     public function create(array $data): ServiceResult
     {
         $data['panel_code'] = random_int(10000, 99999);

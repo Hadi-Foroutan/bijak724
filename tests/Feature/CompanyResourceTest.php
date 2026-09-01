@@ -83,6 +83,39 @@ test('paginated company lists preserve pagination metadata', function () {
         ->assertJsonPath('data.per_page', 1);
 });
 
+test('company list can be returned as a reusable nested tree', function () {
+    $branch = Company::query()->forceCreate([
+        'parent_id' => $this->company->id,
+        'parent_type' => 'branch',
+        'panel_code' => '10002',
+        'organization_code' => 'ORG-10002',
+        'name' => 'شعبه اول',
+        'national_code' => '10000000002',
+        'city_code' => 1101,
+    ]);
+    $subBranch = Company::query()->forceCreate([
+        'parent_id' => $branch->id,
+        'parent_type' => 'branch',
+        'panel_code' => '10003',
+        'organization_code' => 'ORG-10003',
+        'name' => 'زیر شعبه',
+        'national_code' => '10000000003',
+        'city_code' => 1101,
+    ]);
+
+    $this->getJson('/api/admin/companies?tree=1')
+        ->assertSuccessful()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', '1')
+        ->assertJsonPath('data.0.id2', $this->company->id)
+        ->assertJsonPath('data.0.label', 'شرکت تست')
+        ->assertJsonPath('data.0.children.0.id', '1-1')
+        ->assertJsonPath('data.0.children.0.id2', $branch->id)
+        ->assertJsonPath('data.0.children.0.children.0.id', '1-1-1')
+        ->assertJsonPath('data.0.children.0.children.0.id2', $subBranch->id)
+        ->assertJsonPath('data.0.children.0.children.0.children', []);
+});
+
 test('support token context uses the company resource contract', function () {
     $supportToken = $this->postJson("/api/admin/companies/{$this->company->id}/login-as")
         ->assertCreated()

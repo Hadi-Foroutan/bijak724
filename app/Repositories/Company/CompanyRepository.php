@@ -4,12 +4,28 @@ namespace App\Repositories\Company;
 
 use App\Interfaces\CompanyInterface;
 use App\Models\Company;
+use App\Services\TreeBuilder;
+use Illuminate\Database\Eloquent\Collection;
 
 class CompanyRepository implements CompanyInterface
 {
+    public function __construct(
+        protected TreeBuilder $treeBuilder,
+    ) {}
+
     public function all(array $params)
     {
         return Company::searchRecords($params);
+    }
+
+    public function tree(array $params): Collection
+    {
+        unset($params['tree'], $params['paginate']);
+
+        /** @var Collection<int, Company> $companies */
+        $companies = Company::searchRecords($params);
+
+        return $this->treeBuilder->build($companies);
     }
 
     public function create(array $data): Company

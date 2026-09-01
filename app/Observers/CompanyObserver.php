@@ -9,20 +9,22 @@ class CompanyObserver
 {
     public function __construct(
         protected CompanyTableService $companyTableService,
-    )
-    {
-    }
+    ) {}
 
     /**
      * Handle the Company "created" event.
      */
     public function created(Company $company): void
     {
+        if ($company->parent_id !== null) {
+            return;
+        }
+
         // Generate Company Tables
         $this->companyTableService->createCompanyTables(
-             $company->id,
-             config('company_tables'),
-         );
+            $company->id,
+            config('company_tables'),
+        );
     }
 
     /**

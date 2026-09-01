@@ -58,21 +58,26 @@ test('company and admin can receive recursively nested user trees scoped by comp
     $this->getJson('/api/user/users?tree=1')
         ->assertSuccessful()
         ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.id', $root->id)
+        ->assertJsonPath('data.0.id', '1')
+        ->assertJsonPath('data.0.id2', $root->id)
         ->assertJsonPath('data.0.label', 'رضا پاکزاد')
-        ->assertJsonPath('data.0.children.0.id', $child->id)
-        ->assertJsonPath('data.0.children.0.children.0.id', $grandchild->id)
+        ->assertJsonPath('data.0.children.0.id', '1-1')
+        ->assertJsonPath('data.0.children.0.id2', $child->id)
+        ->assertJsonPath('data.0.children.0.children.0.id', '1-1-1')
+        ->assertJsonPath('data.0.children.0.children.0.id2', $grandchild->id)
         ->assertJsonPath('data.0.children.0.children.0.children', [])
-        ->assertJsonMissing(['id' => $otherRoot->id]);
+        ->assertJsonMissing(['id2' => $otherRoot->id]);
 
     Sanctum::actingAs($this->actor, ['*']);
 
     $this->getJson("/api/admin/users?tree=1&eq-company_id={$this->company->id}")
         ->assertSuccessful()
         ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.id', $root->id)
-        ->assertJsonPath('data.0.children.0.children.0.id', $grandchild->id)
-        ->assertJsonMissing(['id' => $otherRoot->id]);
+        ->assertJsonPath('data.0.id', '1')
+        ->assertJsonPath('data.0.id2', $root->id)
+        ->assertJsonPath('data.0.children.0.children.0.id', '1-1-1')
+        ->assertJsonPath('data.0.children.0.children.0.id2', $grandchild->id)
+        ->assertJsonMissing(['id2' => $otherRoot->id]);
 });
 
 function searchTreeCompany(string $panelCode, string $nationalCode): Company

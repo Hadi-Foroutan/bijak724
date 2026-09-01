@@ -10,10 +10,13 @@ class CompanyTableService
 {
     public function __construct(
         protected CompanyDataRepositoryInterface $companyDataRepository,
+        protected CompanyDataOwnerResolver $companyDataOwnerResolver,
     ) {}
 
     public function createCompanyTables(int $companyId, array $schemas): void
     {
+        $companyId = $this->companyDataOwnerResolver->resolveId($companyId);
+
         foreach ($schemas as $tableKey => $columns) {
             $tableName = $this->companyDataRepository->table($companyId, $tableKey);
 
