@@ -29,6 +29,8 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             CompanySeeder::class,
             UserSeeder::class,
+            ShipmentPartiesSeeder::class,
+            AddressesSeeder::class,
         ]);
     }
 }
