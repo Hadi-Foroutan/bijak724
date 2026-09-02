@@ -13,7 +13,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 
-Route::apiResource('users', CompanyUserController::class);
+Route::apiResource('users', CompanyUserController::class)
+    ->except(['update']);
+Route::post('users/{user}', [CompanyUserController::class, 'update'])
+    ->name('users.update');
 
 Route::prefix('drivers')->name('drivers.')->group(function () {
     Route::match(['get', 'post'], '/inquiry/{nationalCode}', [DriverController::class, 'inquiry'])
