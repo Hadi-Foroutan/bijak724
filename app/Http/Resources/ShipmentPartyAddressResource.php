@@ -14,6 +14,7 @@ class ShipmentPartyAddressResource extends JsonResource
             'id' => $this->id,
             'shipment_party_id' => $this->shipment_party_id,
             'postal_code' => $this->postal_code,
+            'phone' => $this->phone,
             'city_code' => $this->city_code,
             'address' => $this->address,
             'description' => $this->description,

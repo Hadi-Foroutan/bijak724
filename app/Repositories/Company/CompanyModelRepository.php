@@ -68,6 +68,14 @@ abstract class CompanyModelRepository
         return $this->loadRelations($companyId, $record);
     }
 
+    protected function findModel(int $companyId, DynamicModel $model, int $id): DynamicModel
+    {
+        /** @var DynamicModel $record */
+        $record = $this->queryModel($companyId, $model)->find($id);
+
+        return $this->loadRelations($companyId, $record);
+    }
+
     /** @param array<string, mixed> $data */
     protected function updateModel(
         int $companyId,

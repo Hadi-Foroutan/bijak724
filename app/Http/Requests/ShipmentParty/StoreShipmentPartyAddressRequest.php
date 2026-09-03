@@ -13,6 +13,7 @@ class StoreShipmentPartyAddressRequest extends BaseRequest
     {
         return [
             'postal_code' => ['required', 'string', 'max:20'],
+            'phone' => ['nullable', 'string', 'max:11'],
             'city_code' => ['required', 'integer', Rule::exists(City::class, 'code')],
             'address' => ['required', 'string'],
             'description' => ['nullable', 'string'],

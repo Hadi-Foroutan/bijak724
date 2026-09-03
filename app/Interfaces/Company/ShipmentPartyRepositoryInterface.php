@@ -18,6 +18,8 @@ interface ShipmentPartyRepositoryInterface extends CompanyModelRepositoryInterfa
 
     public function findOrFail(int $companyId, int $id): ShipmentParty;
 
+    public function find(int $companyId, int $id): ?ShipmentParty;
+
     public function update(int $companyId, int $id, array $data): ShipmentParty;
 
     public function delete(int $companyId, int $id): void;

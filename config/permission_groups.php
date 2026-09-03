@@ -12,6 +12,7 @@ return [
         'user.drivers.' => 'مدیریت رانندگان',
         'user.fleets.' => 'مدیریت ناوگان',
         'user.shipment-parties.' => 'مدیریت فرستندگان و گیرندگان',
+        'user.addresses.' => 'مدیریت آدرس‌های فرستندگان و گیرندگان',
         'user.waybills.' => 'مدیریت بارنامه‌ها',
         'user.cargos.' => 'مدیریت محموله‌ها',
         'user.product-owners.' => 'مدیریت صاحبان کالا',

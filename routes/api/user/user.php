@@ -33,6 +33,13 @@ Route::apiResource('fleets', FleetController::class);
 Route::apiResource('shipment-parties', ShipmentPartyController::class)
     ->parameters(['shipment-parties' => 'shipmentParty']);
 Route::apiResource('shipment-parties.addresses', ShipmentPartyAddressController::class)
+    ->names([
+        'index' => 'addresses.index',
+        'store' => 'addresses.store',
+        'show' => 'addresses.show',
+        'update' => 'addresses.update',
+        'destroy' => 'addresses.destroy',
+    ])
     ->parameters([
         'shipment-parties' => 'shipmentParty',
         'addresses' => 'address',

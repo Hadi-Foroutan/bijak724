@@ -84,6 +84,7 @@ return [
             ],
         ],
         ['name' => 'postal_code', 'type' => 'string', 'length' => 20, 'nullable' => false],
+        ['name' => 'phone', 'type' => 'string', 'length' => 11, 'nullable' => true],
         [
             'name' => 'city_code',
             'type' => 'unsignedInteger',

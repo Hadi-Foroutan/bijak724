@@ -16,7 +16,7 @@ class ShipmentPartyAddressController extends Controller
 {
     public function __construct(protected ShipmentPartyAddressService $addressService) {}
 
-    public function index(Request $request, int $shipmentParty): JsonResponse
+    public function index(Request $request, ?int $shipmentParty): JsonResponse
     {
         $result = $this->addressService->index(
             $this->companyId($request),

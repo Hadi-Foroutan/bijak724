@@ -16,10 +16,14 @@ class ShipmentPartyAddressService
     /** @param array<string, mixed> $params */
     public function index(
         int $companyId,
-        int $shipmentPartyId,
+        ?int $shipmentPartyId,
         array $params,
     ): ServiceResult {
-        $this->shipmentPartyRepository->findOrFail($companyId, $shipmentPartyId);
+        $shipment  = $this->shipmentPartyRepository->find($companyId, $shipmentPartyId);
+
+        if (!$shipment) {
+            return ServiceResult::error(__('public.not_found', ['attribute' => 'دریافتی پرداختی']));
+        }
 
         return ServiceResult::success(
             $this->addressRepository->searchForParty($companyId, $shipmentPartyId, $params),

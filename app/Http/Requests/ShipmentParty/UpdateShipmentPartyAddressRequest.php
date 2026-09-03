@@ -13,6 +13,7 @@ class UpdateShipmentPartyAddressRequest extends BaseRequest
     {
         return [
             'postal_code' => ['sometimes', 'required', 'string', 'max:20'],
+            'phone' => ['nullable', 'string', 'max:11'],
             'city_code' => ['sometimes', 'required', 'integer', Rule::exists(City::class, 'code')],
             'address' => ['sometimes', 'required', 'string'],
             'description' => ['sometimes', 'nullable', 'string'],

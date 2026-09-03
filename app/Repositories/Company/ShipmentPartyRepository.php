@@ -42,6 +42,12 @@ class ShipmentPartyRepository extends CompanyModelRepository implements Shipment
         return $this->findModelOrFail($companyId, $this->shipmentParty, $id);
     }
 
+    public function find(int $companyId, int $id): ShipmentParty
+    {
+        /** @var ShipmentParty */
+        return $this->findModel($companyId, $this->shipmentParty, $id);
+    }
+
     public function update(int $companyId, int $id, array $data): ShipmentParty
     {
         /** @var ShipmentParty */

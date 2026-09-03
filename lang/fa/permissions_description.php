@@ -58,4 +58,34 @@ return [
     'user.fleets.update' => 'ویرایش اطلاعات ناوگان کاربر',
     'user.fleets.destroy' => 'حذف ناوگان از شرکت کاربر',
     'user.fleets.inquiry' => 'استعلام ناوگان کاربر',
+
+    'user.addresses.index' => 'مشاهده لیست آدرس‌های فرستندگان و گیرندگان',
+    'user.addresses.store' => 'ایجاد آدرس جدید برای فرستنده یا گیرنده',
+    'user.addresses.show' => 'مشاهده آدرس فرستنده یا گیرنده',
+    'user.addresses.update' => 'ویرایش آدرس فرستنده یا گیرنده',
+    'user.addresses.destroy' => 'حذف آدرس فرستنده یا گیرنده',
+
+    'user.cargos.index' => 'مشاهده لیست محموله ها',
+    'user.cargos.store' => 'ایجاد محموله جدید',
+    'user.cargos.show' => 'مشاهده محموله',
+    'user.cargos.update' => 'ویرایش محموله',
+    'user.cargos.destroy' => 'حذف محموله',
+
+    'user.product-owners.index' => 'مشاهده لیست صاحب کالا ها',
+    'user.product-owners.store' => 'ایجاد صاحب کالای جدید',
+    'user.product-owners.show' => 'مشاهده صاحب کالا',
+    'user.product-owners.update' => 'ویرایش صاحب کالا',
+    'user.product-owners.destroy' => 'حذف صاحب کالا',
+
+    'user.shipment-parties.index' => 'مشاهده لیست فرستنده گیرنده',
+    'user.shipment-parties.store' => 'ایجاد فرستنده گیرنده جدید',
+    'user.shipment-parties.show' => 'مشاهده فرستنده گیرنده',
+    'user.shipment-parties.update' => 'ویرایش فرستنده گیرنده',
+    'user.shipment-parties.destroy' => 'حذف فرستنده گیرنده',
+
+    'user.waybills.index' => 'مشاهده لیست بیجک ها',
+    'user.waybills.store' => 'ایجاد بیجک جدید',
+    'user.waybills.show' => 'مشاهده بیجک',
+    'user.waybills.update' => 'ویرایش بیجک',
+    'user.waybills.destroy' => 'حذف بیجک',
 ];

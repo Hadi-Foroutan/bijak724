@@ -148,6 +148,9 @@ test('it resets and regenerates route permissions with groups and role links', f
     $shipmentPartyGroup = PermissionGroup::query()
         ->where('name', 'مدیریت فرستندگان و گیرندگان')
         ->firstOrFail();
+    $addressGroup = PermissionGroup::query()
+        ->where('name', 'مدیریت آدرس‌های فرستندگان و گیرندگان')
+        ->firstOrFail();
     $waybillGroup = PermissionGroup::query()
         ->where('name', 'مدیریت بارنامه‌ها')
         ->firstOrFail();
@@ -164,7 +167,10 @@ test('it resets and regenerates route permissions with groups and role links', f
         ->and($driverGroup->permissions()->where('name', 'user.drivers.inquiry')->exists())->toBeTrue();
     expect($fleetGroup->permissions()->count())->toBe(6)
         ->and($fleetGroup->permissions()->where('name', 'user.fleets.inquiry')->exists())->toBeTrue();
-    expect($shipmentPartyGroup->permissions()->count())->toBe(10)
+    expect($shipmentPartyGroup->permissions()->count())->toBe(5)
+        ->and($addressGroup->permissions()->count())->toBe(5)
+        ->and($addressGroup->permissions()->where('name', 'user.addresses.index')->exists())->toBeTrue()
+        ->and(Permission::query()->where('name', 'user.shipment-parties.addresses.index')->exists())->toBeFalse()
         ->and($waybillGroup->permissions()->count())->toBe(5)
         ->and($cargoGroup->permissions()->count())->toBe(5)
         ->and($productOwnerGroup->permissions()->count())->toBe(5);
