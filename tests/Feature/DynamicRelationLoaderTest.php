@@ -17,6 +17,7 @@ uses(LazilyRefreshDatabase::class);
 test('it loads configured static relations for dynamic records and paginators', function () {
     Schema::create('company_42_drivers', function (Blueprint $table): void {
         $table->id();
+        $table->unsignedBigInteger('owner_company_id')->index();
         $table->unsignedBigInteger('license_type');
         $table->timestamps();
     });
@@ -53,11 +54,13 @@ test('it loads dynamic has many relations with nested static relations', functio
 
     Schema::create('company_42_shipment_parties', function (Blueprint $table): void {
         $table->id();
+        $table->unsignedBigInteger('owner_company_id')->index();
         $table->string('title')->nullable();
         $table->timestamps();
     });
     Schema::create('company_42_shipment_party_addresses', function (Blueprint $table): void {
         $table->id();
+        $table->unsignedBigInteger('owner_company_id')->index();
         $table->unsignedBigInteger('shipment_party_id');
         $table->unsignedInteger('city_code');
         $table->text('address');

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\Company\CompanyDataOwnerResolver;
 use App\Traits\AdvancedSearch;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -23,11 +24,14 @@ class DynamicModel extends Model
 
     protected string $companyTableKey = '';
 
+    protected ?int $companyContextId = null;
+
     /** @var list<string> */
     protected array $defaultRelations = [];
 
     public function forCompany(int $companyId, ?string $tableKey = null): static
     {
+        $this->companyContextId = $companyId;
         $resolvedTableKey = $tableKey ?? $this->companyTableKey;
 
         if ($resolvedTableKey === '') {
@@ -77,6 +81,15 @@ class DynamicModel extends Model
         return (int) $matches[1];
     }
 
+    public function companyContextId(): int
+    {
+        $ownerCompanyId = $this->getAttribute('owner_company_id');
+
+        return $ownerCompanyId === null
+            ? ($this->companyContextId ?? $this->companyId())
+            : (int) $ownerCompanyId;
+    }
+
     /**
      * @param  class-string<DynamicModel>  $related
      */
@@ -89,7 +102,7 @@ class DynamicModel extends Model
         $instance = $this->newCompanyRelatedInstance($related);
 
         return $this->newBelongsTo(
-            $instance->newQuery(),
+            $this->companyRelationQuery($instance),
             $this,
             $foreignKey,
             $ownerKey,
@@ -108,7 +121,7 @@ class DynamicModel extends Model
         $instance = $this->newCompanyRelatedInstance($related);
 
         return $this->newHasMany(
-            $instance->newQuery(),
+            $this->companyRelationQuery($instance),
             $this,
             $instance->qualifyColumn($foreignKey),
             $localKey,
@@ -123,6 +136,18 @@ class DynamicModel extends Model
         $instance = new $related;
         $instance->setConnection($this->getConnectionName());
 
-        return $instance->forCompany($this->companyId());
+        return $instance->forCompany($this->companyContextId());
+    }
+
+    private function companyRelationQuery(DynamicModel $instance): Builder
+    {
+        $query = $instance->newQuery();
+        $companyId = $this->companyContextId();
+
+        if (! app(CompanyDataOwnerResolver::class)->isDataOwner($companyId)) {
+            $query->where($instance->qualifyColumn('owner_company_id'), $companyId);
+        }
+
+        return $query;
     }
 }

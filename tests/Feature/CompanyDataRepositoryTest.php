@@ -19,6 +19,7 @@ uses(LazilyRefreshDatabase::class);
 beforeEach(function (): void {
     Schema::create('company_42_waybills', function (Blueprint $table): void {
         $table->id();
+        $table->unsignedBigInteger('owner_company_id')->index();
         $table->string('tracking_code');
         $table->timestamps();
     });

@@ -24,13 +24,13 @@ class StoreWaybillRequest extends BaseRequest
         return [
             'tracking_code' => ['nullable', 'string', 'max:255'],
             'company_code' => ['nullable', 'integer'],
-            'sender_id' => ['nullable', 'integer', Rule::exists($companyDataService->table($companyId, 'shipment_parties'), 'id')],
-            'receiver_id' => ['nullable', 'integer', Rule::exists($companyDataService->table($companyId, 'shipment_parties'), 'id')],
-            'driver1_id' => ['nullable', 'integer', Rule::exists($companyDataService->table($companyId, 'drivers'), 'id')],
-            'driver2_id' => ['nullable', 'integer', Rule::exists($companyDataService->table($companyId, 'drivers'), 'id')],
-            'fleet_id' => ['nullable', 'integer', Rule::exists($companyDataService->table($companyId, 'fleets'), 'id')],
+            'sender_id' => ['nullable', 'integer', $companyDataService->ownedExistsRule($companyId, 'shipment_parties')],
+            'receiver_id' => ['nullable', 'integer', $companyDataService->ownedExistsRule($companyId, 'shipment_parties')],
+            'driver1_id' => ['nullable', 'integer', $companyDataService->ownedExistsRule($companyId, 'drivers')],
+            'driver2_id' => ['nullable', 'integer', $companyDataService->ownedExistsRule($companyId, 'drivers')],
+            'fleet_id' => ['nullable', 'integer', $companyDataService->ownedExistsRule($companyId, 'fleets')],
             'packaging_id' => ['nullable', 'integer', Rule::exists(Packaging::class, 'id')],
-            'product_owner_id' => ['nullable', 'integer', Rule::exists($companyDataService->table($companyId, 'product_owner'), 'id')],
+            'product_owner_id' => ['nullable', 'integer', $companyDataService->ownedExistsRule($companyId, 'product_owner')],
             'meta' => ['nullable', 'array'],
         ];
     }

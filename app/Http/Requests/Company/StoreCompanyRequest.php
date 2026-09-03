@@ -21,7 +21,12 @@ class StoreCompanyRequest extends BaseRequest
             'parent_id' => [
                 'nullable',
                 'integer',
-                'exists:companies,id',
+                Rule::exists(Company::class, 'id')->where(
+                    fn ($query) => $query
+                        ->where('parent_type', CompanyParentEnum::ORIGINAL->value)
+                        ->whereNull('parent_id')
+                        ->whereNull('deleted_at'),
+                ),
 
                 // اگر BRANCH بود → اجباری
                 Rule::requiredIf(fn () => $this->parent_type === CompanyParentEnum::BRANCH->value),

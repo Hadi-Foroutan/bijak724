@@ -3,6 +3,7 @@
 use App\Http\Middleware\CheckPermission;
 use App\Interfaces\CompanyDataRepositoryInterface;
 use App\Models\Company;
+use App\Models\DriverLicenseType;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Schema;
@@ -49,9 +50,13 @@ beforeEach(function (): void {
     $this->withToken($token);
 });
 
-test('branches do not create dynamic tables and use the parent company tables', function () {
+test('branches share parent tables but only access records they own', function () {
     foreach (array_keys(config('company_tables')) as $tableKey) {
         expect(Schema::hasTable("company_{$this->parentCompany->id}_{$tableKey}"))->toBeTrue()
+            ->and(Schema::hasColumn(
+                "company_{$this->parentCompany->id}_{$tableKey}",
+                'owner_company_id',
+            ))->toBeTrue()
             ->and(Schema::hasTable("company_{$this->branchCompany->id}_{$tableKey}"))->toBeFalse();
     }
 
@@ -66,8 +71,10 @@ test('branches do not create dynamic tables and use the parent company tables', 
 
     $this->getJson('/api/user/cargos')
         ->assertSuccessful()
-        ->assertJsonPath('data.0.id', $parentCargo->id)
-        ->assertJsonPath('data.0.name', 'بار شرکت اصلی');
+        ->assertJsonCount(0, 'data');
+
+    $this->getJson("/api/user/cargos/{$parentCargo->id}")
+        ->assertNotFound();
 
     $branchCargoId = $this->postJson('/api/user/cargos', [
         'name' => 'بار ثبت‌شده توسط شعبه',
@@ -78,6 +85,47 @@ test('branches do not create dynamic tables and use the parent company tables', 
 
     $this->assertDatabaseHas("company_{$this->parentCompany->id}_cargos", [
         'id' => $branchCargoId,
+        'owner_company_id' => $this->branchCompany->id,
         'name' => 'بار ثبت‌شده توسط شعبه',
     ]);
+
+    $otherBranch = Company::query()->forceCreate([
+        'parent_id' => $this->parentCompany->id,
+        'parent_type' => 'branch',
+        'panel_code' => '71003',
+        'organization_code' => 'ORG-71003',
+        'name' => 'شعبه دیگر',
+        'national_code' => '71000000003',
+        'city_code' => 1101,
+    ]);
+    $repository->create($otherBranch->id, 'cargos', [
+        'name' => 'بار شعبه دیگر',
+        'national_code' => 'OTHER-BRANCH-CARGO',
+    ]);
+
+    $licenseType = DriverLicenseType::query()->create([
+        'name' => 'پایه یک',
+        'code' => 1,
+    ]);
+    $parentDriver = $repository->create($this->parentCompany->id, 'drivers', [
+        'national_code' => '7100000099',
+        'first_name' => 'راننده',
+        'last_name' => 'شرکت اصلی',
+        'full_name' => 'راننده شرکت اصلی',
+        'father_name' => 'پدر راننده',
+        'license_number' => 'PARENT-LICENSE',
+        'license_type' => $licenseType->id,
+        'license_expiry_date' => '2030-01-01',
+    ]);
+
+    $this->postJson('/api/user/waybills', [
+        'tracking_code' => 'FORBIDDEN-PARENT-DRIVER',
+        'driver1_id' => $parentDriver->id,
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('driver1_id');
+
+    expect($repository->query($this->branchCompany->id, 'cargos')->pluck('id')->all())
+        ->toBe([$branchCargoId])
+        ->and($repository->query($this->parentCompany->id, 'cargos')->count())->toBe(3);
 });

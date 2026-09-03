@@ -69,6 +69,13 @@ class CompanyDataRepository implements CompanyDataRepositoryInterface
             $query->from("{$table} as {$alias}");
         }
 
+        if (! $this->companyDataOwnerResolver->isDataOwner($companyId)) {
+            $query->where(
+                ($alias ?? $table).'.owner_company_id',
+                $companyId,
+            );
+        }
+
         return $query;
     }
 
@@ -117,7 +124,10 @@ class CompanyDataRepository implements CompanyDataRepositoryInterface
 
     public function create(int $companyId, string $tableKey, array $data): DynamicModel
     {
-        return $this->model($companyId, $tableKey)->create($data);
+        return $this->model($companyId, $tableKey)->create([
+            ...$data,
+            'owner_company_id' => $companyId,
+        ]);
     }
 
     /** @return class-string<DynamicModel> */

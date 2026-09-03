@@ -83,6 +83,33 @@ test('paginated company lists preserve pagination metadata', function () {
         ->assertJsonPath('data.per_page', 1);
 });
 
+test('parent company options only contain original root companies', function () {
+    $branch = Company::query()->forceCreate([
+        'parent_id' => $this->company->id,
+        'parent_type' => 'branch',
+        'panel_code' => '10102',
+        'organization_code' => 'ORG-10102',
+        'name' => 'شعبه غیرقابل انتخاب',
+        'national_code' => '10100000002',
+        'city_code' => 1101,
+    ]);
+    $otherOriginal = Company::query()->forceCreate([
+        'parent_type' => 'original',
+        'panel_code' => '10103',
+        'organization_code' => 'ORG-10103',
+        'name' => 'شرکت اصلی دوم',
+        'national_code' => '10100000003',
+        'city_code' => 1101,
+    ]);
+
+    $this->getJson('/api/admin/companies?parent_options=1&paginate=1&itemsPerPage=10')
+        ->assertSuccessful()
+        ->assertJsonPath('data.total', 2)
+        ->assertJsonFragment(['id' => $this->company->id])
+        ->assertJsonFragment(['id' => $otherOriginal->id])
+        ->assertJsonMissing(['id' => $branch->id]);
+});
+
 test('company list can be returned as a reusable nested tree', function () {
     $branch = Company::query()->forceCreate([
         'parent_id' => $this->company->id,

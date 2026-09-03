@@ -4,6 +4,7 @@ namespace App\Repositories\User;
 
 use App\Interfaces\UserInterface;
 use App\Models\User;
+use App\Services\Company\CompanyHierarchyService;
 use App\Services\TreeBuilder;
 use Closure;
 use Illuminate\Database\Eloquent\Collection;
@@ -12,6 +13,7 @@ class UserRepository implements UserInterface
 {
     public function __construct(
         protected TreeBuilder $treeBuilder,
+        protected CompanyHierarchyService $companyHierarchyService,
     ) {}
 
     public function all(array $params)
@@ -24,10 +26,12 @@ class UserRepository implements UserInterface
 
     public function allForCompany(int $companyId, array $params)
     {
+        $visibleCompanyIds = $this->companyHierarchyService->visibleUserCompanyIds($companyId);
+
         return User::searchRecords(
             $params,
             fn ($query) => $query
-                ->where('company_id', $companyId)
+                ->whereIn('company_id', $visibleCompanyIds)
                 ->with(['roles', 'parent']),
         );
     }
@@ -39,9 +43,11 @@ class UserRepository implements UserInterface
 
     public function treeForCompany(int $companyId, array $params): Collection
     {
+        $visibleCompanyIds = $this->companyHierarchyService->visibleUserCompanyIds($companyId);
+
         return $this->treeBuilder->build($this->usersForTree(
             $params,
-            fn ($query) => $query->where('company_id', $companyId),
+            fn ($query) => $query->whereIn('company_id', $visibleCompanyIds),
         ));
     }
 

@@ -129,3 +129,30 @@ test('it requires unique company identifiers', function () {
         ->assertUnprocessable()
         ->assertJsonValidationErrors('organization_code');
 });
+
+test('a branch can only select an original root company as its parent', function () {
+    $original = Company::factory()->create([
+        'parent_type' => 'original',
+        'parent_id' => null,
+    ]);
+    $branch = Company::query()->forceCreate([
+        'parent_id' => $original->id,
+        'parent_type' => 'branch',
+        'panel_code' => '10991',
+        'organization_code' => 'ORG-10991',
+        'name' => 'شعبه والد نامعتبر',
+        'national_code' => '10991000001',
+        'city_code' => 1101,
+    ]);
+
+    $this->postJson('/api/admin/companies', [
+        'parent_type' => 'branch',
+        'parent_id' => $branch->id,
+        'organization_code' => 'ORG-10992',
+        'name' => 'زیرشعبه نامعتبر',
+        'national_code' => '10992000001',
+        'city_code' => 1101,
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('parent_id');
+});

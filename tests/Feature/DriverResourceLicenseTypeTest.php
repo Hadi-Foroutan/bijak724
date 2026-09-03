@@ -12,6 +12,7 @@ uses(LazilyRefreshDatabase::class);
 test('driver resource returns the complete driver license type object', function () {
     Schema::create('company_42_drivers', function (Blueprint $table): void {
         $table->id();
+        $table->unsignedBigInteger('owner_company_id')->index();
         $table->string('first_name');
         $table->string('last_name');
         $table->string('full_name');

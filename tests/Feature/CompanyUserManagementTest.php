@@ -102,6 +102,51 @@ test('company user management is scoped to current company', function () {
     expect($companyUser->fresh()->trashed())->toBeTrue();
 });
 
+test('original company sees users of all branches while a branch only sees its own users', function () {
+    $branch = Company::query()->forceCreate([
+        'parent_id' => $this->company->id,
+        'parent_type' => 'branch',
+        'panel_code' => '10003',
+        'organization_code' => 'ORG-10003',
+        'name' => 'شعبه شرکت اصلی',
+        'national_code' => '10000000003',
+        'city_code' => 1101,
+    ]);
+    $branchUser = companyPanelUser($branch, 'branch-user', '1234567893', '09120000003');
+    $otherCompanyUser = companyPanelUser($this->otherCompany, 'outside-user', '1234567894', '09120000004');
+
+    $this->getJson('/api/user/users')
+        ->assertSuccessful()
+        ->assertJsonFragment(['id' => $this->manager->id])
+        ->assertJsonFragment(['id' => $branchUser->id])
+        ->assertJsonMissing(['id' => $otherCompanyUser->id]);
+
+    $this->getJson('/api/user/users?tree=1')
+        ->assertSuccessful()
+        ->assertJsonFragment(['id2' => $branchUser->id])
+        ->assertJsonMissing(['id2' => $otherCompanyUser->id]);
+
+    $branchToken = $branchUser->createToken(
+        'branch-user',
+        ['company-user', "company:{$branch->id}"],
+    )->plainTextToken;
+
+    app('auth')->forgetGuards();
+
+    $this->withToken($branchToken)
+        ->getJson('/api/user/users')
+        ->assertSuccessful()
+        ->assertJsonFragment(['id' => $branchUser->id])
+        ->assertJsonPath(
+            'data',
+            fn (array $users): bool => ! in_array(
+                $this->manager->id,
+                array_column($users, 'id'),
+                true,
+            ),
+        );
+});
+
 test('company manager cannot delete own account', function () {
     $this->deleteJson("/api/user/users/{$this->manager->id}")
         ->assertUnprocessable();

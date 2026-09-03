@@ -45,4 +45,9 @@ class CompanyDataOwnerResolver
 
         return $this->resolvedCompanyIds[$companyId] = $dataOwnerCompanyId;
     }
+
+    public function isDataOwner(int $companyId): bool
+    {
+        return $this->resolveId($companyId) === $companyId;
+    }
 }

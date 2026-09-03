@@ -3,6 +3,7 @@
 namespace App\Repositories\Company;
 
 use App\Models\DynamicModel;
+use App\Services\Company\CompanyDataOwnerResolver;
 use App\Services\Company\DynamicRelationLoader;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,7 +20,13 @@ abstract class CompanyModelRepository
 
     protected function queryModel(int $companyId, DynamicModel $model): Builder
     {
-        return $this->companyModel($companyId, $model)->newQuery();
+        $query = $this->companyModel($companyId, $model)->newQuery();
+
+        if (! app(CompanyDataOwnerResolver::class)->isDataOwner($companyId)) {
+            $query->where($query->getModel()->qualifyColumn('owner_company_id'), $companyId);
+        }
+
+        return $query;
     }
 
     /**
@@ -45,7 +52,10 @@ abstract class CompanyModelRepository
     /** @param array<string, mixed> $data */
     protected function createModel(int $companyId, DynamicModel $model, array $data): DynamicModel
     {
-        $record = $this->companyModel($companyId, $model)->create($data);
+        $record = $this->companyModel($companyId, $model)->create([
+            ...$data,
+            'owner_company_id' => $companyId,
+        ]);
 
         return $this->loadRelations($companyId, $record);
     }
@@ -65,6 +75,8 @@ abstract class CompanyModelRepository
         int $id,
         array $data,
     ): DynamicModel {
+        unset($data['owner_company_id']);
+
         $record = $this->findModelOrFail($companyId, $model, $id);
         $record->update($data);
 

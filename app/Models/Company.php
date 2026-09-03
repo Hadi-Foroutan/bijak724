@@ -129,12 +129,12 @@ class Company extends Model
 
     public function scopeOriginal($query)
     {
-        return $query->where('parent_type', CompanyParentEnum::ORIGINAL);
+        return $query->where('parent_type', CompanyParentEnum::ORIGINAL->value);
     }
 
     public function scopeBranches($query)
     {
-        return $query->where('parent_type', CompanyParentEnum::BRANCH);
+        return $query->where('parent_type', CompanyParentEnum::BRANCH->value);
     }
 
     /*
@@ -145,12 +145,12 @@ class Company extends Model
 
     public function isBranch(): bool
     {
-        return $this->parent_type === CompanyParentEnum::BRANCH;
+        return $this->parent_type === CompanyParentEnum::BRANCH->value;
     }
 
     public function isOriginal(): bool
     {
-        return $this->parent_type === CompanyParentEnum::ORIGINAL;
+        return $this->parent_type === CompanyParentEnum::ORIGINAL->value;
     }
 
     /*

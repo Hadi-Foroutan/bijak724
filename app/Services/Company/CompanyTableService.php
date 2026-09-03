@@ -4,6 +4,7 @@ namespace App\Services\Company;
 
 use App\Interfaces\CompanyDataRepositoryInterface;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class CompanyTableService
@@ -21,11 +22,14 @@ class CompanyTableService
             $tableName = $this->companyDataRepository->table($companyId, $tableKey);
 
             if (Schema::hasTable($tableName)) {
+                $this->ensureOwnerCompanyColumn($tableName, $companyId);
+
                 continue;
             }
 
             Schema::create($tableName, function (Blueprint $table) use ($columns, $companyId) {
                 $table->id();
+                $table->unsignedBigInteger('owner_company_id')->index();
 
                 foreach ($columns as $column) {
                     $this->addColumn($table, $column, $companyId);
@@ -34,6 +38,19 @@ class CompanyTableService
                 $table->timestamps();
             });
         }
+    }
+
+    private function ensureOwnerCompanyColumn(string $tableName, int $companyId): void
+    {
+        if (! Schema::hasColumn($tableName, 'owner_company_id')) {
+            Schema::table($tableName, function (Blueprint $table): void {
+                $table->unsignedBigInteger('owner_company_id')->nullable()->after('id')->index();
+            });
+        }
+
+        DB::table($tableName)
+            ->whereNull('owner_company_id')
+            ->update(['owner_company_id' => $companyId]);
     }
 
     private function addColumn(Blueprint $table, array $column, int $companyId): void

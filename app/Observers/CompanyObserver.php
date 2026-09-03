@@ -2,6 +2,7 @@
 
 namespace App\Observers;
 
+use App\Enums\CompanyParentEnum;
 use App\Models\Company;
 use App\Services\Company\CompanyTableService;
 
@@ -16,7 +17,7 @@ class CompanyObserver
      */
     public function created(Company $company): void
     {
-        if ($company->parent_id !== null) {
+        if ($company->parent_type === CompanyParentEnum::BRANCH->value) {
             return;
         }
 
