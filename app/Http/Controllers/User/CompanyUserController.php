@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Permission\ManageCompanyUserPermissionsRequest;
 use App\Http\Requests\User\StoreCompanyUserRequest;
 use App\Http\Requests\User\UpdateCompanyUserRequest;
 use App\Http\Resources\UserResource;
@@ -51,6 +52,27 @@ class CompanyUserController extends Controller
         $result = $this->companyUserService->find($this->companyId($request), $user);
 
         return ResponseHandler::success(UserResource::make($result->data));
+    }
+
+    public function permissions(ManageCompanyUserPermissionsRequest $request, int $user): JsonResponse
+    {
+        $result = $this->companyUserService->permissions($this->companyId($request), $user);
+
+        return ResponseHandler::success($result->data);
+    }
+
+    public function syncPermissions(ManageCompanyUserPermissionsRequest $request, int $user): JsonResponse
+    {
+        $result = $this->companyUserService->syncPermissions(
+            $this->companyId($request),
+            $user,
+            $request->validated('permissions'),
+        );
+
+        return ResponseHandler::success(
+            $result->data,
+            __('public.update_success', ['attribute' => 'دسترسی‌های کاربر']),
+        );
     }
 
     public function update(UpdateCompanyUserRequest $request, int $user): JsonResponse

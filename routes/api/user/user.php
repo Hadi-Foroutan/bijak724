@@ -13,6 +13,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 
+Route::get('users/{user}/permissions', [CompanyUserController::class, 'permissions'])
+    ->name('users.permissions.index');
+Route::put('users/{user}/permissions', [CompanyUserController::class, 'syncPermissions'])
+    ->name('users.permissions.update');
+
 Route::apiResource('users', CompanyUserController::class)
     ->except(['update']);
 Route::post('users/{user}', [CompanyUserController::class, 'update'])
