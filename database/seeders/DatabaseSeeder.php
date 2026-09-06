@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             CompanySeeder::class,
             UserSeeder::class,
+            ProductOwnerSeeder::class,
             ShipmentPartiesSeeder::class,
             AddressesSeeder::class,
         ]);
