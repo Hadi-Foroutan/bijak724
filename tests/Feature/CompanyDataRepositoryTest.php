@@ -49,8 +49,9 @@ test('company data service passes company and table arguments in the correct ord
         'tracking_code' => 'WB-002',
     ]);
 
-    $result = app(CompanyDataService::class)->list(42, 'waybills', [
-        'tracking_code' => 'WB-002',
+    $result = app(CompanyDataService::class)->search(42, 'waybills', [
+        'eq-tracking_code' => 'WB-002',
+        'paginate' => true,
     ]);
 
     expect($result->total())->toBe(1);

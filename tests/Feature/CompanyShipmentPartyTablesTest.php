@@ -1,11 +1,13 @@
 <?php
 
-use App\Enums\ShipmentPartyType;
+use App\Http\Resources\CompanyCargoResource;
 use App\Interfaces\CompanyDataRepositoryInterface;
 use App\Models\City;
 use App\Models\Company;
 use App\Models\State;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 uses(LazilyRefreshDatabase::class);
@@ -38,7 +40,8 @@ test('company gets shipment parties and their address tables', function () {
     expect(Schema::hasTable($partyTable))->toBeTrue()
         ->and(Schema::hasColumns($partyTable, [
             'national_identifier',
-            'type',
+            'is_sender',
+            'is_receiver',
             'status',
             'title',
             'first_name',
@@ -66,7 +69,8 @@ test('shipment party accepts multiple addresses and cascades them on delete', fu
     $repository = app(CompanyDataRepositoryInterface::class);
     $party = $repository->create($this->company->id, 'shipment_parties', [
         'national_identifier' => '10000000001',
-        'type' => ShipmentPartyType::Both->value,
+        'is_sender' => true,
+        'is_receiver' => true,
         'title' => 'شرکت فرستنده و گیرنده',
     ]);
 
@@ -86,12 +90,54 @@ test('shipment party accepts multiple addresses and cascades them on delete', fu
     expect($repository->query($this->company->id, 'shipment_party_addresses')->count())->toBe(0);
 });
 
-test('sync command recreates only missing company tables', function () {
+test('sync command creates missing tables and adds newly configured fields', function () {
     $addressTable = "company_{$this->company->id}_shipment_party_addresses";
+    $cargoTable = "company_{$this->company->id}_cargos";
     Schema::drop($addressTable);
+    config()->push('company_tables.cargos', [
+        'name' => 'description',
+        'type' => 'text',
+    ]);
 
     $this->artisan('company-tables:sync', ['--company' => $this->company->id])
         ->assertSuccessful();
 
-    expect(Schema::hasTable($addressTable))->toBeTrue();
+    expect(Schema::hasTable($addressTable))->toBeTrue()
+        ->and(Schema::hasColumn($cargoTable, 'description'))->toBeTrue();
+
+    $cargo = app(CompanyDataRepositoryInterface::class)->create($this->company->id, 'cargos', [
+        'name' => 'محموله تست',
+        'description' => 'فیلد تازه',
+    ]);
+
+    expect(CompanyCargoResource::make($cargo)->resolve(request()))
+        ->toHaveKey('description', 'فیلد تازه');
+});
+
+test('migration converts legacy shipment party types to boolean roles', function () {
+    $tableName = 'company_999_shipment_parties';
+    Schema::create($tableName, function (Blueprint $table): void {
+        $table->id();
+        $table->enum('type', ['sender', 'receiver', 'both']);
+    });
+    DB::table($tableName)->insert([
+        ['id' => 1, 'type' => 'sender'],
+        ['id' => 2, 'type' => 'receiver'],
+        ['id' => 3, 'type' => 'both'],
+    ]);
+
+    $migration = require database_path('migrations/2026_09_05_124845_replace_shipment_party_type_with_sender_receiver_flags.php');
+    $migration->up();
+
+    $sender = DB::table($tableName)->where('id', 1)->first();
+    $receiver = DB::table($tableName)->where('id', 2)->first();
+    $both = DB::table($tableName)->where('id', 3)->first();
+
+    expect(Schema::hasColumn($tableName, 'type'))->toBeFalse()
+        ->and($sender->is_sender)->toBe(1)
+        ->and($sender->is_receiver)->toBe(0)
+        ->and($receiver->is_sender)->toBe(0)
+        ->and($receiver->is_receiver)->toBe(1)
+        ->and($both->is_sender)->toBe(1)
+        ->and($both->is_receiver)->toBe(1);
 });

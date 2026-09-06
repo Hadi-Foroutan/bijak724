@@ -21,11 +21,7 @@ class CompanyObserver
             return;
         }
 
-        // Generate Company Tables
-        $this->companyTableService->createCompanyTables(
-            $company->id,
-            config('company_tables'),
-        );
+        $this->companyTableService->sync($company->id);
     }
 
     /**

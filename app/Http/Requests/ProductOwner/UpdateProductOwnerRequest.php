@@ -6,12 +6,13 @@ use App\Http\Requests\BaseRequest;
 
 class UpdateProductOwnerRequest extends BaseRequest
 {
-    /** @return array<string, array<int, string>> */
+    /** @return array<string, array<int, mixed>> */
     public function rules(): array
     {
         return [
-            'name' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'national_code' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'phone' => ['sometimes', 'required', 'string', 'max:20'],
+            'transportation_code' => ['sometimes', 'required', 'string', 'max:255'],
         ];
     }
 }

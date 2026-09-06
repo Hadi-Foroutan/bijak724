@@ -2,7 +2,6 @@
 
 namespace App\Services\Company;
 
-use App\Interfaces\CompanyDataRepositoryInterface;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -10,19 +9,21 @@ use Illuminate\Support\Facades\Schema;
 class CompanyTableService
 {
     public function __construct(
-        protected CompanyDataRepositoryInterface $companyDataRepository,
+        protected CompanyTableRegistry $tableRegistry,
         protected CompanyDataOwnerResolver $companyDataOwnerResolver,
     ) {}
 
-    public function createCompanyTables(int $companyId, array $schemas): void
+    public function sync(int $companyId): void
     {
         $companyId = $this->companyDataOwnerResolver->resolveId($companyId);
 
-        foreach ($schemas as $tableKey => $columns) {
-            $tableName = $this->companyDataRepository->table($companyId, $tableKey);
+        foreach ($this->tableRegistry->tableKeys() as $tableKey) {
+            $tableName = $this->tableRegistry->tableName($companyId, $tableKey);
+            $columns = $this->tableRegistry->columns($tableKey);
 
             if (Schema::hasTable($tableName)) {
                 $this->ensureOwnerCompanyColumn($tableName, $companyId);
+                $this->syncColumns($tableName, $columns, $companyId);
 
                 continue;
             }
@@ -40,6 +41,22 @@ class CompanyTableService
         }
     }
 
+    /** @param list<array<string, mixed>> $columns */
+    private function syncColumns(string $tableName, array $columns, int $companyId): void
+    {
+        foreach ($columns as $column) {
+            $columnExists = Schema::hasColumn($tableName, $column['name']);
+
+            if ($columnExists && ! ($column['change'] ?? false)) {
+                continue;
+            }
+
+            Schema::table($tableName, function (Blueprint $table) use ($column, $companyId, $columnExists): void {
+                $this->addColumn($table, $column, $companyId, $columnExists);
+            });
+        }
+    }
+
     private function ensureOwnerCompanyColumn(string $tableName, int $companyId): void
     {
         if (! Schema::hasColumn($tableName, 'owner_company_id')) {
@@ -53,8 +70,12 @@ class CompanyTableService
             ->update(['owner_company_id' => $companyId]);
     }
 
-    private function addColumn(Blueprint $table, array $column, int $companyId): void
-    {
+    private function addColumn(
+        Blueprint $table,
+        array $column,
+        int $companyId,
+        bool $change = false,
+    ): void {
         $definition = match ($column['type']) {
             'string' => $table->string($column['name'], $column['length'] ?? 255),
             'integer' => $table->integer($column['name']),
@@ -79,6 +100,12 @@ class CompanyTableService
             $definition->default(false);
         }
 
+        if ($change) {
+            $definition->change();
+
+            return;
+        }
+
         if ($column['unique'] ?? false) {
             $definition->unique();
         } elseif ($column['index'] ?? false) {
@@ -87,7 +114,7 @@ class CompanyTableService
 
         if (isset($column['foreign'])) {
             $foreignTable = isset($column['foreign']['company_table'])
-                ? $this->companyDataRepository->table($companyId, $column['foreign']['company_table'])
+                ? $this->tableRegistry->tableName($companyId, $column['foreign']['company_table'])
                 : $column['foreign']['table'];
 
             $foreignKey = $table->foreign($column['name'])

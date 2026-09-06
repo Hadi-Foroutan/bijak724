@@ -5,7 +5,7 @@ namespace App\Services\Company;
 use App\Interfaces\CompanyDataRepositoryInterface;
 use App\Models\DynamicModel;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Exists;
 
@@ -16,15 +16,16 @@ class CompanyDataService
         protected CompanyDataOwnerResolver $companyDataOwnerResolver,
     ) {}
 
-    // ✅ یک شرکت
-    public function list(int $companyId, string $table, array $filters = []): LengthAwarePaginator
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return Collection<int, DynamicModel>|LengthAwarePaginator
+     */
+    public function search(int $companyId, string $table, array $filters = []): Collection|LengthAwarePaginator
     {
-        $query = $this->repo->query($companyId, $table);
-
-        return $this->applyFilters($query, $filters)->paginate();
+        return $this->repo->search($companyId, $table, $filters);
     }
 
-    // ✅ create generic
+    /** @param array<string, mixed> $data */
     public function create(int $companyId, string $table, array $data): DynamicModel
     {
         return $this->repo->create($companyId, $table, $data);
@@ -44,15 +45,5 @@ class CompanyDataService
         }
 
         return $rule;
-    }
-
-    // 🎯 فیلتر داینامیک
-    private function applyFilters(Builder $query, array $filters): Builder
-    {
-        foreach ($filters as $field => $value) {
-            $query->where($field, $value);
-        }
-
-        return $query;
     }
 }

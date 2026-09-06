@@ -17,4 +17,13 @@ class ShipmentParty extends DynamicModel
     {
         return $this->hasManyCompany(ShipmentPartyAddress::class, 'shipment_party_id');
     }
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return [
+            'is_sender' => 'boolean',
+            'is_receiver' => 'boolean',
+        ];
+    }
 }

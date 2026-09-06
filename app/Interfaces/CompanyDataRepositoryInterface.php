@@ -14,8 +14,6 @@ interface CompanyDataRepositoryInterface
 
     public function query(int $companyId, string $tableKey, ?string $alias = null): Builder;
 
-    public function queryWithJoin(int $companyId, string $tableKey, array $joins = []): Builder;
-
     /**
      * @param  array<string, mixed>  $filters
      * @param  null|Closure(Builder): (Builder|void)  $queryCallback

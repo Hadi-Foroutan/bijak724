@@ -2,9 +2,11 @@
 
 namespace App\Services\Company\Fleet;
 
+use App\Enums\FleetOwnershipType;
 use App\Enums\StatusEnum;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\FleetRepositoryInterface;
+use App\Models\FleetType;
 use App\Services\Company\CompanyCrudService;
 use Illuminate\Validation\ValidationException;
 
@@ -25,34 +27,65 @@ class FleetService extends CompanyCrudService
         );
     }
 
-    protected function prepareCreateData(array $data): array
+    /** @param array<string, mixed> $data */
+    public function create(int $companyId, array $data): ServiceResult
     {
         $data['status'] ??= StatusEnum::ACTIVE->value;
+        $data['ownership_type'] ??= FleetOwnershipType::Unknown->value;
         $data['has_violation'] ??= false;
-        $data['system_id'] = $this->resolveSystemId((int) $data['tip_code']);
+        $this->validateSystemAndTip(
+            $this->nullableInteger($data['system_id'] ?? null),
+            $this->nullableInteger($data['tip_code'] ?? null),
+        );
 
-        return $data;
+        return parent::create($companyId, $data);
     }
 
-    protected function prepareUpdateData(array $data): array
+    /** @param array<string, mixed> $data */
+    public function update(int $companyId, int $id, array $data): ServiceResult
     {
-        if (array_key_exists('tip_code', $data)) {
-            $data['system_id'] = $this->resolveSystemId((int) $data['tip_code']);
+        foreach (['status', 'ownership_type', 'has_violation'] as $defaultedField) {
+            if (array_key_exists($defaultedField, $data) && $data[$defaultedField] === null) {
+                unset($data[$defaultedField]);
+            }
         }
 
-        return $data;
+        $fleet = $this->fleetRepository->findOrFail($companyId, $id);
+        $systemId = array_key_exists('system_id', $data)
+            ? $this->nullableInteger($data['system_id'])
+            : $this->nullableInteger($fleet->getAttribute('system_id'));
+        $tipCode = array_key_exists('tip_code', $data)
+            ? $this->nullableInteger($data['tip_code'])
+            : $this->nullableInteger($fleet->getAttribute('tip_code'));
+
+        $this->validateSystemAndTip($systemId, $tipCode);
+
+        return parent::update($companyId, $id, $data);
     }
 
-    private function resolveSystemId(int $tipCode): int
+    private function validateSystemAndTip(?int $systemId, ?int $tipCode): void
     {
-        $systemId = $this->fleetRepository->systemIdForTipCode($tipCode);
+        if ($tipCode === null) {
+            return;
+        }
 
         if ($systemId === null) {
             throw ValidationException::withMessages([
-                'tip_code' => 'برند مرتبط با تیپ انتخاب‌شده معتبر نیست.',
+                'system_id' => 'برای تیپ انتخاب‌شده، سیستم ناوگان الزامی است.',
             ]);
         }
 
-        return $systemId;
+        $fleetType = FleetType::query()->with('brand')->find($tipCode);
+
+        if ((int) $fleetType?->brand?->getKey() !== $systemId) {
+            throw ValidationException::withMessages([
+                'tip_code' => 'تیپ انتخاب‌شده متعلق به سیستم ناوگان نیست.',
+            ]);
+        }
+    }
+
+    private function nullableInteger(mixed $value): ?int
+    {
+        return $value === null ? null : (int) $value;
     }
 }

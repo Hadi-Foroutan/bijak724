@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\ShipmentParty;
 
-use App\Enums\ShipmentPartyType;
 use App\Enums\StatusEnum;
 use App\Http\Requests\BaseRequest;
 use App\Services\Company\CompanyDataService;
@@ -23,7 +22,8 @@ class UpdateShipmentPartyRequest extends BaseRequest
                 'max:20',
                 Rule::unique($table, 'national_identifier')->ignore((int) $this->route('shipmentParty')),
             ],
-            'type' => ['sometimes', 'required', Rule::enum(ShipmentPartyType::class)],
+            'is_sender' => ['sometimes', 'required', 'boolean'],
+            'is_receiver' => ['sometimes', 'required', 'boolean'],
             'status' => ['sometimes', 'required', Rule::enum(StatusEnum::class)],
             'title' => ['sometimes', 'nullable', 'string', 'max:255'],
             'first_name' => ['sometimes', 'nullable', 'string', 'max:255'],

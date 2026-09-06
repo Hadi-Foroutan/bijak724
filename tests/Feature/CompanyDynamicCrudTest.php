@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\ShipmentPartyType;
 use App\Enums\StatusEnum;
 use App\Http\Middleware\CheckPermission;
 use App\Models\City;
@@ -51,7 +50,8 @@ test('shipment parties and their nested addresses have complete company scoped c
 
     $partyId = $this->postJson('/api/user/shipment-parties', [
         'national_identifier' => '12345678901',
-        'type' => ShipmentPartyType::Sender->value,
+        'is_sender' => true,
+        'is_receiver' => false,
         'title' => 'فرستنده تست',
         'first_name' => 'علی',
         'last_name' => 'احمدی',
@@ -59,7 +59,8 @@ test('shipment parties and their nested addresses have complete company scoped c
     ])
         ->assertCreated()
         ->assertJsonPath('data.status', StatusEnum::ACTIVE->value)
-        ->assertJsonPath('data.type', ShipmentPartyType::Sender->value)
+        ->assertJsonPath('data.is_sender', true)
+        ->assertJsonPath('data.is_receiver', false)
         ->assertJsonCount(0, 'data.addresses')
         ->json('data.id');
 
@@ -95,6 +96,38 @@ test('shipment parties and their nested addresses have complete company scoped c
     ]);
 });
 
+test('shipment party must be a sender or receiver and can be both', function () {
+    $this->postJson('/api/user/shipment-parties', [
+        'national_identifier' => '12345678902',
+        'is_sender' => false,
+        'is_receiver' => false,
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['is_sender', 'is_receiver']);
+
+    $partyId = $this->postJson('/api/user/shipment-parties', [
+        'national_identifier' => '12345678903',
+        'is_sender' => true,
+        'is_receiver' => false,
+    ])
+        ->assertCreated()
+        ->json('data.id');
+
+    $this->patchJson("/api/user/shipment-parties/{$partyId}", [
+        'is_sender' => false,
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['is_sender', 'is_receiver']);
+
+    $this->patchJson("/api/user/shipment-parties/{$partyId}", [
+        'is_sender' => true,
+        'is_receiver' => true,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.is_sender', true)
+        ->assertJsonPath('data.is_receiver', true);
+});
+
 test('waybills have complete crud and preserve paginated and unpaginated responses', function () {
     $waybillId = $this->postJson('/api/user/waybills', [
         'tracking_code' => 'WB-1001',
@@ -122,26 +155,30 @@ test('waybills have complete crud and preserve paginated and unpaginated respons
     $this->deleteJson("/api/user/waybills/{$waybillId}")->assertSuccessful();
 });
 
-test('company cargos and product owners have complete crud', function (string $endpoint) {
+test('company cargos and product owners have complete crud', function (string $endpoint, string $nameField, string $codeField) {
     $recordId = $this->postJson("/api/user/{$endpoint}", [
-        'name' => 'رکورد تست',
-        'national_code' => '1234567890',
+        $nameField => 'رکورد تست',
+        $codeField => '1234567890',
+        'phone' => '02112345678',
     ])
         ->assertCreated()
-        ->assertJsonPath('data.name', 'رکورد تست')
+        ->assertJsonPath("data.{$nameField}", 'رکورد تست')
         ->json('data.id');
 
     $this->getJson("/api/user/{$endpoint}/{$recordId}")
         ->assertSuccessful()
-        ->assertJsonPath('data.national_code', '1234567890');
+        ->assertJsonPath("data.{$codeField}", '1234567890');
 
-    $this->patchJson("/api/user/{$endpoint}/{$recordId}", ['name' => 'رکورد ویرایش‌شده'])
+    $this->patchJson("/api/user/{$endpoint}/{$recordId}", [$nameField => 'رکورد ویرایش‌شده'])
         ->assertSuccessful()
-        ->assertJsonPath('data.name', 'رکورد ویرایش‌شده');
+        ->assertJsonPath("data.{$nameField}", 'رکورد ویرایش‌شده');
 
     $this->getJson("/api/user/{$endpoint}?paginate=1")
         ->assertSuccessful()
         ->assertJsonPath('data.total', 1);
 
     $this->deleteJson("/api/user/{$endpoint}/{$recordId}")->assertSuccessful();
-})->with(['cargos', 'product-owners']);
+})->with([
+    ['cargos', 'name', 'national_code'],
+    ['product-owners', 'name', 'transportation_code'],
+]);

@@ -18,6 +18,8 @@ interface CompanyModelRepositoryInterface
 
     public function findOrFail(int $companyId, int $id): DynamicModel;
 
+    public function find(int $companyId, int $id): ?DynamicModel;
+
     public function update(int $companyId, int $id, array $data): DynamicModel;
 
     public function delete(int $companyId, int $id): void;

@@ -40,6 +40,23 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
+    /** @var array<class-string, class-string> */
+    public $bindings = [
+        UserInterface::class => UserRepository::class,
+        CompanyDataRepositoryInterface::class => CompanyDataRepository::class,
+        CompanyInterface::class => CompanyRepository::class,
+        DriverRepositoryInterface::class => DriverRepository::class,
+        FleetRepositoryInterface::class => FleetRepository::class,
+        ShipmentPartyRepositoryInterface::class => ShipmentPartyRepository::class,
+        ShipmentPartyAddressRepositoryInterface::class => ShipmentPartyAddressRepository::class,
+        WaybillRepositoryInterface::class => WaybillRepository::class,
+        CargoRepositoryInterface::class => CargoRepository::class,
+        ProductOwnerRepositoryInterface::class => ProductOwnerRepository::class,
+        CityRepositoryInterface::class => CityRepository::class,
+        PermissionInterface::class => PermissionRepository::class,
+        RoleInterface::class => RoleRepository::class,
+    ];
+
     /**
      * Register any application services.
      */
@@ -55,27 +72,6 @@ class AppServiceProvider extends ServiceProvider
     {
         Company::observe(CompanyObserver::class);
         User::observe(UserObserver::class);
-
-        // User
-        $this->app->bind(UserInterface::class, UserRepository::class);
-
-        // Company
-        $this->app->bind(CompanyDataRepositoryInterface::class, CompanyDataRepository::class);
-        $this->app->bind(CompanyInterface::class, CompanyRepository::class);
-        $this->app->bind(DriverRepositoryInterface::class, DriverRepository::class);
-        $this->app->bind(FleetRepositoryInterface::class, FleetRepository::class);
-        $this->app->bind(ShipmentPartyRepositoryInterface::class, ShipmentPartyRepository::class);
-        $this->app->bind(ShipmentPartyAddressRepositoryInterface::class, ShipmentPartyAddressRepository::class);
-        $this->app->bind(WaybillRepositoryInterface::class, WaybillRepository::class);
-        $this->app->bind(CargoRepositoryInterface::class, CargoRepository::class);
-        $this->app->bind(ProductOwnerRepositoryInterface::class, ProductOwnerRepository::class);
-
-        // City
-        $this->app->bind(CityRepositoryInterface::class, CityRepository::class);
-
-        // Role And Permission
-        $this->app->bind(PermissionInterface::class, PermissionRepository::class);
-        $this->app->bind(RoleInterface::class, RoleRepository::class);
 
         Scramble::configure()
             ->withDocumentTransformers(function (OpenApi $openApi) {

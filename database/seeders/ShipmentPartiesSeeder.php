@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Enums\StatusEnum;
 use App\Services\Company\ShipmentParty\ShipmentPartyService;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class ShipmentPartiesSeeder extends Seeder
@@ -16,7 +15,8 @@ class ShipmentPartiesSeeder extends Seeder
         $shipments = [
             [
                 'national_identifier' => '1870675274',
-                'type' => 'sender',
+                'is_sender' => true,
+                'is_receiver' => false,
                 'status' => StatusEnum::ACTIVE->value,
                 'title' => 'test',
                 'first_name' => 'test',
@@ -25,12 +25,12 @@ class ShipmentPartiesSeeder extends Seeder
                 'landline' => '0318498489',
                 'intermediary_code' => 'test',
                 'transportation_code' => 'test',
-                'email' => 'sfdsgdf@gmail.com'
+                'email' => 'sfdsgdf@gmail.com',
             ],
         ];
 
         foreach ($shipments as $shipment) {
-            $this->shipmentPartyService->create(1000,$shipment);
+            $this->shipmentPartyService->create(1000, $shipment);
         }
     }
 }

@@ -1,7 +1,6 @@
 <?php
 
 use App\Enums\FleetOwnershipType;
-use App\Enums\ShipmentPartyType;
 use App\Enums\StatusEnum;
 use App\Enums\UserStatusEnum;
 
@@ -48,12 +47,8 @@ return [
     ],
     'shipment_parties' => [
         ['name' => 'national_identifier', 'type' => 'string', 'length' => 20, 'nullable' => false, 'unique' => true],
-        [
-            'name' => 'type',
-            'type' => 'enum',
-            'values' => ShipmentPartyType::values(),
-            'nullable' => false,
-        ],
+        ['name' => 'is_sender', 'type' => 'boolean', 'default' => false, 'nullable' => false],
+        ['name' => 'is_receiver', 'type' => 'boolean', 'default' => false, 'nullable' => false],
         [
             'name' => 'status',
             'type' => 'enum',
@@ -96,7 +91,7 @@ return [
         ['name' => 'description', 'type' => 'text'],
     ],
     'fleets' => [
-        ['name' => 'smart_card_number', 'type' => 'string', 'nullable' => false, 'unique' => true],
+        ['name' => 'smart_card_number', 'type' => 'string', 'nullable' => true, 'unique' => true, 'change' => true],
         [
             'name' => 'status',
             'type' => 'enum',
@@ -115,43 +110,48 @@ return [
         ['name' => 'plate_second_letter', 'type' => 'string', 'length' => 1, 'nullable' => false],
         ['name' => 'plate_third_number', 'type' => 'string', 'length' => 3, 'nullable' => false],
         ['name' => 'plate_fourth_number', 'type' => 'string', 'length' => 2, 'nullable' => false],
-        ['name' => 'manufacture_year', 'type' => 'unsignedSmallInteger', 'nullable' => false],
+        ['name' => 'manufacture_year', 'type' => 'unsignedSmallInteger', 'nullable' => true, 'change' => true],
         [
             'name' => 'driver_license_type_id',
             'type' => 'unsignedBigInteger',
-            'nullable' => false,
+            'nullable' => true,
+            'change' => true,
             'index' => true,
             'foreign' => ['table' => 'driver_license_types', 'column' => 'id'],
         ],
-        ['name' => 'owner_mobile', 'type' => 'string', 'length' => 20, 'nullable' => false],
+        ['name' => 'owner_mobile', 'type' => 'string', 'length' => 20, 'nullable' => true, 'change' => true],
         [
             'name' => 'loading_type_id',
             'type' => 'unsignedBigInteger',
-            'nullable' => false,
+            'nullable' => true,
+            'change' => true,
             'index' => true,
             'foreign' => ['table' => 'loading_types', 'column' => 'id'],
         ],
-        ['name' => 'insurance_policy_number', 'type' => 'string', 'nullable' => false],
-        ['name' => 'chassis_number', 'type' => 'string', 'nullable' => false],
-        ['name' => 'engine_number', 'type' => 'string', 'nullable' => false],
-        ['name' => 'vin', 'type' => 'string', 'length' => 50, 'nullable' => false],
+        ['name' => 'insurance_policy_number', 'type' => 'string', 'nullable' => true, 'change' => true],
+        ['name' => 'chassis_number', 'type' => 'string', 'nullable' => true, 'change' => true],
+        ['name' => 'engine_number', 'type' => 'string', 'nullable' => true, 'change' => true],
+        ['name' => 'vin', 'type' => 'string', 'length' => 50, 'nullable' => true, 'change' => true],
         [
             'name' => 'system_id',
             'type' => 'unsignedBigInteger',
-            'nullable' => false,
+            'nullable' => true,
+            'change' => true,
             'index' => true,
             'foreign' => ['table' => 'fleet_brands', 'column' => 'id'],
         ],
         [
             'name' => 'tip_code',
             'type' => 'unsignedBigInteger',
+            'nullable' => true,
+            'change' => true,
             'index' => true,
             'foreign' => ['table' => 'fleet_types', 'column' => 'tip_code'],
         ],
-        ['name' => 'document_date', 'type' => 'date', 'nullable' => false],
-        ['name' => 'document_number', 'type' => 'string', 'nullable' => false],
-        ['name' => 'insurance_date', 'type' => 'date', 'nullable' => false],
-        ['name' => 'technical_inspection_valid_until', 'type' => 'date', 'nullable' => false],
+        ['name' => 'document_date', 'type' => 'date', 'nullable' => true, 'change' => true],
+        ['name' => 'document_number', 'type' => 'string', 'nullable' => true, 'change' => true],
+        ['name' => 'insurance_date', 'type' => 'date', 'nullable' => true, 'change' => true],
+        ['name' => 'technical_inspection_valid_until', 'type' => 'date', 'nullable' => true, 'change' => true],
         ['name' => 'has_violation', 'type' => 'boolean', 'default' => false, 'nullable' => false],
         ['name' => 'description', 'type' => 'text'],
     ],
@@ -161,6 +161,7 @@ return [
     ],
     'product_owner' => [
         ['name' => 'name', 'type' => 'string'],
-        ['name' => 'national_code', 'type' => 'string'],
+        ['name' => 'phone', 'type' => 'string', 'length' => 20],
+        ['name' => 'transportation_code', 'type' => 'string'],
     ],
 ];

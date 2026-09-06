@@ -2,27 +2,31 @@
 
 namespace App\Repositories\Company;
 
+use App\Interfaces\Company\CompanyModelRepositoryInterface;
 use App\Models\DynamicModel;
 use App\Services\Company\CompanyDataOwnerResolver;
+use App\Services\Company\CompanyTableRegistry;
 use App\Services\Company\DynamicRelationLoader;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Arr;
 
-abstract class CompanyModelRepository
+abstract class CompanyModelRepository implements CompanyModelRepositoryInterface
 {
-    protected string $tableKey;
+    /** @var class-string<DynamicModel> */
+    protected string $modelClass;
 
     public function __construct(
         protected DynamicRelationLoader $relationLoader,
+        protected CompanyTableRegistry $tableRegistry,
+        protected CompanyDataOwnerResolver $companyDataOwnerResolver,
     ) {}
 
-    protected function queryModel(int $companyId, DynamicModel $model): Builder
+    public function query(int $companyId): Builder
     {
-        $query = $this->companyModel($companyId, $model)->newQuery();
+        $query = $this->model($companyId)->newQuery();
 
-        if (! app(CompanyDataOwnerResolver::class)->isDataOwner($companyId)) {
+        if (! $this->companyDataOwnerResolver->isDataOwner($companyId)) {
             $query->where($query->getModel()->qualifyColumn('owner_company_id'), $companyId);
         }
 
@@ -33,99 +37,77 @@ abstract class CompanyModelRepository
      * @param  array<string, mixed>  $filters
      * @return Collection<int, DynamicModel>|LengthAwarePaginator
      */
-    protected function searchModels(
-        int $companyId,
-        DynamicModel $model,
-        array $filters,
-    ): Collection|LengthAwarePaginator {
+    public function search(int $companyId, array $filters): Collection|LengthAwarePaginator
+    {
         $filters['itemsPerPage'] ??= $filters['per_page'] ?? 15;
-        $query = $this->queryModel($companyId, $model)->advancedSearch($filters);
+        $query = $this->query($companyId)->advancedSearch($filters);
 
         /** @var DynamicModel $configuredModel */
         $configuredModel = $query->getModel();
         $records = $configuredModel->advancedSearchResults($query, $filters);
-        $this->relationLoader->load($companyId, $this->tableKey, $records);
+        $this->relationLoader->load($records);
 
         return $records;
     }
 
     /** @param array<string, mixed> $data */
-    protected function createModel(int $companyId, DynamicModel $model, array $data): DynamicModel
+    public function create(int $companyId, array $data): DynamicModel
     {
-        $record = $this->companyModel($companyId, $model)->create([
+        $record = $this->model($companyId)->create([
             ...$data,
             'owner_company_id' => $companyId,
         ]);
 
-        return $this->loadRelations($companyId, $record);
+        return $this->loadRelations($record);
     }
 
-    protected function findModelOrFail(int $companyId, DynamicModel $model, int $id): DynamicModel
+    public function findOrFail(int $companyId, int $id): DynamicModel
     {
         /** @var DynamicModel $record */
-        $record = $this->queryModel($companyId, $model)->findOrFail($id);
+        $record = $this->query($companyId)->findOrFail($id);
 
-        return $this->loadRelations($companyId, $record);
+        return $this->loadRelations($record);
     }
 
-    protected function findModel(int $companyId, DynamicModel $model, int $id): DynamicModel
+    public function find(int $companyId, int $id): ?DynamicModel
     {
-        /** @var DynamicModel $record */
-        $record = $this->queryModel($companyId, $model)->find($id);
+        /** @var DynamicModel|null $record */
+        $record = $this->query($companyId)->find($id);
 
-        return $this->loadRelations($companyId, $record);
+        return $record === null ? null : $this->loadRelations($record);
     }
 
     /** @param array<string, mixed> $data */
-    protected function updateModel(
+    public function update(
         int $companyId,
-        DynamicModel $model,
         int $id,
         array $data,
     ): DynamicModel {
         unset($data['owner_company_id']);
 
-        $record = $this->findModelOrFail($companyId, $model, $id);
+        $record = $this->findOrFail($companyId, $id);
         $record->update($data);
 
-        return $this->loadRelations($companyId, $record->refresh());
+        return $this->loadRelations($record->refresh());
     }
 
-    protected function deleteModel(int $companyId, DynamicModel $model, int $id): void
+    public function delete(int $companyId, int $id): void
     {
-        $this->findModelOrFail($companyId, $model, $id)->delete();
+        $this->findOrFail($companyId, $id)->delete();
     }
 
-    protected function loadRelations(int $companyId, DynamicModel $record): DynamicModel
+    protected function loadRelations(DynamicModel $record): DynamicModel
     {
-        $this->relationLoader->load($companyId, $this->tableKey, $record);
+        $this->relationLoader->load($record);
 
         return $record;
     }
 
-    private function companyModel(int $companyId, DynamicModel $model): DynamicModel
+    private function model(int $companyId): DynamicModel
     {
-        $columns = collect(config("company_tables.{$this->tableKey}", []));
-        $searchableFields = $columns
-            ->filter(fn (array $column): bool => (bool) ($column['searchable'] ?? true))
-            ->pluck('name')
-            ->filter()
-            ->values()
-            ->all();
-        $globalSearchFields = $columns
-            ->filter(fn (array $column): bool => (bool) ($column['global_search'] ?? in_array(
-                Arr::get($column, 'type'),
-                ['string', 'text'],
-                true,
-            )))
-            ->pluck('name')
-            ->filter()
-            ->values()
-            ->all();
+        /** @var DynamicModel $model */
+        $model = app($this->modelClass);
 
-        return (clone $model)
-            ->forCompany($companyId)
-            ->setSearchableFields($searchableFields)
-            ->setGlobalSearchFields($globalSearchFields);
+        return $this->tableRegistry->configure(clone $model, $companyId);
     }
 }

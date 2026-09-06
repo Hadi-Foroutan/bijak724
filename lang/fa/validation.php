@@ -78,7 +78,7 @@ return [
     'json' => 'گزینه :attribute باید از نوع رشته جیسون باشد',
     'list' => 'فیلد :attribute باید یک لیست باشد.',
     'lowercase' => 'گزینه :attribute باید با حروف کوچک باشد.',
-    //-------------------*****----------------
+    // -------------------*****----------------
 
     'lt' => [
         'array' => 'گزینه :attribute باید کمتر از :value آیتم داشته باشد',
@@ -239,6 +239,7 @@ return [
         'role_id' => 'نقش',
         'permission_ids.*' => 'دسترسی',
         'national_code' => 'کد ملی',
+        'transportation_code' => 'کد سراسری حمل و نقل',
         'min_commission_percentage' => 'حداقل درصد کمیسیون',
         'max_commission_percentage' => 'حداکثر درصد کمیسیون',
         'status' => 'وضعیت',

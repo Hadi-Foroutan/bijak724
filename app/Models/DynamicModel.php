@@ -29,14 +29,19 @@ class DynamicModel extends Model
     /** @var list<string> */
     protected array $defaultRelations = [];
 
+    public function companyTableKey(): string
+    {
+        if ($this->companyTableKey === '') {
+            throw new LogicException('A company table key must be configured on the model.');
+        }
+
+        return $this->companyTableKey;
+    }
+
     public function forCompany(int $companyId, ?string $tableKey = null): static
     {
         $this->companyContextId = $companyId;
-        $resolvedTableKey = $tableKey ?? $this->companyTableKey;
-
-        if ($resolvedTableKey === '') {
-            throw new LogicException('A company table key must be provided.');
-        }
+        $resolvedTableKey = $tableKey ?? $this->companyTableKey();
 
         $dataOwnerCompanyId = app(CompanyDataOwnerResolver::class)->resolveId($companyId);
 

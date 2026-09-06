@@ -46,10 +46,7 @@ class SyncCompanyTablesCommand extends Command
         }
 
         $companies->each(function (Company $company): void {
-            $this->companyTableService->createCompanyTables(
-                $company->id,
-                config('company_tables'),
-            );
+            $this->companyTableService->sync($company->id);
 
             $this->line("Synced dynamic tables for company [{$company->id}].");
         });

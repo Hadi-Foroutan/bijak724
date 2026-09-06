@@ -6,12 +6,13 @@ use App\Http\Requests\BaseRequest;
 
 class StoreProductOwnerRequest extends BaseRequest
 {
-    /** @return array<string, array<int, string>> */
+    /** @return array<string, array<int, mixed>> */
     public function rules(): array
     {
         return [
-            'name' => ['nullable', 'string', 'max:255'],
-            'national_code' => ['nullable', 'string', 'max:20'],
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:20'],
+            'transportation_code' => ['required', 'string', 'max:255'],
         ];
     }
 }

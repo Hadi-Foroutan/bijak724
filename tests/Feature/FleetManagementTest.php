@@ -111,6 +111,7 @@ test('it updates and deletes a fleet', function () {
     $this->patchJson("/api/user/fleets/{$fleetId}", [
         'status' => StatusEnum::INACTIVE->value,
         'has_violation' => true,
+        'system_id' => $otherBrand->id,
         'tip_code' => $otherFleetType->tip_code,
     ])
         ->assertSuccessful()
@@ -156,7 +157,7 @@ test('it finds a fleet by smart card number only inside the current company', fu
         ->assertNotFound();
 });
 
-test('it derives the fleet brand from the tip code', function () {
+test('it rejects a fleet type that does not belong to the selected system', function () {
     $otherBrand = FleetBrand::query()->create([
         'name' => 'ولوو',
         'brand_code' => 20,
@@ -172,10 +173,8 @@ test('it derives the fleet brand from the tip code', function () {
         'tip_code' => $otherFleetType->tip_code,
         'system_id' => $this->fleetBrand->id,
     ])
-        ->assertCreated()
-        ->assertJsonPath('data.tip_code', $otherFleetType->tip_code)
-        ->assertJsonPath('data.system_id', $otherBrand->id)
-        ->assertJsonPath('data.fleet_brand.brand_code', $otherBrand->brand_code);
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('tip_code');
 });
 
 test('it rejects an invalid fleet tip code', function () {
@@ -209,13 +208,79 @@ test('it stores an optional fleet description', function () {
         ->assertJsonPath('data.description', 'توضیحات ناوگان');
 });
 
-test('it requires a fleet tip code', function () {
+test('it allows a system without a fleet type', function () {
     $payload = fleetPayload($this);
     $payload['tip_code'] = null;
 
     $this->postJson('/api/user/fleets', $payload)
+        ->assertCreated()
+        ->assertJsonPath('data.system_id', $this->fleetBrand->id)
+        ->assertJsonPath('data.tip_code', null);
+});
+
+test('it creates a fleet with only a plate and nullable system fields', function () {
+    $this->postJson('/api/user/fleets', [
+        'plate_first_number' => '12',
+        'plate_second_letter' => 'ب',
+        'plate_third_number' => '345',
+        'plate_fourth_number' => '67',
+        'status' => null,
+        'ownership_type' => '',
+        'system_id' => null,
+        'tip_code' => null,
+        'document_date' => [],
+        'insurance_date' => '----/--/--',
+        'technical_inspection_valid_until' => [
+            'year' => null,
+            'month' => null,
+            'day' => null,
+        ],
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.system_id', null)
+        ->assertJsonPath('data.tip_code', null);
+});
+
+test('it requires a system when a fleet type is selected', function () {
+    $this->postJson('/api/user/fleets', [
+        'plate_first_number' => '12',
+        'plate_second_letter' => 'ب',
+        'plate_third_number' => '345',
+        'plate_fourth_number' => '67',
+        'tip_code' => $this->fleetType->tip_code,
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('system_id');
+});
+
+test('it preserves the system and fleet type relation during updates', function () {
+    $fleetId = $this->postJson('/api/user/fleets', fleetPayload($this))
+        ->assertCreated()
+        ->json('data.id');
+    $otherBrand = FleetBrand::query()->create([
+        'name' => 'ولوو',
+        'brand_code' => 20,
+    ]);
+
+    $this->patchJson("/api/user/fleets/{$fleetId}", [
+        'system_id' => $otherBrand->id,
+    ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors('tip_code');
+
+    $this->patchJson("/api/user/fleets/{$fleetId}", [
+        'system_id' => null,
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('system_id');
+
+    $this->patchJson("/api/user/fleets/{$fleetId}", [
+        'system_id' => null,
+        'tip_code' => null,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.system_id', null)
+        ->assertJsonPath('data.tip_code', null);
 });
 
 function fleetPayload(object $test): array
@@ -236,6 +301,7 @@ function fleetPayload(object $test): array
         'chassis_number' => 'CHASSIS-1001',
         'engine_number' => 'ENGINE-1001',
         'vin' => 'IR123456789012345',
+        'system_id' => $test->fleetBrand->id,
         'tip_code' => $test->fleetType->tip_code,
         'document_date' => '2026-01-01',
         'document_number' => 'DOC-1001',

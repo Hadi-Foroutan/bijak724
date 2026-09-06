@@ -11,15 +11,10 @@ class DynamicRelationLoader
     /**
      * Load real Eloquent relations declared by each company model.
      *
-     * The company and table arguments remain in the signature for backward
-     * compatibility with the existing services.
-     *
      * @param  Collection<int, DynamicModel>|LengthAwarePaginator|DynamicModel  $records
      * @param  list<string>|null  $relations
      */
     public function load(
-        int $companyId,
-        string $tableKey,
         Collection|LengthAwarePaginator|DynamicModel $records,
         ?array $relations = null,
     ): void {
