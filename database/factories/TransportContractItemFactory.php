@@ -27,7 +27,7 @@ class TransportContractItemFactory extends Factory
             'is_free' => fake()->boolean(),
             'is_unknown' => fake()->boolean(),
             'charge_recipient' => fake()->boolean(),
-            'primary_value' => fake()->randomFloat(4, 0, 100000000),
+            'primary_value' => fake()->randomFloat(4, 0, 100),
             'secondary_value' => fake()->randomFloat(4, 0, 100000000),
         ];
     }

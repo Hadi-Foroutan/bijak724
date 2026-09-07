@@ -19,7 +19,6 @@ class UpdateTransportContractRequest extends BaseRequest
             'contract_date' => ['sometimes', 'required', 'date_format:Y-m-d'],
             'customer_name' => ['sometimes', 'required', 'string', 'max:255'],
             'status' => ['sometimes', 'required', Rule::enum(StatusEnum::class)],
-            'is_default' => ['sometimes', 'required', 'boolean'],
             'default_owned' => ['sometimes', 'required', 'boolean'],
             'default_rental' => ['sometimes', 'required', 'boolean'],
             'default_free' => ['sometimes', 'required', 'boolean'],
@@ -34,7 +33,7 @@ class UpdateTransportContractRequest extends BaseRequest
             'items.*.is_free' => ['required', 'boolean'],
             'items.*.is_unknown' => ['required', 'boolean'],
             'items.*.charge_recipient' => ['required', 'boolean'],
-            'items.*.primary_value' => ['nullable', 'numeric', 'min:0'],
+            'items.*.primary_value' => ['nullable', 'numeric', 'between:0,100'],
             'items.*.secondary_value' => ['nullable', 'numeric', 'min:0'],
         ];
     }

@@ -17,7 +17,8 @@ interface TransportContractRepositoryInterface
 
     public function update(TransportContract $transportContract, array $data): TransportContract;
 
-    public function clearDefault(int $companyId): void;
+    /** @param array<int, string> $fields */
+    public function clearDefaults(int $companyId, array $fields): void;
 
     public function delete(TransportContract $transportContract): void;
 }

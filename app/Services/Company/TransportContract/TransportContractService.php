@@ -2,6 +2,7 @@
 
 namespace App\Services\Company\TransportContract;
 
+use App\Enums\TransportContractItemType;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\TransportContractRepositoryInterface;
 use Illuminate\Support\Arr;
@@ -63,8 +64,17 @@ class TransportContractService
     /** @param array<string, mixed> $data */
     private function clearDefaultWhenSelected(int $companyId, array $data): void
     {
-        if ((bool) ($data['is_default'] ?? false)) {
-            $this->transportContractRepository->clearDefault($companyId);
+        $selectedDefaultFields = array_values(array_filter(
+            array_map(
+                fn (TransportContractItemType $type): ?string => ($data[$type->defaultField()] ?? false)
+                    ? $type->defaultField()
+                    : null,
+                TransportContractItemType::cases(),
+            ),
+        ));
+
+        if ($selectedDefaultFields !== []) {
+            $this->transportContractRepository->clearDefaults($companyId, $selectedDefaultFields);
         }
     }
 }

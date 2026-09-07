@@ -5,11 +5,13 @@ namespace App\Observers;
 use App\Enums\CompanyParentEnum;
 use App\Models\Company;
 use App\Services\Company\CompanyTableService;
+use App\Services\Company\TransportContract\DefaultTransportContractService;
 
 class CompanyObserver
 {
     public function __construct(
         protected CompanyTableService $companyTableService,
+        protected DefaultTransportContractService $defaultTransportContractService,
     ) {}
 
     /**
@@ -17,6 +19,8 @@ class CompanyObserver
      */
     public function created(Company $company): void
     {
+        $this->defaultTransportContractService->createForCompany($company);
+
         if ($company->parent_type === CompanyParentEnum::BRANCH->value) {
             return;
         }

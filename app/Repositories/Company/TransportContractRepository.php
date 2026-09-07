@@ -38,12 +38,14 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
         return $transportContract->refresh();
     }
 
-    public function clearDefault(int $companyId): void
+    public function clearDefaults(int $companyId, array $fields): void
     {
-        TransportContract::query()
-            ->where('company_id', $companyId)
-            ->where('is_default', true)
-            ->update(['is_default' => false]);
+        foreach ($fields as $field) {
+            TransportContract::query()
+                ->where('company_id', $companyId)
+                ->where($field, true)
+                ->update([$field => false]);
+        }
     }
 
     public function delete(TransportContract $transportContract): void

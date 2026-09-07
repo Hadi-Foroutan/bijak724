@@ -116,6 +116,11 @@ class Company extends Model
         return $this->hasOne(User::class);
     }
 
+    public function transportContracts(): HasMany
+    {
+        return $this->hasMany(TransportContract::class);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Scopes

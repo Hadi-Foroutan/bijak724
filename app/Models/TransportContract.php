@@ -15,18 +15,17 @@ class TransportContract extends Model
     /** @use HasFactory<TransportContractFactory> */
     use AdvancedSearch, HasFactory;
 
-    protected array $searchableFields = ['company_id', 'title', 'contract_number', 'contract_date', 'customer_name', 'status', 'is_default'];
+    protected array $searchableFields = ['company_id', 'title', 'contract_number', 'contract_date', 'customer_name', 'status', 'default_owned', 'default_rental', 'default_free', 'default_unknown'];
 
     protected array $globalSearchFields = ['title', 'contract_number', 'customer_name', 'description'];
 
-    protected $fillable = ['company_id', 'title', 'contract_number', 'contract_date', 'customer_name', 'status', 'is_default', 'default_owned', 'default_rental', 'default_free', 'default_unknown', 'description'];
+    protected $fillable = ['company_id', 'title', 'contract_number', 'contract_date', 'customer_name', 'status', 'default_owned', 'default_rental', 'default_free', 'default_unknown', 'description'];
 
     protected function casts(): array
     {
         return [
             'contract_date' => 'date', 'status' => StatusEnum::class,
-            'is_default' => 'boolean', 'default_owned' => 'boolean',
-            'default_rental' => 'boolean', 'default_free' => 'boolean',
+            'default_owned' => 'boolean', 'default_rental' => 'boolean', 'default_free' => 'boolean',
             'default_unknown' => 'boolean',
         ];
     }

@@ -19,7 +19,6 @@ class StoreTransportContractRequest extends BaseRequest
             'contract_date' => ['required', 'date_format:Y-m-d'],
             'customer_name' => ['required', 'string', 'max:255'],
             'status' => ['required', Rule::enum(StatusEnum::class)],
-            'is_default' => ['required', 'boolean'],
             'default_owned' => ['required', 'boolean'],
             'default_rental' => ['required', 'boolean'],
             'default_free' => ['required', 'boolean'],
@@ -32,7 +31,7 @@ class StoreTransportContractRequest extends BaseRequest
             'items.*.is_free' => ['required', 'boolean'],
             'items.*.is_unknown' => ['required', 'boolean'],
             'items.*.charge_recipient' => ['required', 'boolean'],
-            'items.*.primary_value' => ['nullable', 'numeric', 'min:0'],
+            'items.*.primary_value' => ['nullable', 'numeric', 'between:0,100'],
             'items.*.secondary_value' => ['nullable', 'numeric', 'min:0'],
         ];
     }

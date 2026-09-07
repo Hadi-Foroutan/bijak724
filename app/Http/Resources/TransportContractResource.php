@@ -22,7 +22,6 @@ class TransportContractResource extends JsonResource
             'contract_date' => $this->contract_date?->format('Y-m-d'),
             'customer_name' => $this->customer_name,
             'status' => $this->status->value,
-            'is_default' => $this->is_default,
             'default_owned' => $this->default_owned,
             'default_rental' => $this->default_rental,
             'default_free' => $this->default_free,

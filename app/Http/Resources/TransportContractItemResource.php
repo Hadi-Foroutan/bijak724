@@ -23,11 +23,28 @@ class TransportContractItemResource extends JsonResource
             'is_free' => $this->is_free,
             'is_unknown' => $this->is_unknown,
             'charge_recipient' => $this->charge_recipient,
-            'primary_value' => $this->primary_value,
+            'primary_value' => $this->numericValue($this->primary_value),
             'primary_value_label' => $this->name->primaryValueLabel(),
-            'secondary_value' => $this->secondary_value,
+            'secondary_value' => $this->numericValue($this->secondary_value),
             'secondary_value_label' => $this->name->secondaryValueLabel(),
             'editable_fields' => $this->name->editableFields(),
         ];
+    }
+
+    private function numericValue(mixed $value): int|float|null
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $normalizedValue = (string) $value;
+
+        if (str_contains($normalizedValue, '.')) {
+            $normalizedValue = rtrim(rtrim($normalizedValue, '0'), '.');
+        }
+
+        return str_contains($normalizedValue, '.')
+            ? (float) $normalizedValue
+            : (int) $normalizedValue;
     }
 }

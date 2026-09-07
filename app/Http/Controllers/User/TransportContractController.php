@@ -21,18 +21,29 @@ class TransportContractController extends Controller
     public function options(): JsonResponse
     {
         return ResponseHandler::success([
-            'items' => array_map(fn (TransportContractItemName $item): array => [
+            'items' => array_map(fn (TransportContractItemName $item, int $index): array => [
+                'id' => $index + 1,
                 'value' => $item->value,
                 'label' => $item->label(),
                 'primary_value_label' => $item->primaryValueLabel(),
                 'secondary_value_label' => $item->secondaryValueLabel(),
                 'editable_fields' => $item->editableFields(),
-            ], TransportContractItemName::cases()),
+            ], TransportContractItemName::cases(), array_keys(TransportContractItemName::cases())),
             'types' => array_map(fn (TransportContractItemType $type): array => [
                 'field' => $type->field(),
                 'value' => $type->value,
                 'label' => $type->label(),
             ], TransportContractItemType::cases()),
+            'defaults' => array_map(fn (TransportContractItemType $type): array => [
+                'field' => $type->defaultField(),
+                'value' => $type->value,
+                'label' => $type->defaultLabel(),
+            ], [
+                TransportContractItemType::Unknown,
+                TransportContractItemType::Free,
+                TransportContractItemType::Rental,
+                TransportContractItemType::Owned,
+            ]),
         ]);
     }
 

@@ -1,59 +1,13 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+من هرچی بهت میگم توی دیتابیس اضافه کنی باید توی خود مایگرینش اصلی اضافه کنی توی ادامه توی مایگریشن add اضافه نکنی
+خوب حالا ما جدول بارنامه هارو داریم برای هر شرکت که فیلد هاش هستن
+اول باید به یک فرستنده و گیرنده متصل بشه و بعد باید توی خود بیجک کد ملی و نام ونام خانوادگی فرستنده گیرنده و شماره هم ذخیره بشه که اگه ویراش شد فرستنده گیرنده اطلاعات قبلی بارنامه که برای کدوم فرستنده گیرنده ارسال شد از بین نره و ما راننده 1 و راننده 2 داریم که از جدول رانندگان خودش باید انتخاب کنه و لینک بشه راننده هم لینک و هم مثل فرستنده گیرنده باید اطلاعات کد ملینام راننده و تلفنش ذخیره بشه هم راننده 1 و هم 2 همینطور و به یک ناوگان هم متصل میشه و لیستی از محموله هارو داره هر محموله دارای این فیلد هاست
+یک ایدی محموله رو میگیره از جدول محموله ها یک ایدی بسته بندی میگیره از جدول بسته بندی ها یک شرح داره توضیحات داره وزن مبدا(کیلوگرم) ارزش(ریال) تعداد تیک ترافیکی و تیک برگشتی
+ادامه این فیلد ها اختیاری باشن شماره کوتاژ شماره کوتاژ 2 شماره حساب راننده شماره کانتینر شماره کانتینر 2 به صورت ارایه میاد پس ما یه روت میخوایم که لیست محموله هارو بفرسته لیست بسته بندی هارو بفرسته برای فرانت
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
-
-## About Laravel
-
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
-
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
-
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-## Laravel Sponsors
-
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
-
-### Premium Partners
-
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
-
-## Contributing
-
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+ادامه فیلد های بارنامه وزن حواله هست تعداد شروع بارگیری پایان بارگیری شماره حواله شماره بیجک سریال زمان صدور بیمه مسئولیت
+کد رهگیری بیجک و یه حالت نا تمام باشه که بعدا بتونه بارنامه رو تکمیل کنه فعلا فقط ثبت بشه و حالا قسمت قرار داد حمل 
+اینجا چندتا فیلد داریم قرار داد حمل کرایه پایه پیش کرایه باسکول بارگیری انبارداری دریافتی از راننده مالیات بیمه مبلغ بیمه هزینه توقف مبلغ قابل پرداخت دوتا تیک کرایه در مبدا و قابت هم داریم اگه تیک ثابت خورده باشه مبلغ قابل پرداخت قابل تغییر توسط کاربر هست و و بقیه فیلد ها از قرارداد حمل فیلد های درصدیشون پر میشه
+قسمت مهم قرار داد حمل باید به این  صورت باشه که لیست قرار داد های حل شرکت خودشو میاره فیلد باسکول بارگیری انبار داری هزینه توقف داره که اختیارین
+فیلد کرایه پایه + هر کدام از فیلد های اختیاری + کمیسیون به مبلغ و مالیات بیمه = فیلد مبلغ قابل پرداخت
+پیش کرایه از قابل پرداخت کم میشه دریافتی از رانندهجمع تمام فیلد های اختیاری به غیر از پیش کرایه و کرایه پایه میباشد
+یعنی در حالتی که فیلد های اختیاری نداریم مبلغ بیمه و مالیات بیمه دریافتی از راننده
