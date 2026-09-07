@@ -81,6 +81,14 @@ class UserRepository implements UserInterface
             ->findOrFail($userId);
     }
 
+    public function findVisibleForCompany(int $companyId, int $userId): User
+    {
+        return User::query()
+            ->whereIn('company_id', $this->companyHierarchyService->visibleUserCompanyIds($companyId))
+            ->with(['roles', 'parent'])
+            ->findOrFail($userId);
+    }
+
     private function usersForTree(array $params, ?Closure $queryCallback = null): Collection
     {
         unset($params['tree'], $params['paginate']);

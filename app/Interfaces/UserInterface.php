@@ -26,4 +26,6 @@ interface UserInterface
     public function findByUsername(string $username): ?User;
 
     public function findForCompany(int $companyId, int $userId): User;
+
+    public function findVisibleForCompany(int $companyId, int $userId): User;
 }

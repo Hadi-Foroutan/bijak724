@@ -88,4 +88,14 @@ return [
     'user.waybills.show' => 'مشاهده بیجک',
     'user.waybills.update' => 'ویرایش بیجک',
     'user.waybills.destroy' => 'حذف بیجک',
+
+    'user.permissions.index' => 'مشاهده لیست دسترسی ها',
+    'user.permissions.update' => 'ویرایش دسترسی ها',
+
+    'user.transport-contracts.index' => 'مشاهده لیست قراردادهای حمل',
+    'user.transport-contracts.options' => 'مشاهده گزینه‌های قرارداد حمل',
+    'user.transport-contracts.store' => 'ایجاد قرارداد حمل',
+    'user.transport-contracts.show' => 'مشاهده قرارداد حمل',
+    'user.transport-contracts.update' => 'ویرایش قرارداد حمل',
+    'user.transport-contracts.destroy' => 'حذف قرارداد حمل',
 ];

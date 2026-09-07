@@ -72,7 +72,7 @@ class CompanyUserService
 
     public function permissions(int $companyId, int $userId): ServiceResult
     {
-        $user = $this->userRepository->findForCompany($companyId, $userId);
+        $user = $this->userRepository->findVisibleForCompany($companyId, $userId);
 
         return ServiceResult::success(
             $this->permissionData($user, $this->companyManagerRole()),
@@ -84,7 +84,7 @@ class CompanyUserService
      */
     public function syncPermissions(int $companyId, int $userId, array $permissions): ServiceResult
     {
-        $user = $this->userRepository->findForCompany($companyId, $userId);
+        $user = $this->userRepository->findVisibleForCompany($companyId, $userId);
         $managerRole = $this->companyManagerRole();
 
         $user->permissions()->sync($permissions);
@@ -159,6 +159,7 @@ class CompanyUserService
             });
         $groupedPermissionIds = $groups
             ->flatMap(fn (array $group): array => array_column($group['permissions'], 'id'));
+
         $ungroupedPermissions = $availablePermissions
             ->whereNotIn('id', $groupedPermissionIds)
             ->map(fn (Permission $permission): array => $this->permissionItem(

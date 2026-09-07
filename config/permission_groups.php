@@ -16,7 +16,9 @@ return [
         'user.waybills.' => 'مدیریت بارنامه‌ها',
         'user.cargos.' => 'مدیریت محموله‌ها',
         'user.product-owners.' => 'مدیریت صاحبان کالا',
+        'user.transport-contracts.' => 'مدیریت قراردادهای حمل',
         'profile.' => 'مدیریت پروفایل کاربر',
+        'user.permissions.' => 'مدیریت دسترسی ها',
     ],
 
     'roles' => [

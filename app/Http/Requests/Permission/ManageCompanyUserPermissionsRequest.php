@@ -6,6 +6,8 @@ use App\Enums\RoleEnum;
 use App\Http\Requests\BaseRequest;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\Company\CompanyHierarchyService;
+use App\Services\Company\CompanySupportTokenService;
 use Illuminate\Validation\Rule;
 
 class ManageCompanyUserPermissionsRequest extends BaseRequest
@@ -14,13 +16,23 @@ class ManageCompanyUserPermissionsRequest extends BaseRequest
     {
         $actor = $this->user();
 
-        if (! $actor instanceof User || ! $actor->hasRole(RoleEnum::COMPANY_MANAGER->value)) {
+        if (! $actor instanceof User) {
             return false;
         }
 
+        $isCompanyManager = $actor->hasRole(RoleEnum::COMPANY_MANAGER->value);
+        $isCompanySupport = app(CompanySupportTokenService::class)->isSupportToken($actor);
+
+        if (! $isCompanyManager && ! $isCompanySupport) {
+            return false;
+        }
+
+        $visibleCompanyIds = app(CompanyHierarchyService::class)
+            ->visibleUserCompanyIds($this->companyId());
+
         return User::query()
             ->whereKey($this->route('user'))
-            ->where('company_id', $this->companyId())
+            ->whereIn('company_id', $visibleCompanyIds)
             ->exists();
     }
 

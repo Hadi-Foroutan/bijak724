@@ -40,8 +40,20 @@ beforeEach(function (): void {
         'name' => 'user.drivers.index',
         'display_name' => 'مشاهده رانندگان شرکت',
     ]);
+    $companyPermissionIndex = Permission::query()->create([
+        'name' => 'user.permissions.index',
+        'display_name' => 'مشاهده دسترسی‌های کاربران شرکت',
+    ]);
+    $companyPermissionUpdate = Permission::query()->create([
+        'name' => 'user.permissions.update',
+        'display_name' => 'ویرایش دسترسی‌های کاربران شرکت',
+    ]);
     $this->adminRole->permissions()->attach($loginAsPermission);
-    $this->companyManagerRole->permissions()->attach($companyPermission);
+    $this->companyManagerRole->permissions()->attach([
+        $companyPermission->id,
+        $companyPermissionIndex->id,
+        $companyPermissionUpdate->id,
+    ]);
     $this->admin->permissions()->attach($loginAsPermission);
 
     $this->company = createSupportTestCompany('شرکت مقصد', '10001', 'ORG-10001', '10000000001');
@@ -121,6 +133,50 @@ test('support token permissions follow current company manager role permissions'
     withFreshBearerToken($this, $supportToken)
         ->postJson('/api/user/drivers', [])
         ->assertUnprocessable();
+});
+
+test('a support token can manage permissions for a user in the selected company', function () {
+    $targetUser = User::query()->forceCreate([
+        'company_id' => $this->company->id,
+        'national_code' => '1234567893',
+        'first_name' => 'کاربر',
+        'last_name' => 'شرکت',
+        'phone' => '09120000004',
+        'username' => 'company-user',
+        'password' => 'password',
+    ]);
+    $driverPermission = Permission::query()
+        ->where('name', 'user.drivers.index')
+        ->firstOrFail();
+    $targetUser->permissions()->attach($driverPermission);
+    $supportToken = issueSupportToken($this, $this->adminToken, $this->company);
+
+    withFreshBearerToken($this, $supportToken)
+        ->getJson("/api/user/{$targetUser->id}/permissions")
+        ->assertSuccessful()
+        ->assertJsonPath('data.user_id', $targetUser->id)
+        ->assertJsonPath('data.permission_ids.0', $driverPermission->id);
+
+    withFreshBearerToken($this, $supportToken)
+        ->putJson("/api/user/{$targetUser->id}/permissions", [
+            'permissions' => [],
+        ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.permission_ids', []);
+
+    $otherCompanyUser = User::query()->forceCreate([
+        'company_id' => $this->otherCompany->id,
+        'national_code' => '1234567894',
+        'first_name' => 'کاربر',
+        'last_name' => 'شرکت دیگر',
+        'phone' => '09120000005',
+        'username' => 'other-company-user',
+        'password' => 'password',
+    ]);
+
+    withFreshBearerToken($this, $supportToken)
+        ->getJson("/api/user/{$otherCompanyUser->id}/permissions")
+        ->assertForbidden();
 });
 
 test('a support token is restricted to its own company', function () {

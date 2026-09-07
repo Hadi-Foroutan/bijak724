@@ -8,6 +8,7 @@ use App\Http\Controllers\User\Fleet\FleetController;
 use App\Http\Controllers\User\ProductOwner\ProductOwnerController;
 use App\Http\Controllers\User\ShipmentParty\ShipmentPartyAddressController;
 use App\Http\Controllers\User\ShipmentParty\ShipmentPartyController;
+use App\Http\Controllers\User\TransportContractController;
 use App\Http\Controllers\User\Waybill\WaybillController;
 use Illuminate\Support\Facades\Route;
 
@@ -54,3 +55,8 @@ Route::apiResource('waybills', WaybillController::class);
 Route::apiResource('cargos', CargoController::class);
 Route::apiResource('product-owners', ProductOwnerController::class)
     ->parameters(['product-owners' => 'productOwner']);
+
+Route::get('transport-contracts/options', [TransportContractController::class, 'options'])
+    ->name('transport-contracts.options');
+Route::apiResource('transport-contracts', TransportContractController::class)
+    ->parameters(['transport-contracts' => 'transportContract']);

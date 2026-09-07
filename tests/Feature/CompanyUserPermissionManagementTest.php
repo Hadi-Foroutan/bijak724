@@ -65,7 +65,7 @@ beforeEach(function (): void {
 });
 
 test('company manager receives company manager permissions grouped with selected state', function () {
-    $this->getJson("/api/user/users/{$this->targetUser->id}/permissions")
+    $this->getJson("/api/user/{$this->targetUser->id}/permissions")
         ->assertSuccessful()
         ->assertJsonPath('data.user_id', $this->targetUser->id)
         ->assertJsonPath('data.permission_ids', [$this->indexPermission->id])
@@ -80,7 +80,7 @@ test('company manager receives company manager permissions grouped with selected
 });
 
 test('company manager can replace a company user permissions within the manager role', function () {
-    $this->putJson("/api/user/users/{$this->targetUser->id}/permissions", [
+    $this->putJson("/api/user/{$this->targetUser->id}/permissions", [
         'permissions' => [
             $this->updatePermission->id,
             $this->fleetPermission->id,
@@ -97,15 +97,91 @@ test('company manager can replace a company user permissions within the manager 
         $this->fleetPermission->id,
     ]);
 
-    $this->putJson("/api/user/users/{$this->targetUser->id}/permissions", [
+    $this->putJson("/api/user/{$this->targetUser->id}/permissions", [
         'permissions' => [],
     ])->assertSuccessful();
 
     expect($this->targetUser->permissions()->exists())->toBeFalse();
 });
 
+test('parent company manager can manage permissions throughout its company hierarchy', function () {
+    $permissionIndexRoute = permissionManagementPermission(
+        'user.permissions.index',
+        'مشاهده دسترسی‌های کاربران شرکت',
+    );
+    $permissionUpdateRoute = permissionManagementPermission(
+        'user.permissions.update',
+        'ویرایش دسترسی‌های کاربران شرکت',
+    );
+    $this->managerRole->permissions()->attach([
+        $permissionIndexRoute->id,
+        $permissionUpdateRoute->id,
+    ]);
+    $this->manager->permissions()->attach([
+        $permissionIndexRoute->id,
+        $permissionUpdateRoute->id,
+    ]);
+    $this->withMiddleware(CheckPermission::class);
+
+    $childCompany = Company::query()->forceCreate([
+        'parent_id' => $this->company->id,
+        'parent_type' => 'branch',
+        'panel_code' => '20003',
+        'organization_code' => 'ORG-20003',
+        'name' => 'شرکت زیرمجموعه',
+        'national_code' => '20000000003',
+        'city_code' => '1101',
+    ]);
+    $grandchildCompany = Company::query()->forceCreate([
+        'parent_id' => $childCompany->id,
+        'parent_type' => 'branch',
+        'panel_code' => '20004',
+        'organization_code' => 'ORG-20004',
+        'name' => 'شرکت زیرمجموعه سطح دوم',
+        'national_code' => '20000000004',
+        'city_code' => '1101',
+    ]);
+    $childUser = permissionManagementUser(
+        $childCompany,
+        'child-company-user',
+        '2234567894',
+        '09122222224',
+    );
+    $grandchildUser = permissionManagementUser(
+        $grandchildCompany,
+        'grandchild-company-user',
+        '2234567895',
+        '09122222225',
+    );
+
+    $this->getJson("/api/user/{$childUser->id}/permissions")
+        ->assertSuccessful()
+        ->assertJsonPath('data.user_id', $childUser->id);
+
+    $this->putJson("/api/user/{$grandchildUser->id}/permissions", [
+        'permissions' => [$this->fleetPermission->id],
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.permission_ids', [$this->fleetPermission->id]);
+
+    expect($grandchildUser->permissions()->pluck('permissions.id')->all())
+        ->toBe([$this->fleetPermission->id]);
+
+    $childManager = permissionManagementUser(
+        $childCompany,
+        'child-company-manager',
+        '2234567896',
+        '09122222226',
+    );
+    app(RoleInterface::class)->assignRoleToUser($this->managerRole, $childManager);
+    permissionManagementAuthenticate($this, $childManager);
+
+    $this->getJson("/api/user/{$this->targetUser->id}/permissions")
+        ->assertForbidden();
+});
+
 test('permissions outside the company manager role cannot be assigned', function () {
-    $this->putJson("/api/user/users/{$this->targetUser->id}/permissions", [
+    $this->putJson("/api/user/{$this->targetUser->id}/permissions", [
         'permissions' => [$this->outsidePermission->id],
     ])
         ->assertUnprocessable()
@@ -124,7 +200,7 @@ test('only a manager of the same company can manage user permissions', function 
     );
     permissionManagementAuthenticate($this, $ordinaryUser);
 
-    $this->getJson("/api/user/users/{$this->targetUser->id}/permissions")
+    $this->getJson("/api/user/{$this->targetUser->id}/permissions")
         ->assertForbidden();
 
     $otherManager = permissionManagementUser(
@@ -136,7 +212,7 @@ test('only a manager of the same company can manage user permissions', function 
     app(RoleInterface::class)->assignRoleToUser($this->managerRole, $otherManager);
     permissionManagementAuthenticate($this, $otherManager);
 
-    $this->putJson("/api/user/users/{$this->targetUser->id}/permissions", [
+    $this->putJson("/api/user/{$this->targetUser->id}/permissions", [
         'permissions' => [$this->updatePermission->id],
     ])->assertForbidden();
 
