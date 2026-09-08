@@ -160,6 +160,9 @@ test('it resets and regenerates route permissions with groups and role links', f
     $productOwnerGroup = PermissionGroup::query()
         ->where('name', 'مدیریت صاحبان کالا')
         ->firstOrFail();
+    $generalGroup = PermissionGroup::query()
+        ->where('name', 'اطلاعات عمومی کاربران')
+        ->firstOrFail();
 
     expect($dashboardGroup->permissions()->pluck('name')->all())
         ->toBe(['user.dashboard.index']);
@@ -171,9 +174,11 @@ test('it resets and regenerates route permissions with groups and role links', f
         ->and($addressGroup->permissions()->count())->toBe(5)
         ->and($addressGroup->permissions()->where('name', 'user.addresses.index')->exists())->toBeTrue()
         ->and(Permission::query()->where('name', 'user.shipment-parties.addresses.index')->exists())->toBeFalse()
-        ->and($waybillGroup->permissions()->count())->toBe(5)
+        ->and($waybillGroup->permissions()->count())->toBe(6)
+        ->and($waybillGroup->permissions()->where('name', 'user.waybills.options')->exists())->toBeTrue()
         ->and($cargoGroup->permissions()->count())->toBe(5)
-        ->and($productOwnerGroup->permissions()->count())->toBe(5);
+        ->and($productOwnerGroup->permissions()->count())->toBe(5)
+        ->and($generalGroup->permissions()->count())->toBe(7);
 
     expect($user->permissions()->where('name', 'user.drivers.index')->exists())->toBeTrue();
     expect($user->permissions()->where('name', 'user.fleets.destroy')->exists())->toBeFalse();

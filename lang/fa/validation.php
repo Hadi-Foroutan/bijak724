@@ -243,6 +243,10 @@ return [
         'min_commission_percentage' => 'حداقل درصد کمیسیون',
         'max_commission_percentage' => 'حداکثر درصد کمیسیون',
         'status' => 'وضعیت',
+        'plate_first_number' => 'عدد اول پلاک',
+        'plate_second_letter' => 'حرف دوم پلاک',
+        'plate_third_number' => 'عدد سوم پلاک',
+        'plate_fourth_number' => 'عدد چهارم پلاک',
     ],
 
 ];

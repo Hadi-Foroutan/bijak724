@@ -31,7 +31,7 @@ class StoreFleetRequest extends BaseRequest
             'status' => ['nullable', Rule::enum(StatusEnum::class)],
             'ownership_type' => ['nullable', Rule::enum(FleetOwnershipType::class)],
             'plate_first_number' => ['required', 'string', 'regex:/^\d{2}$/'],
-            'plate_second_letter' => ['required', 'string', 'min:1', 'max:3'],
+            'plate_second_letter' => ['required', 'string', 'min:1', 'max:1'],
             'plate_third_number' => ['required', 'string', 'regex:/^\d{3}$/'],
             'plate_fourth_number' => ['required', 'string', 'regex:/^\d{2}$/'],
             'manufacture_year' => ['nullable', 'integer', 'between:1300,'.(now()->year + 1)],

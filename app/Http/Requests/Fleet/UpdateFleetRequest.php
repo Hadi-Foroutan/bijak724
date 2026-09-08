@@ -37,7 +37,7 @@ class UpdateFleetRequest extends BaseRequest
             'status' => ['sometimes', 'nullable', Rule::enum(StatusEnum::class)],
             'ownership_type' => ['sometimes', 'nullable', Rule::enum(FleetOwnershipType::class)],
             'plate_first_number' => ['sometimes', 'required', 'string', 'regex:/^\d{2}$/'],
-            'plate_second_letter' => ['sometimes', 'required', 'string', 'min:1', 'max:3'],
+            'plate_second_letter' => ['sometimes', 'required', 'string', 'min:1', 'max:1'],
             'plate_third_number' => ['sometimes', 'required', 'string', 'regex:/^\d{3}$/'],
             'plate_fourth_number' => ['sometimes', 'required', 'string', 'regex:/^\d{2}$/'],
             'manufacture_year' => ['sometimes', 'nullable', 'integer', 'between:1300,'.(now()->year + 1)],

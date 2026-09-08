@@ -2,11 +2,18 @@
 
 namespace App\Models;
 
+use App\Traits\AdvancedSearch;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FleetType extends Model
 {
+    use AdvancedSearch;
+
+    protected array $searchableFields = ['tip_code', 'name', 'brand_code', 'brand__name'];
+
+    protected array $globalSearchFields = ['tip_code', 'name', 'brand_code'];
+
     /**
      * The primary key associated with the table.
      *

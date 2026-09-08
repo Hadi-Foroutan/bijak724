@@ -51,8 +51,9 @@ Route::apiResource('shipment-parties.addresses', ShipmentPartyAddressController:
         'addresses' => 'address',
     ]);
 
+// Route::get('waybills/options', [WaybillController::class, 'options'])->name('waybills.options');
 Route::apiResource('waybills', WaybillController::class);
-Route::apiResource('cargos', CargoController::class);
+// Route::apiResource('cargos', CargoController::class);
 Route::apiResource('product-owners', ProductOwnerController::class)
     ->parameters(['product-owners' => 'productOwner']);
 

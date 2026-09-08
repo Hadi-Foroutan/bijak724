@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Waybill\StoreWaybillRequest;
 use App\Http\Requests\Waybill\UpdateWaybillRequest;
 use App\Http\Resources\WaybillResource;
+use App\Models\TransportContract;
 use App\Services\Company\Waybill\WaybillService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,6 +16,27 @@ use Symfony\Component\HttpFoundation\Response;
 class WaybillController extends Controller
 {
     public function __construct(protected WaybillService $waybillService) {}
+
+    public function options(Request $request): JsonResponse
+    {
+        $contracts = TransportContract::query()
+            ->where('company_id', $this->companyId($request))
+            ->with('items')
+            ->orderBy('title')
+            ->get();
+
+        return ResponseHandler::success([
+            'transport_contracts' => $contracts->map(fn (TransportContract $contract): array => [
+                'id' => $contract->id,
+                'title' => $contract->title,
+                'contract_number' => $contract->contract_number,
+                'items' => $contract->items->map(fn ($item): array => [
+                    'name' => $item->name->value,
+                    'primary_value' => $item->primary_value === null ? null : (float) $item->primary_value,
+                ])->values(),
+            ]),
+        ]);
+    }
 
     public function index(Request $request): JsonResponse
     {

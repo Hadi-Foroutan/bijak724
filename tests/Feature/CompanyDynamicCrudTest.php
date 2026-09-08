@@ -130,13 +130,12 @@ test('shipment party must be a sender or receiver and can be both', function () 
 
 test('waybills have complete crud and preserve paginated and unpaginated responses', function () {
     $waybillId = $this->postJson('/api/user/waybills', [
-        'tracking_code' => 'WB-1001',
-        'company_code' => 10,
-        'meta' => ['source' => 'api'],
+        'is_incomplete' => true,
+        'bijak_tracking_code' => 'WB-1001',
     ])
         ->assertCreated()
-        ->assertJsonPath('data.tracking_code', 'WB-1001')
-        ->assertJsonPath('data.meta.source', 'api')
+        ->assertJsonPath('data.is_incomplete', true)
+        ->assertJsonPath('data.bijak_tracking_code', 'WB-1001')
         ->json('data.id');
 
     $this->getJson('/api/user/waybills?paginate=1&itemsPerPage=1')
@@ -148,9 +147,9 @@ test('waybills have complete crud and preserve paginated and unpaginated respons
         ->assertSuccessful()
         ->assertJsonCount(1, 'data');
 
-    $this->patchJson("/api/user/waybills/{$waybillId}", ['tracking_code' => 'WB-2002'])
+    $this->patchJson("/api/user/waybills/{$waybillId}", ['bijak_tracking_code' => 'WB-2002'])
         ->assertSuccessful()
-        ->assertJsonPath('data.tracking_code', 'WB-2002');
+        ->assertJsonPath('data.bijak_tracking_code', 'WB-2002');
 
     $this->deleteJson("/api/user/waybills/{$waybillId}")->assertSuccessful();
 });

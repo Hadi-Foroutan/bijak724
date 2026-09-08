@@ -2,4 +2,10 @@
 
 namespace App\Interfaces\Company;
 
-interface WaybillRepositoryInterface extends CompanyModelRepositoryInterface {}
+use App\Models\Company\Waybill;
+
+interface WaybillRepositoryInterface extends CompanyModelRepositoryInterface
+{
+    /** @param array<int, array<string, mixed>> $cargos */
+    public function syncCargos(Waybill $waybill, int $companyId, array $cargos): void;
+}

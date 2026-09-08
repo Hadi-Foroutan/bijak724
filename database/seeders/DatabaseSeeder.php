@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             FleetBrandSeeder::class,
             FleetTypeSeeder::class,
             CargoSeeder::class,
+            PackagingSeeder::class,
             DriverLicenseTypeSeeder::class,
             SettingsSeeder::class,
             RoleSeeder::class,

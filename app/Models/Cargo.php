@@ -2,10 +2,17 @@
 
 namespace App\Models;
 
+use App\Traits\AdvancedSearch;
 use Illuminate\Database\Eloquent\Model;
 
 class Cargo extends Model
 {
+    use AdvancedSearch;
+
+    protected array $searchableFields = ['name', 'code', 'description'];
+
+    protected array $globalSearchFields = ['name', 'code', 'description'];
+
     /**
      * The attributes that are mass assignable.
      *

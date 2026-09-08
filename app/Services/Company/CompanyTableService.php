@@ -83,6 +83,8 @@ class CompanyTableService
             'json' => $table->json($column['name']),
             'boolean' => $table->boolean($column['name']),
             'date' => $table->date($column['name']),
+            'dateTime' => $table->dateTime($column['name']),
+            'decimal' => $table->decimal($column['name'], $column['total'] ?? 18, $column['places'] ?? 2),
             'enum' => $table->enum($column['name'], $column['values']),
             'unsignedBigInteger' => $table->unsignedBigInteger($column['name']),
             'unsignedInteger' => $table->unsignedInteger($column['name']),

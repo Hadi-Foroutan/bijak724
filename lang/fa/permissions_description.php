@@ -84,10 +84,19 @@ return [
     'user.shipment-parties.destroy' => 'حذف فرستنده گیرنده',
 
     'user.waybills.index' => 'مشاهده لیست بیجک ها',
+    'user.waybills.options' => 'مشاهده گزینه‌های بارنامه',
     'user.waybills.store' => 'ایجاد بیجک جدید',
     'user.waybills.show' => 'مشاهده بیجک',
     'user.waybills.update' => 'ویرایش بیجک',
     'user.waybills.destroy' => 'حذف بیجک',
+
+    'user.general.cargos' => 'مشاهده لیست عمومی محموله‌ها',
+    'user.general.packaging' => 'مشاهده لیست عمومی بسته‌بندی‌ها',
+    'user.general.fleet-types' => 'مشاهده لیست عمومی تیپ ناوگان',
+    'user.general.fleet-systems' => 'مشاهده لیست عمومی سیستم ناوگان',
+    'user.general.states' => 'مشاهده لیست عمومی استان‌ها',
+    'user.general.cities' => 'مشاهده لیست عمومی شهرها',
+    'user.general.insurance-companies' => 'مشاهده لیست عمومی شرکت‌های بیمه‌گذار',
 
     'user.permissions.index' => 'مشاهده لیست دسترسی ها',
     'user.permissions.update' => 'ویرایش دسترسی ها',

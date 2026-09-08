@@ -13,6 +13,7 @@ use App\Interfaces\Company\TransportContractRepositoryInterface;
 use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Interfaces\CompanyDataRepositoryInterface;
 use App\Interfaces\CompanyInterface;
+use App\Interfaces\GeneralOptionRepositoryInterface;
 use App\Interfaces\PermissionInterface;
 use App\Interfaces\RoleInterface;
 use App\Interfaces\UserInterface;
@@ -31,6 +32,7 @@ use App\Repositories\Company\ShipmentPartyAddressRepository;
 use App\Repositories\Company\ShipmentPartyRepository;
 use App\Repositories\Company\TransportContractRepository;
 use App\Repositories\Company\WaybillRepository;
+use App\Repositories\General\GeneralOptionRepository;
 use App\Repositories\Permission\PermissionRepository;
 use App\Repositories\Permission\RoleRepository;
 use App\Repositories\User\UserRepository;
@@ -56,6 +58,7 @@ class AppServiceProvider extends ServiceProvider
         ProductOwnerRepositoryInterface::class => ProductOwnerRepository::class,
         TransportContractRepositoryInterface::class => TransportContractRepository::class,
         CityRepositoryInterface::class => CityRepository::class,
+        GeneralOptionRepositoryInterface::class => GeneralOptionRepository::class,
         PermissionInterface::class => PermissionRepository::class,
         RoleInterface::class => RoleRepository::class,
     ];

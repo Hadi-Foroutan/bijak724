@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('packagings', function (Blueprint $table) {
             $table->id();
+            $table->string('unit_name');
+            $table->unsignedBigInteger('code')->unique();
+            $table->text('description')->nullable();
             $table->timestamps();
         });
     }
