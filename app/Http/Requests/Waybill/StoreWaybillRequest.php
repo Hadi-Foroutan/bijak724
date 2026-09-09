@@ -48,6 +48,7 @@ class StoreWaybillRequest extends BaseRequest
             'receiver_id' => [$requiredWhenComplete, 'nullable', 'integer', $receiverExists],
             'driver1_id' => [$requiredWhenComplete, 'nullable', 'integer', $companyDataService->ownedExistsRule($companyId, 'drivers')],
             'driver2_id' => ['nullable', 'integer', 'different:driver1_id', $companyDataService->ownedExistsRule($companyId, 'drivers')],
+            'referral_driver_id' => [$requiredWhenComplete, 'nullable', 'integer', $companyDataService->ownedExistsRule($companyId, 'drivers')],
             'fleet_id' => [$requiredWhenComplete, 'nullable', 'integer', $companyDataService->ownedExistsRule($companyId, 'fleets')],
         ];
     }
@@ -66,7 +67,7 @@ class StoreWaybillRequest extends BaseRequest
             'serial_number' => [$requiredWhenComplete, 'nullable', 'string', 'max:255'],
             'issued_at' => [$requiredWhenComplete, 'nullable', 'date'],
             'liability_insurance' => [$requiredWhenComplete, 'nullable', 'string', 'max:255'],
-            'bijak_tracking_code' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
         ];
     }
 
@@ -99,7 +100,6 @@ class StoreWaybillRequest extends BaseRequest
             'cargos.*.cargo_id' => ['required', 'integer', Rule::exists(Cargo::class, 'id')],
             'cargos.*.packaging_id' => ['required', 'integer', Rule::exists(Packaging::class, 'id')],
             'cargos.*.title' => ['required', 'string', 'max:255'],
-            'cargos.*.description' => ['nullable', 'string'],
             'cargos.*.origin_weight' => ['required', 'numeric', 'min:0'],
             'cargos.*.value' => ['required', 'integer', 'min:0'],
             'cargos.*.quantity' => ['required', 'integer', 'min:1'],

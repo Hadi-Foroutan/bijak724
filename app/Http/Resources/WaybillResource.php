@@ -14,6 +14,7 @@ class WaybillResource extends CompanyDynamicResource
             'receiver' => $this->whenLoaded('receiver'),
             'first_driver' => $this->whenLoaded('firstDriver'),
             'second_driver' => $this->whenLoaded('secondDriver'),
+            'referral_driver' => $this->whenLoaded('referralDriver'),
             'fleet' => $this->whenLoaded('fleet'),
             'transport_contract' => $this->whenLoaded('transportContract'),
             'cargos' => WaybillCargoResource::collection($this->whenLoaded('cargos')),

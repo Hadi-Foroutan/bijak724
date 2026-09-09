@@ -4,7 +4,6 @@ namespace App\Repositories\Company;
 
 use App\Interfaces\CompanyDataRepositoryInterface;
 use App\Models\DynamicModel;
-use App\Services\Company\CompanyDataOwnerResolver;
 use App\Services\Company\CompanyTableRegistry;
 use Closure;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -14,7 +13,6 @@ use Illuminate\Database\Eloquent\Collection;
 class CompanyDataRepository implements CompanyDataRepositoryInterface
 {
     public function __construct(
-        protected CompanyDataOwnerResolver $companyDataOwnerResolver,
         protected CompanyTableRegistry $tableRegistry,
     ) {}
 
@@ -30,24 +28,7 @@ class CompanyDataRepository implements CompanyDataRepositoryInterface
 
     public function query(int $companyId, string $tableKey, ?string $alias = null): EloquentBuilder
     {
-        $table = $this->table($companyId, $tableKey);
-
-        $model = $this->model($companyId, $tableKey);
-
-        $query = $model->newQuery();
-
-        if ($alias) {
-            $query->from("{$table} as {$alias}");
-        }
-
-        if (! $this->companyDataOwnerResolver->isDataOwner($companyId)) {
-            $query->where(
-                ($alias ?? $table).'.owner_company_id',
-                $companyId,
-            );
-        }
-
-        return $query;
+        return $this->tableRegistry->query($companyId, $tableKey, $alias);
     }
 
     public function search(

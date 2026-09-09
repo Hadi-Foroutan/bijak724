@@ -4,6 +4,7 @@ use App\Http\Middleware\CheckPermission;
 use App\Interfaces\Company\ProductOwnerRepositoryInterface;
 use App\Models\Company;
 use App\Models\User;
+use App\Services\Company\CompanyTableService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -109,7 +110,7 @@ test('product owner access is scoped to the current company and branch', functio
     ]);
 });
 
-test('product owner migration preserves legacy data and can be rerun and rolled back', function () {
+test('company table sync preserves legacy product owner data and can be rerun', function () {
     $tableName = 'company_987654_product_owner';
     Schema::create($tableName, function (Blueprint $table): void {
         $table->id();
@@ -117,27 +118,12 @@ test('product owner migration preserves legacy data and can be rerun and rolled 
         $table->string('national_code')->nullable();
     });
     DB::table($tableName)->insert(['id' => 7, 'name' => 'نام قدیمی', 'national_code' => '0009']);
-    $migration = require database_path('migrations/2026_09_05_105354_add_details_to_company_product_owner_tables.php');
-    $migration->up();
-    $migration->up();
-    $this->assertDatabaseHas($tableName, [
-        'id' => 7, 'name' => 'نام قدیمی', 'national_code' => '0009',
-        'first_name' => 'نام قدیمی', 'last_name' => null, 'code' => '0009',
-        'description' => null, 'status' => 'active',
-    ]);
-    $migration->down();
-    $this->assertDatabaseHas($tableName, ['id' => 7, 'name' => 'نام قدیمی', 'national_code' => '0009']);
-    expect(Schema::hasColumn($tableName, 'status'))->toBeFalse();
 
-    $contactMigration = require database_path('migrations/2026_09_05_105715_add_contact_fields_to_company_product_owner_tables.php');
-    $contactMigration->up();
-    $contactMigration->up();
+    app(CompanyTableService::class)->sync(987654);
+    app(CompanyTableService::class)->sync(987654);
+
     $this->assertDatabaseHas($tableName, [
         'id' => 7, 'name' => 'نام قدیمی', 'national_code' => '0009',
-        'phone' => null, 'transportation_code' => null,
+        'owner_company_id' => 987654, 'phone' => null, 'transportation_code' => null,
     ]);
-    $contactMigration->down();
-    $this->assertDatabaseHas($tableName, ['id' => 7, 'name' => 'نام قدیمی']);
-    expect(Schema::hasColumn($tableName, 'phone'))->toBeFalse()
-        ->and(Schema::hasColumn($tableName, 'transportation_code'))->toBeFalse();
 });

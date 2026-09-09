@@ -12,7 +12,7 @@ class Waybill extends DynamicModel
     protected string $companyTableKey = 'waybills';
 
     protected array $defaultRelations = [
-        'sender', 'receiver', 'firstDriver', 'secondDriver', 'fleet',
+        'sender', 'receiver', 'firstDriver', 'secondDriver', 'referralDriver', 'fleet',
         'transportContract', 'cargos.cargo', 'cargos.packaging',
     ];
 
@@ -48,6 +48,11 @@ class Waybill extends DynamicModel
     public function secondDriver(): BelongsTo
     {
         return $this->belongsToCompany(Driver::class, 'driver2_id', relationName: 'secondDriver');
+    }
+
+    public function referralDriver(): BelongsTo
+    {
+        return $this->belongsToCompany(Driver::class, 'referral_driver_id', relationName: 'referralDriver');
     }
 
     public function fleet(): BelongsTo

@@ -7,7 +7,7 @@ use App\Models\Company\Fleet;
 
 class FleetRepository extends CompanyModelRepository implements FleetRepositoryInterface
 {
-    protected string $modelClass = Fleet::class;
+    protected string $tableKey = 'fleets';
 
     public function findBySmartCardNumber(int $companyId, string $smartCardNumber): Fleet
     {

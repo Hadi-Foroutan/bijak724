@@ -170,7 +170,8 @@ test('it resets and regenerates route permissions with groups and role links', f
         ->and($driverGroup->permissions()->where('name', 'user.drivers.inquiry')->exists())->toBeTrue();
     expect($fleetGroup->permissions()->count())->toBe(6)
         ->and($fleetGroup->permissions()->where('name', 'user.fleets.inquiry')->exists())->toBeTrue();
-    expect($shipmentPartyGroup->permissions()->count())->toBe(5)
+    expect($shipmentPartyGroup->permissions()->count())->toBe(6)
+        ->and($shipmentPartyGroup->permissions()->where('name', 'user.shipment-parties.inquiry')->exists())->toBeTrue()
         ->and($addressGroup->permissions()->count())->toBe(5)
         ->and($addressGroup->permissions()->where('name', 'user.addresses.index')->exists())->toBeTrue()
         ->and(Permission::query()->where('name', 'user.shipment-parties.addresses.index')->exists())->toBeFalse()

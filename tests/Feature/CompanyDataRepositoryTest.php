@@ -20,7 +20,7 @@ beforeEach(function (): void {
     Schema::create('company_42_waybills', function (Blueprint $table): void {
         $table->id();
         $table->unsignedBigInteger('owner_company_id')->index();
-        $table->string('tracking_code');
+        $table->string('bijak_tracking_code');
         $table->timestamps();
     });
 });
@@ -29,13 +29,13 @@ test('repository contract queries and creates company scoped records', function 
     $repository = app(CompanyDataRepositoryInterface::class);
 
     $waybill = $repository->create(42, 'waybills', [
-        'tracking_code' => 'WB-001',
+        'bijak_tracking_code' => '12345678',
     ]);
 
     expect($waybill)->toBeInstanceOf(CompanyWaybill::class)
         ->and($waybill)->toBeInstanceOf(DynamicModel::class);
     expect($repository->table(42, 'waybills'))->toBe('company_42_waybills');
-    expect($repository->query(42, 'waybills')->value('tracking_code'))->toBe('WB-001');
+    expect($repository->query(42, 'waybills')->value('bijak_tracking_code'))->toBe('12345678');
     expect($repository->query(42, 'waybills', 'waybill')->where('waybill.id', $waybill->id)->exists())->toBeTrue();
 });
 
@@ -43,19 +43,19 @@ test('company data service passes company and table arguments in the correct ord
     $repository = app(CompanyDataRepositoryInterface::class);
 
     $repository->create(42, 'waybills', [
-        'tracking_code' => 'WB-001',
+        'bijak_tracking_code' => '12345678',
     ]);
     $repository->create(42, 'waybills', [
-        'tracking_code' => 'WB-002',
+        'bijak_tracking_code' => '87654321',
     ]);
 
     $result = app(CompanyDataService::class)->search(42, 'waybills', [
-        'eq-tracking_code' => 'WB-002',
+        'eq-bijak_tracking_code' => '87654321',
         'paginate' => true,
     ]);
 
     expect($result->total())->toBe(1);
-    expect($result->first()->tracking_code)->toBe('WB-002');
+    expect($result->first()->bijak_tracking_code)->toBe('87654321');
 });
 
 test('repository resolves dedicated models by company table convention', function () {

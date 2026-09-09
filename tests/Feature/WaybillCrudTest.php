@@ -73,6 +73,14 @@ beforeEach(function (): void {
         'license_number' => 'LIC-2',
         'phone_number_1' => '09122222222',
     ]);
+    $this->thirdDriver = $repository->create($this->company->id, 'drivers', [
+        ...$driverData,
+        'national_code' => '1122334455',
+        'first_name' => 'عباس',
+        'last_name' => 'راننده حواله',
+        'license_number' => 'LIC-3',
+        'phone_number_1' => '09123333333',
+    ]);
     $this->fleet = $repository->create($this->company->id, 'fleets', [
         'status' => 'active',
         'ownership_type' => 'owned',
@@ -91,6 +99,10 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertJsonPath('data.receiver_last_name', 'گیرنده')
         ->assertJsonPath('data.driver1_national_code', '1234567890')
         ->assertJsonPath('data.driver2_phone', '09122222222')
+        ->assertJsonPath('data.referral_driver_id', $this->thirdDriver->id)
+        ->assertJsonPath('data.referral_driver_first_name', 'عباس')
+        ->assertJsonPath('data.referral_driver.phone_number_1', '09123333333')
+        ->assertJsonPath('data.description', 'توضیحات بارنامه')
         ->assertJsonPath('data.advance_freight_amount', 0)
         ->assertJsonPath('data.weighbridge_amount', 5000)
         ->assertJsonPath('data.commission_amount', 10000)
@@ -99,7 +111,12 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertJsonPath('data.driver_receivable_amount', 22000)
         ->assertJsonPath('data.payable_amount', 132000)
         ->assertJsonCount(1, 'data.cargos')
-        ->assertJsonPath('data.cargos.0.origin_weight', 1250.5);
+        ->assertJsonPath('data.cargos.0.origin_weight', 1250.5)
+        ->assertJsonMissingPath('data.cargos.0.description');
+
+    expect($response->json('data.bijak_tracking_code'))
+        ->toBeString()
+        ->toMatch('/^\d{8}$/');
 
     $waybillId = $response->json('data.id');
     $cargoItemId = $response->json('data.cargos.0.id');
@@ -108,19 +125,30 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
 
     $this->getJson("/api/user/waybills/{$waybillId}")
         ->assertSuccessful()
+        ->assertJsonPath('data.bijak_number', 'BIJAK-1')
+        ->assertJsonPath('data.serial_number', 'SERIAL-1')
+        ->assertJsonPath('data.description', 'توضیحات بارنامه')
+        ->assertJsonPath('data.bijak_tracking_code', $response->json('data.bijak_tracking_code'))
         ->assertJsonPath('data.sender_first_name', 'علی')
         ->assertJsonPath('data.driver1_first_name', 'حسین')
         ->assertJsonPath('data.sender.first_name', 'نام جدید')
-        ->assertJsonPath('data.first_driver.first_name', 'راننده جدید');
+        ->assertJsonPath('data.first_driver.first_name', 'راننده جدید')
+        ->assertJsonPath('data.receiver.last_name', 'گیرنده')
+        ->assertJsonPath('data.referral_driver.last_name', 'راننده حواله')
+        ->assertJsonCount(1, 'data.cargos');
 
     $updatePayload = completeWaybillPayload($this);
     $updatePayload['is_fixed'] = true;
     $updatePayload['payable_amount'] = 999999;
+    $updatePayload['referral_driver_id'] = $this->firstDriver->id;
 
     $this->putJson("/api/user/waybills/{$waybillId}", $updatePayload)
         ->assertSuccessful()
         ->assertJsonPath('data.payable_amount', 999999)
+        ->assertJsonPath('data.bijak_tracking_code', $response->json('data.bijak_tracking_code'))
         ->assertJsonPath('data.sender_first_name', 'علی')
+        ->assertJsonPath('data.referral_driver_id', $this->firstDriver->id)
+        ->assertJsonPath('data.referral_driver_first_name', 'راننده جدید')
         ->assertJsonPath('data.cargos.0.id', $cargoItemId);
 });
 
@@ -131,11 +159,32 @@ test('it stores an incomplete waybill', function () {
         ->assertJsonCount(0, 'data.cargos');
 });
 
+test('the referral driver can be the first or second driver', function () {
+    $firstDriverPayload = completeWaybillPayload($this);
+    $firstDriverPayload['referral_driver_id'] = $this->firstDriver->id;
+
+    $firstResponse = $this->postJson('/api/user/waybills', $firstDriverPayload)
+        ->assertCreated()
+        ->assertJsonPath('data.referral_driver_id', $this->firstDriver->id)
+        ->assertJsonPath('data.referral_driver_national_code', '1234567890');
+
+    $secondDriverPayload = completeWaybillPayload($this);
+    $secondDriverPayload['referral_driver_id'] = $this->secondDriver->id;
+
+    $secondResponse = $this->postJson('/api/user/waybills', $secondDriverPayload)
+        ->assertCreated()
+        ->assertJsonPath('data.referral_driver_id', $this->secondDriver->id)
+        ->assertJsonPath('data.referral_driver_national_code', '0987654321');
+
+    expect($secondResponse->json('data.bijak_tracking_code'))
+        ->not->toBe($firstResponse->json('data.bijak_tracking_code'));
+});
+
 test('it validates all required complete waybill data and company references', function () {
     $this->postJson('/api/user/waybills', ['is_incomplete' => false])
         ->assertUnprocessable()
         ->assertJsonValidationErrors([
-            'sender_id', 'receiver_id', 'driver1_id', 'fleet_id', 'transport_contract_id',
+            'sender_id', 'receiver_id', 'driver1_id', 'referral_driver_id', 'fleet_id', 'transport_contract_id',
             'base_freight_amount', 'cargos',
         ]);
 
@@ -166,7 +215,7 @@ test('it requires the same complete body when updating a complete waybill', func
     ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors([
-            'sender_id', 'receiver_id', 'driver1_id', 'fleet_id',
+            'sender_id', 'receiver_id', 'driver1_id', 'referral_driver_id', 'fleet_id',
             'transport_contract_id', 'base_freight_amount', 'cargos',
         ]);
 });
@@ -180,6 +229,7 @@ function completeWaybillPayload(object $test): array
         'receiver_id' => $test->receiver->id,
         'driver1_id' => $test->firstDriver->id,
         'driver2_id' => $test->secondDriver->id,
+        'referral_driver_id' => $test->thirdDriver->id,
         'fleet_id' => $test->fleet->id,
         'referral_weight' => 1250.5,
         'quantity' => 10,
@@ -190,7 +240,8 @@ function completeWaybillPayload(object $test): array
         'serial_number' => 'SERIAL-1',
         'issued_at' => '2026-09-07 11:00:00',
         'liability_insurance' => 'INS-1',
-        'bijak_tracking_code' => 'TRACK-1',
+        'bijak_tracking_code' => 'FRONT-CODE',
+        'description' => 'توضیحات بارنامه',
         'transport_contract_id' => $test->contract->id,
         'base_freight_amount' => 100000,
         'weighbridge_amount' => 0,
@@ -201,7 +252,6 @@ function completeWaybillPayload(object $test): array
             'cargo_id' => $test->cargo->id,
             'packaging_id' => $test->packaging->id,
             'title' => 'محموله گندم',
-            'description' => 'توضیحات محموله',
             'origin_weight' => 1250.5,
             'value' => 50000000,
             'quantity' => 10,

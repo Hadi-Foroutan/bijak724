@@ -12,7 +12,6 @@ class WaybillRepository extends CompanyModelRepository implements WaybillReposit
         'cargo_id',
         'packaging_id',
         'title',
-        'description',
         'origin_weight',
         'value',
         'quantity',
@@ -25,7 +24,14 @@ class WaybillRepository extends CompanyModelRepository implements WaybillReposit
         'container_number_2',
     ];
 
-    protected string $modelClass = Waybill::class;
+    protected string $tableKey = 'waybills';
+
+    public function trackingCodeExists(int $companyId, string $trackingCode): bool
+    {
+        return $this->tableRegistry->sharedQuery($companyId, $this->tableKey)
+            ->where('bijak_tracking_code', $trackingCode)
+            ->exists();
+    }
 
     public function update(int $companyId, int $id, array $data): Waybill
     {

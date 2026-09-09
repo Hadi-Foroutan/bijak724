@@ -2,4 +2,9 @@
 
 namespace App\Interfaces\Company;
 
-interface ShipmentPartyRepositoryInterface extends CompanyModelRepositoryInterface {}
+use App\Models\Company\ShipmentParty;
+
+interface ShipmentPartyRepositoryInterface extends CompanyModelRepositoryInterface
+{
+    public function findByNationalIdentifier(int $companyId, string $nationalIdentifier): ShipmentParty;
+}

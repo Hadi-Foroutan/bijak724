@@ -46,6 +46,13 @@ class ShipmentPartyService extends CompanyCrudService
         return parent::update($companyId, $id, $data);
     }
 
+    public function findByNationalIdentifier(int $companyId, string $nationalIdentifier): ServiceResult
+    {
+        return ServiceResult::success(
+            $this->shipmentPartyRepository->findByNationalIdentifier($companyId, $nationalIdentifier),
+        );
+    }
+
     private function validateRoles(bool $isSender, bool $isReceiver): void
     {
         if ($isSender || $isReceiver) {

@@ -4,7 +4,6 @@ namespace App\Services\Company\Waybill;
 
 use App\Models\Company\Waybill;
 use App\Models\DynamicModel;
-use App\Services\Company\CompanyDataOwnerResolver;
 use App\Services\Company\CompanyTableRegistry;
 
 class WaybillReferenceSnapshotBuilder
@@ -34,12 +33,15 @@ class WaybillReferenceSnapshotBuilder
             'last_name' => 'last_name',
             'phone' => 'phone_number_1',
         ]],
+        'referral_driver_id' => ['drivers', 'referral_driver', [
+            'national_code' => 'national_code',
+            'first_name' => 'first_name',
+            'last_name' => 'last_name',
+            'phone' => 'phone_number_1',
+        ]],
     ];
 
-    public function __construct(
-        protected CompanyTableRegistry $tableRegistry,
-        protected CompanyDataOwnerResolver $companyDataOwnerResolver,
-    ) {}
+    public function __construct(protected CompanyTableRegistry $tableRegistry) {}
 
     /** @param array<string, mixed> $data */
     public function forCreate(int $companyId, array $data): array
@@ -88,13 +90,6 @@ class WaybillReferenceSnapshotBuilder
 
     private function findReference(int $companyId, string $tableKey, int $id): DynamicModel
     {
-        $model = $this->tableRegistry->model($companyId, $tableKey);
-        $query = $model->newQuery();
-
-        if (! $this->companyDataOwnerResolver->isDataOwner($companyId)) {
-            $query->where('owner_company_id', $companyId);
-        }
-
-        return $query->findOrFail($id);
+        return $this->tableRegistry->query($companyId, $tableKey)->findOrFail($id);
     }
 }

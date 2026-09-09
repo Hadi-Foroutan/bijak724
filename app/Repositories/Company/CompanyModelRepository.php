@@ -4,7 +4,6 @@ namespace App\Repositories\Company;
 
 use App\Interfaces\Company\CompanyModelRepositoryInterface;
 use App\Models\DynamicModel;
-use App\Services\Company\CompanyDataOwnerResolver;
 use App\Services\Company\CompanyTableRegistry;
 use App\Services\Company\DynamicRelationLoader;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -13,24 +12,16 @@ use Illuminate\Database\Eloquent\Collection;
 
 abstract class CompanyModelRepository implements CompanyModelRepositoryInterface
 {
-    /** @var class-string<DynamicModel> */
-    protected string $modelClass;
+    protected string $tableKey;
 
     public function __construct(
         protected DynamicRelationLoader $relationLoader,
         protected CompanyTableRegistry $tableRegistry,
-        protected CompanyDataOwnerResolver $companyDataOwnerResolver,
     ) {}
 
     public function query(int $companyId): Builder
     {
-        $query = $this->model($companyId)->newQuery();
-
-        if (! $this->companyDataOwnerResolver->isDataOwner($companyId)) {
-            $query->where($query->getModel()->qualifyColumn('owner_company_id'), $companyId);
-        }
-
-        return $query;
+        return $this->tableRegistry->query($companyId, $this->tableKey);
     }
 
     /**
@@ -105,9 +96,6 @@ abstract class CompanyModelRepository implements CompanyModelRepositoryInterface
 
     private function model(int $companyId): DynamicModel
     {
-        /** @var DynamicModel $model */
-        $model = app($this->modelClass);
-
-        return $this->tableRegistry->configure(clone $model, $companyId);
+        return $this->tableRegistry->model($companyId, $this->tableKey);
     }
 }

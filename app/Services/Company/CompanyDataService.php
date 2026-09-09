@@ -6,14 +6,13 @@ use App\Interfaces\CompanyDataRepositoryInterface;
 use App\Models\DynamicModel;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Exists;
 
 class CompanyDataService
 {
     public function __construct(
         protected CompanyDataRepositoryInterface $repo,
-        protected CompanyDataOwnerResolver $companyDataOwnerResolver,
+        protected CompanyTableRegistry $tableRegistry,
     ) {}
 
     /**
@@ -38,12 +37,6 @@ class CompanyDataService
 
     public function ownedExistsRule(int $companyId, string $table, string $column = 'id'): Exists
     {
-        $rule = Rule::exists($this->table($companyId, $table), $column);
-
-        if (! $this->companyDataOwnerResolver->isDataOwner($companyId)) {
-            $rule->where('owner_company_id', $companyId);
-        }
-
-        return $rule;
+        return $this->tableRegistry->ownedExistsRule($companyId, $table, $column);
     }
 }

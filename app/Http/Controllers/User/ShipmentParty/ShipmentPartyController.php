@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User\ShipmentParty;
 
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ShipmentParty\FindShipmentPartyByNationalIdentifierRequest;
 use App\Http\Requests\ShipmentParty\StoreShipmentPartyRequest;
 use App\Http\Requests\ShipmentParty\UpdateShipmentPartyRequest;
 use App\Http\Resources\ShipmentPartyResource;
@@ -44,6 +45,18 @@ class ShipmentPartyController extends Controller
         $result = $this->shipmentPartyService->show($this->companyId($request), $shipmentParty);
 
         return ResponseHandler::success(ShipmentPartyResource::make($result->data)->resolve($request));
+    }
+
+    public function inquiry(FindShipmentPartyByNationalIdentifierRequest $request): JsonResponse
+    {
+        $result = $this->shipmentPartyService->findByNationalIdentifier(
+            $this->companyId($request),
+            $request->validated('national_identifier'),
+        );
+
+        return ResponseHandler::success(
+            ShipmentPartyResource::make($result->data)->resolve($request),
+        );
     }
 
     public function update(UpdateShipmentPartyRequest $request, int $shipmentParty): JsonResponse

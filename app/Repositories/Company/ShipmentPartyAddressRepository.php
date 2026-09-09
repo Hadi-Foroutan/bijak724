@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 class ShipmentPartyAddressRepository extends CompanyModelRepository implements ShipmentPartyAddressRepositoryInterface
 {
-    protected string $modelClass = ShipmentPartyAddress::class;
+    protected string $tableKey = 'shipment_party_addresses';
 
     public function searchForParty(
         int $companyId,

@@ -78,6 +78,7 @@ return [
     'user.product-owners.destroy' => 'حذف صاحب کالا',
 
     'user.shipment-parties.index' => 'مشاهده لیست فرستنده گیرنده',
+    'user.shipment-parties.inquiry' => 'استعلام فرستنده یا گیرنده با شناسه ملی',
     'user.shipment-parties.store' => 'ایجاد فرستنده گیرنده جدید',
     'user.shipment-parties.show' => 'مشاهده فرستنده گیرنده',
     'user.shipment-parties.update' => 'ویرایش فرستنده گیرنده',

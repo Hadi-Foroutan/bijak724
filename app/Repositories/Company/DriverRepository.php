@@ -7,7 +7,7 @@ use App\Models\Company\Driver;
 
 class DriverRepository extends CompanyModelRepository implements DriverRepositoryInterface
 {
-    protected string $modelClass = Driver::class;
+    protected string $tableKey = 'drivers';
 
     public function findByNationalCode(int $companyId, string $nationalCode): Driver
     {

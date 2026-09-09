@@ -17,6 +17,7 @@ class WaybillService extends CompanyCrudService
         protected WaybillRepositoryInterface $waybillRepository,
         protected WaybillReferenceSnapshotBuilder $snapshotBuilder,
         protected WaybillFinancialCalculator $financialCalculator,
+        protected WaybillTrackingCodeGenerator $trackingCodeGenerator,
     ) {
         parent::__construct($waybillRepository);
     }
@@ -27,6 +28,7 @@ class WaybillService extends CompanyCrudService
         return DB::transaction(function () use ($companyId, $data): ServiceResult {
             $cargos = Arr::pull($data, 'cargos', []);
             $data = $this->snapshotBuilder->forCreate($companyId, $data);
+            $data['bijak_tracking_code'] = $this->trackingCodeGenerator->generate($companyId);
             $data = $this->financialCalculator->calculate($companyId, $data);
 
             /** @var Waybill $waybill */
