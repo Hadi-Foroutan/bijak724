@@ -1,10 +1,13 @@
 <?php
 
 use App\Http\Controllers\User\Cargo\CargoController;
+use App\Http\Controllers\User\CargoGroupController;
 use App\Http\Controllers\User\CompanyUserController;
 use App\Http\Controllers\User\Dashboard\DashboardController;
 use App\Http\Controllers\User\Driver\DriverController;
 use App\Http\Controllers\User\Fleet\FleetController;
+use App\Http\Controllers\User\InsuranceController;
+use App\Http\Controllers\User\InsuranceTariffController;
 use App\Http\Controllers\User\ProductOwner\ProductOwnerController;
 use App\Http\Controllers\User\ShipmentParty\ShipmentPartyAddressController;
 use App\Http\Controllers\User\ShipmentParty\ShipmentPartyController;
@@ -63,3 +66,12 @@ Route::get('transport-contracts/options', [TransportContractController::class, '
     ->name('transport-contracts.options');
 Route::apiResource('transport-contracts', TransportContractController::class)
     ->parameters(['transport-contracts' => 'transportContract']);
+
+Route::apiResource('insurances', InsuranceController::class);
+Route::apiResource('insurances.tariffs', InsuranceTariffController::class)
+    ->parameters(['tariffs' => 'tariff']);
+
+Route::get('cargo-groups', [CargoGroupController::class, 'index'])->name('cargo-groups.index');
+Route::get('cargo-groups/{cargoGroup}', [CargoGroupController::class, 'show'])->name('cargo-groups.show');
+Route::put('cargo-groups/{cargoGroup}/cargos', [CargoGroupController::class, 'syncCargos'])
+    ->name('cargo-groups.cargos.update');

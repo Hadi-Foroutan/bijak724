@@ -3,9 +3,12 @@
 namespace App\Providers;
 
 use App\Interfaces\CityRepositoryInterface;
+use App\Interfaces\Company\CargoGroupRepositoryInterface;
 use App\Interfaces\Company\CargoRepositoryInterface;
 use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Interfaces\Company\FleetRepositoryInterface;
+use App\Interfaces\Company\InsuranceRepositoryInterface;
+use App\Interfaces\Company\InsuranceTariffRepositoryInterface;
 use App\Interfaces\Company\ProductOwnerRepositoryInterface;
 use App\Interfaces\Company\ShipmentPartyAddressRepositoryInterface;
 use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
@@ -22,11 +25,14 @@ use App\Models\User;
 use App\Observers\CompanyObserver;
 use App\Observers\UserObserver;
 use App\Repositories\City\CityRepository;
+use App\Repositories\Company\CargoGroupRepository;
 use App\Repositories\Company\CargoRepository;
 use App\Repositories\Company\CompanyDataRepository;
 use App\Repositories\Company\CompanyRepository;
 use App\Repositories\Company\DriverRepository;
 use App\Repositories\Company\FleetRepository;
+use App\Repositories\Company\InsuranceRepository;
+use App\Repositories\Company\InsuranceTariffRepository;
 use App\Repositories\Company\ProductOwnerRepository;
 use App\Repositories\Company\ShipmentPartyAddressRepository;
 use App\Repositories\Company\ShipmentPartyRepository;
@@ -55,6 +61,9 @@ class AppServiceProvider extends ServiceProvider
         ShipmentPartyAddressRepositoryInterface::class => ShipmentPartyAddressRepository::class,
         WaybillRepositoryInterface::class => WaybillRepository::class,
         CargoRepositoryInterface::class => CargoRepository::class,
+        CargoGroupRepositoryInterface::class => CargoGroupRepository::class,
+        InsuranceRepositoryInterface::class => InsuranceRepository::class,
+        InsuranceTariffRepositoryInterface::class => InsuranceTariffRepository::class,
         ProductOwnerRepositoryInterface::class => ProductOwnerRepository::class,
         TransportContractRepositoryInterface::class => TransportContractRepository::class,
         CityRepositoryInterface::class => CityRepository::class,

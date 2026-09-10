@@ -108,4 +108,19 @@ return [
     'user.transport-contracts.show' => 'مشاهده قرارداد حمل',
     'user.transport-contracts.update' => 'ویرایش قرارداد حمل',
     'user.transport-contracts.destroy' => 'حذف قرارداد حمل',
+
+    'user.insurances.index' => 'مشاهده لیست بیمه‌ها',
+    'user.insurances.store' => 'ایجاد بیمه',
+    'user.insurances.show' => 'مشاهده بیمه',
+    'user.insurances.update' => 'ویرایش بیمه',
+    'user.insurances.destroy' => 'حذف بیمه',
+    'user.insurances.tariffs.index' => 'مشاهده لیست تعرفه‌های بیمه',
+    'user.insurances.tariffs.store' => 'ایجاد تعرفه بیمه',
+    'user.insurances.tariffs.show' => 'مشاهده تعرفه بیمه',
+    'user.insurances.tariffs.update' => 'ویرایش تعرفه بیمه',
+    'user.insurances.tariffs.destroy' => 'حذف تعرفه بیمه',
+
+    'user.cargo-groups.index' => 'مشاهده لیست گروه‌بندی کالاها',
+    'user.cargo-groups.show' => 'مشاهده گروه‌بندی کالا',
+    'user.cargo-groups.cargos.update' => 'ویرایش محموله‌های گروه کالا',
 ];

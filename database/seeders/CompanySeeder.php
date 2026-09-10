@@ -42,10 +42,7 @@ class CompanySeeder extends Seeder
 
         foreach ($companies as $company) {
             $company = $this->companyService->create($company);
-            $this->companyTableService->createCompanyTables(
-                $company->data['id'],
-                config('company_tables'),
-            );
+            $this->companyTableService->sync($company->data['id']);
         }
     }
 }

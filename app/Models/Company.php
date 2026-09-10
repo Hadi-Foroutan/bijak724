@@ -121,6 +121,16 @@ class Company extends Model
         return $this->hasMany(TransportContract::class);
     }
 
+    public function insurances(): HasMany
+    {
+        return $this->hasMany(Insurance::class);
+    }
+
+    public function cargoGroupAssignments(): HasMany
+    {
+        return $this->hasMany(CargoGroupCargo::class);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Scopes
