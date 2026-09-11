@@ -39,8 +39,9 @@ Route::prefix('fleets')->name('fleets.')->group(function () {
 });
 Route::apiResource('fleets', FleetController::class);
 
-Route::get('shipment-parties/inquiry/{nationalIdentifier}', [ShipmentPartyController::class, 'inquiry'])
-    ->name('shipment-parties.inquiry');
+Route::prefix('shipment-parties')->name('shipment-parties.')->group(function () {
+    Route::match(['get','post'], 'inquiry/{nationalIdentifier}', [ShipmentPartyController::class, 'inquiry'])->name('inquiry');
+});
 Route::apiResource('shipment-parties', ShipmentPartyController::class)
     ->parameters(['shipment-parties' => 'shipmentParty']);
 Route::apiResource('shipment-parties.addresses', ShipmentPartyAddressController::class)

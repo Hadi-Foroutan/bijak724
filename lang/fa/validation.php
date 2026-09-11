@@ -247,6 +247,7 @@ return [
         'plate_second_letter' => 'حرف دوم پلاک',
         'plate_third_number' => 'عدد سوم پلاک',
         'plate_fourth_number' => 'عدد چهارم پلاک',
+        'license_type' => 'نوع گواهینامه',
     ],
 
 ];
