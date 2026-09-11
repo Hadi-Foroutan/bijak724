@@ -28,19 +28,19 @@ Route::post('users/{user}', [CompanyUserController::class, 'update'])
     ->name('users.update');
 
 Route::prefix('drivers')->name('drivers.')->group(function () {
-    Route::match(['get', 'post'], '/inquiry/{nationalCode}', [DriverController::class, 'inquiry'])
+    Route::match(['get', 'post'], '/inquiry', [DriverController::class, 'inquiry'])
         ->name('inquiry');
 });
 Route::apiResource('drivers', DriverController::class);
 
 Route::prefix('fleets')->name('fleets.')->group(function () {
-    Route::match(['get', 'post'], '/inquiry/{smartCardNumber}', [FleetController::class, 'inquiry'])
+    Route::match(['get', 'post'], '/inquiry', [FleetController::class, 'inquiry'])
         ->name('inquiry');
 });
 Route::apiResource('fleets', FleetController::class);
 
 Route::prefix('shipment-parties')->name('shipment-parties.')->group(function () {
-    Route::match(['get','post'], 'inquiry/{nationalIdentifier}', [ShipmentPartyController::class, 'inquiry'])->name('inquiry');
+    Route::match(['get','post'], '/inquiry', [ShipmentPartyController::class, 'inquiry'])->name('inquiry');
 });
 Route::apiResource('shipment-parties', ShipmentPartyController::class)
     ->parameters(['shipment-parties' => 'shipmentParty']);

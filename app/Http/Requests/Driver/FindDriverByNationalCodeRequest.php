@@ -6,12 +6,12 @@ use App\Http\Requests\BaseRequest;
 
 class FindDriverByNationalCodeRequest extends BaseRequest
 {
-    protected function prepareForValidation(): void
+    /*protected function prepareForValidation(): void
     {
         $this->merge([
             'national_code' => $this->route('nationalCode'),
         ]);
-    }
+    }*/
 
     /**
      * @return array<string, array<int, string>>

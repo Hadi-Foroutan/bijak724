@@ -6,12 +6,12 @@ use App\Http\Requests\BaseRequest;
 
 class FindFleetBySmartCardNumberRequest extends BaseRequest
 {
-    protected function prepareForValidation(): void
+    /*protected function prepareForValidation(): void
     {
         $this->merge([
             'smart_card_number' => $this->route('smartCardNumber'),
         ]);
-    }
+    }*/
 
     /**
      * @return array<string, array<int, string>>

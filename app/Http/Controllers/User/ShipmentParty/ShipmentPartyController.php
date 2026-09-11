@@ -51,7 +51,7 @@ class ShipmentPartyController extends Controller
     {
         $result = $this->shipmentPartyService->findByNationalIdentifier(
             $this->companyId($request),
-            $request->validated('national_identifier'),
+            $request->validated('national_code'),
         );
 
         return ResponseHandler::success(
