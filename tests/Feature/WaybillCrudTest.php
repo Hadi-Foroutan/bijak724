@@ -204,6 +204,26 @@ test('it validates all required complete waybill data and company references', f
         ->assertJsonValidationErrors('transport_contract_id');
 });
 
+test('a waybill accepts at most ten cargos', function () {
+    $payload = completeWaybillPayload($this);
+    $payload['cargos'] = array_fill(0, 10, $payload['cargos'][0]);
+
+    $waybillId = $this->postJson('/api/user/waybills', $payload)
+        ->assertCreated()
+        ->assertJsonCount(10, 'data.cargos')
+        ->json('data.id');
+
+    $payload['cargos'][] = $payload['cargos'][0];
+
+    $this->postJson('/api/user/waybills', $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('cargos');
+
+    $this->putJson("/api/user/waybills/{$waybillId}", $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('cargos');
+});
+
 test('it requires the same complete body when updating a complete waybill', function () {
     $waybillId = $this->postJson('/api/user/waybills', completeWaybillPayload($this))
         ->assertCreated()

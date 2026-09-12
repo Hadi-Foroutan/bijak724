@@ -24,10 +24,10 @@ class TransportContractService
         return DB::transaction(function () use ($companyId, $data): ServiceResult {
             $items = Arr::pull($data, 'items');
             $this->clearDefaultWhenSelected($companyId, $data);
-            $transportContract = $this->transportContractRepository->create($companyId, $data);
-            $transportContract->items()->createMany($items);
 
-            return ServiceResult::success($transportContract->load('items'));
+            return ServiceResult::success(
+                $this->transportContractRepository->createWithItems($companyId, $data, $items),
+            );
         });
     }
 
@@ -45,11 +45,10 @@ class TransportContractService
             $transportContract = $this->transportContractRepository->update($transportContract, $data);
 
             if ($items !== null) {
-                $transportContract->items()->delete();
-                $transportContract->items()->createMany($items);
+                $transportContract = $this->transportContractRepository->syncItems($transportContract, $items);
             }
 
-            return ServiceResult::success($transportContract->load('items'));
+            return ServiceResult::success($transportContract);
         });
     }
 

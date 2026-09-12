@@ -5,6 +5,7 @@ namespace App\Services\Company\Waybill;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Models\Company\Waybill;
+use App\Models\TransportContract;
 use App\Services\Company\CompanyCrudService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -18,8 +19,28 @@ class WaybillService extends CompanyCrudService
         protected WaybillReferenceSnapshotBuilder $snapshotBuilder,
         protected WaybillFinancialCalculator $financialCalculator,
         protected WaybillTrackingCodeGenerator $trackingCodeGenerator,
-    ) {
-        parent::__construct($waybillRepository);
+    ) {}
+
+    protected function repository(): WaybillRepositoryInterface
+    {
+        return $this->waybillRepository;
+    }
+
+    public function options(int $companyId): ServiceResult
+    {
+        $contracts = $this->waybillRepository->transportContractOptions($companyId);
+
+        return ServiceResult::success([
+            'transport_contracts' => $contracts->map(fn (TransportContract $contract): array => [
+                'id' => $contract->id,
+                'title' => $contract->title,
+                'contract_number' => $contract->contract_number,
+                'items' => $contract->items->map(fn ($item): array => [
+                    'name' => $item->name->value,
+                    'primary_value' => $item->primary_value === null ? null : (float) $item->primary_value,
+                ])->values(),
+            ]),
+        ]);
     }
 
     /** @param array<string, mixed> $data */

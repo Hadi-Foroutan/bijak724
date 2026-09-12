@@ -4,17 +4,21 @@ namespace App\Services\Company\TransportContract;
 
 use App\Enums\StatusEnum;
 use App\Enums\TransportContractItemName;
+use App\Interfaces\Company\TransportContractRepositoryInterface;
 use App\Models\Company;
 use App\Models\TransportContract;
 use Illuminate\Support\Facades\DB;
 
 class DefaultTransportContractService
 {
+    public function __construct(
+        protected TransportContractRepositoryInterface $transportContractRepository,
+    ) {}
+
     public function createForCompany(Company $company): TransportContract
     {
         return DB::transaction(function () use ($company): TransportContract {
-            $transportContract = TransportContract::query()->create([
-                'company_id' => $company->id,
+            return $this->transportContractRepository->createWithItems($company->id, [
                 'title' => 'پیشفرض',
                 'contract_number' => '1',
                 'contract_date' => now()->addYear()->toDateString(),
@@ -25,11 +29,7 @@ class DefaultTransportContractService
                 'default_rental' => true,
                 'default_owned' => true,
                 'description' => null,
-            ]);
-
-            $transportContract->items()->createMany($this->items());
-
-            return $transportContract->load('items');
+            ], $this->items());
         });
     }
 

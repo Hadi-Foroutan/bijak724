@@ -11,7 +11,11 @@ interface ShipmentPartyAddressRepositoryInterface extends CompanyModelRepository
     /** @return Collection<int, ShipmentPartyAddress>|LengthAwarePaginator */
     public function searchForParty(int $companyId, int $shipmentPartyId, array $filters): Collection|LengthAwarePaginator;
 
+    public function shipmentPartyExists(int $companyId, int $shipmentPartyId): bool;
+
     public function findForPartyOrFail(int $companyId, int $shipmentPartyId, int $addressId): ShipmentPartyAddress;
+
+    public function findByPostalCode(int $companyId, int $shipmentPartyId, string $postalCode): ?ShipmentPartyAddress;
 
     public function updateForParty(int $companyId, int $shipmentPartyId, int $addressId, array $data): ShipmentPartyAddress;
 

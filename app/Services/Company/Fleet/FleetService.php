@@ -6,7 +6,6 @@ use App\Enums\FleetOwnershipType;
 use App\Enums\StatusEnum;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\FleetRepositoryInterface;
-use App\Models\FleetType;
 use App\Services\Company\CompanyCrudService;
 use Illuminate\Validation\ValidationException;
 
@@ -16,8 +15,11 @@ class FleetService extends CompanyCrudService
 
     public function __construct(
         protected FleetRepositoryInterface $fleetRepository,
-    ) {
-        parent::__construct($fleetRepository);
+    ) {}
+
+    protected function repository(): FleetRepositoryInterface
+    {
+        return $this->fleetRepository;
     }
 
     public function findBySmartCardNumber(int $companyId, string $smartCardNumber): ServiceResult
@@ -75,9 +77,7 @@ class FleetService extends CompanyCrudService
             ]);
         }
 
-        $fleetType = FleetType::query()->with('brand')->find($tipCode);
-
-        if ((int) $fleetType?->brand?->getKey() !== $systemId) {
+        if (! $this->fleetRepository->tipBelongsToSystem($tipCode, $systemId)) {
             throw ValidationException::withMessages([
                 'tip_code' => 'تیپ انتخاب‌شده متعلق به سیستم ناوگان نیست.',
             ]);

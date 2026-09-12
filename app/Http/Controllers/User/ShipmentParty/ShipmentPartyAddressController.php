@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User\ShipmentParty;
 
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ShipmentParty\FindShipmentPartyAddressByPostalCodeRequest;
 use App\Http\Requests\ShipmentParty\StoreShipmentPartyAddressRequest;
 use App\Http\Requests\ShipmentParty\UpdateShipmentPartyAddressRequest;
 use App\Http\Resources\ShipmentPartyAddressResource;
@@ -16,7 +17,20 @@ class ShipmentPartyAddressController extends Controller
 {
     public function __construct(protected ShipmentPartyAddressService $addressService) {}
 
-    public function index(Request $request, ?int $shipmentParty): JsonResponse
+    public function inquiry(FindShipmentPartyAddressByPostalCodeRequest $request): JsonResponse
+    {
+        $result = $this->addressService->findByPostalCode(
+            $this->companyId($request),
+            $request->integer('shipment_party_id'),
+            $request->validated('postal_code'),
+        );
+
+        return ResponseHandler::success(
+            ShipmentPartyAddressResource::make($result->data)->resolve($request),
+        );
+    }
+
+    public function index(Request $request, int $shipmentParty): JsonResponse
     {
         $result = $this->addressService->index(
             $this->companyId($request),

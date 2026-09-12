@@ -3,29 +3,28 @@
 namespace App\Http\Requests\Waybill;
 
 use App\Http\Requests\BaseRequest;
+use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Models\Cargo;
 use App\Models\Packaging;
 use App\Models\TransportContract;
-use App\Services\Company\CompanyDataService;
 use Illuminate\Validation\Rule;
 
 class StoreWaybillRequest extends BaseRequest
 {
     /** @return array<string, array<int, mixed>> */
-    public function rules(): array
+    public function rules(WaybillRepositoryInterface $waybillRepository): array
     {
-        return $this->waybillRules();
+        return $this->waybillRules($waybillRepository);
     }
 
     /** @return array<string, array<int, mixed>> */
-    protected function waybillRules(): array
+    protected function waybillRules(WaybillRepositoryInterface $waybillRepository): array
     {
-        $companyDataService = app(CompanyDataService::class);
         $companyId = $this->companyId();
         $requiredWhenComplete = Rule::requiredIf(fn (): bool => ! $this->boolean('is_incomplete', true));
 
         return [
-            ...$this->referenceRules($companyDataService, $companyId, $requiredWhenComplete),
+            ...$this->referenceRules($waybillRepository, $companyId, $requiredWhenComplete),
             ...$this->documentRules($requiredWhenComplete),
             ...$this->financialRules($companyId, $requiredWhenComplete),
             ...$this->cargoRules($requiredWhenComplete),
@@ -34,22 +33,17 @@ class StoreWaybillRequest extends BaseRequest
 
     /** @return array<string, array<int, mixed>> */
     private function referenceRules(
-        CompanyDataService $companyDataService,
+        WaybillRepositoryInterface $waybillRepository,
         int $companyId,
         mixed $requiredWhenComplete,
     ): array {
-        $senderExists = $companyDataService->ownedExistsRule($companyId, 'shipment_parties')
-            ->where('is_sender', true);
-        $receiverExists = $companyDataService->ownedExistsRule($companyId, 'shipment_parties')
-            ->where('is_receiver', true);
-
         return [
-            'sender_id' => [$requiredWhenComplete, 'nullable', 'integer', $senderExists],
-            'receiver_id' => [$requiredWhenComplete, 'nullable', 'integer', $receiverExists],
-            'driver1_id' => [$requiredWhenComplete, 'nullable', 'integer', $companyDataService->ownedExistsRule($companyId, 'drivers')],
-            'driver2_id' => ['nullable', 'integer', 'different:driver1_id', $companyDataService->ownedExistsRule($companyId, 'drivers')],
-            'referral_driver_id' => [$requiredWhenComplete, 'nullable', 'integer', $companyDataService->ownedExistsRule($companyId, 'drivers')],
-            'fleet_id' => [$requiredWhenComplete, 'nullable', 'integer', $companyDataService->ownedExistsRule($companyId, 'fleets')],
+            'sender_id' => [$requiredWhenComplete, 'nullable', 'integer', $waybillRepository->senderExistsRule($companyId)],
+            'receiver_id' => [$requiredWhenComplete, 'nullable', 'integer', $waybillRepository->receiverExistsRule($companyId)],
+            'driver1_id' => [$requiredWhenComplete, 'nullable', 'integer', $waybillRepository->driverExistsRule($companyId)],
+            'driver2_id' => ['nullable', 'integer', 'different:driver1_id', $waybillRepository->driverExistsRule($companyId)],
+            'referral_driver_id' => [$requiredWhenComplete, 'nullable', 'integer', $waybillRepository->driverExistsRule($companyId)],
+            'fleet_id' => [$requiredWhenComplete, 'nullable', 'integer', $waybillRepository->fleetExistsRule($companyId)],
         ];
     }
 
@@ -96,7 +90,7 @@ class StoreWaybillRequest extends BaseRequest
     private function cargoRules(mixed $requiredWhenComplete): array
     {
         return [
-            'cargos' => [$requiredWhenComplete, 'nullable', 'array', 'min:1'],
+            'cargos' => [$requiredWhenComplete, 'nullable', 'array', 'min:1', 'max:10'],
             'cargos.*.cargo_id' => ['required', 'integer', Rule::exists(Cargo::class, 'id')],
             'cargos.*.packaging_id' => ['required', 'integer', Rule::exists(Packaging::class, 'id')],
             'cargos.*.title' => ['required', 'string', 'max:255'],

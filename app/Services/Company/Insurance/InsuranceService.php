@@ -4,7 +4,6 @@ namespace App\Services\Company\Insurance;
 
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\InsuranceRepositoryInterface;
-use App\Models\Company;
 use Illuminate\Support\Facades\DB;
 
 class InsuranceService
@@ -22,7 +21,7 @@ class InsuranceService
     {
         return DB::transaction(function () use ($companyId, $data): ServiceResult {
             if ($data['is_default'] ?? false) {
-                Company::query()->whereKey($companyId)->lockForUpdate()->firstOrFail();
+                $this->insuranceRepository->lockCompanyForUpdate($companyId);
                 $this->insuranceRepository->clearDefault($companyId);
             }
 
@@ -43,7 +42,7 @@ class InsuranceService
             $insurance = $this->insuranceRepository->findOrFail($companyId, $id);
 
             if ($data['is_default'] ?? false) {
-                Company::query()->whereKey($companyId)->lockForUpdate()->firstOrFail();
+                $this->insuranceRepository->lockCompanyForUpdate($companyId);
                 $this->insuranceRepository->clearDefault($companyId);
             }
 

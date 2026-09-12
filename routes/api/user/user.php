@@ -44,6 +44,11 @@ Route::prefix('shipment-parties')->name('shipment-parties.')->group(function () 
 });
 Route::apiResource('shipment-parties', ShipmentPartyController::class)
     ->parameters(['shipment-parties' => 'shipmentParty']);
+
+Route::prefix('shipment-parties')->name('shipment-parties.')->group(function () {
+    Route::match(['get', 'post'], '/addresses/inquiry', [ShipmentPartyAddressController::class, 'inquiry'])->name('addresses.inquiry');
+    Route::match(['get','post'], '/inquiry', [ShipmentPartyController::class, 'inquiry'])->name('inquiry');
+});
 Route::apiResource('shipment-parties.addresses', ShipmentPartyAddressController::class)
     ->names([
         'index' => 'addresses.index',
@@ -75,4 +80,4 @@ Route::apiResource('insurances.tariffs', InsuranceTariffController::class)
 Route::get('cargo-groups', [CargoGroupController::class, 'index'])->name('cargo-groups.index');
 Route::get('cargo-groups/{cargoGroup}', [CargoGroupController::class, 'show'])->name('cargo-groups.show');
 Route::put('cargo-groups/{cargoGroup}/cargos', [CargoGroupController::class, 'syncCargos'])
-    ->name('cargo-groups.cargos.update');
+    ->name('cargo-groups-cargos.update');

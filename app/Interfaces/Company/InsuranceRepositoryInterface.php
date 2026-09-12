@@ -8,6 +8,8 @@ use Illuminate\Support\Collection;
 
 interface InsuranceRepositoryInterface
 {
+    public function lockCompanyForUpdate(int $companyId): void;
+
     /** @return Collection<int, Insurance>|LengthAwarePaginator */
     public function search(int $companyId, array $filters): Collection|LengthAwarePaginator;
 

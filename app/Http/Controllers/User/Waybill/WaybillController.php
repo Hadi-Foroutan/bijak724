@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Waybill\StoreWaybillRequest;
 use App\Http\Requests\Waybill\UpdateWaybillRequest;
 use App\Http\Resources\WaybillResource;
-use App\Models\TransportContract;
 use App\Services\Company\Waybill\WaybillService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,23 +18,9 @@ class WaybillController extends Controller
 
     public function options(Request $request): JsonResponse
     {
-        $contracts = TransportContract::query()
-            ->where('company_id', $this->companyId($request))
-            ->with('items')
-            ->orderBy('title')
-            ->get();
+        $result = $this->waybillService->options($this->companyId($request));
 
-        return ResponseHandler::success([
-            'transport_contracts' => $contracts->map(fn (TransportContract $contract): array => [
-                'id' => $contract->id,
-                'title' => $contract->title,
-                'contract_number' => $contract->contract_number,
-                'items' => $contract->items->map(fn ($item): array => [
-                    'name' => $item->name->value,
-                    'primary_value' => $item->primary_value === null ? null : (float) $item->primary_value,
-                ])->values(),
-            ]),
-        ]);
+        return ResponseHandler::success($result->data);
     }
 
     public function index(Request $request): JsonResponse

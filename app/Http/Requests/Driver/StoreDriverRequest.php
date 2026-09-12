@@ -4,9 +4,9 @@ namespace App\Http\Requests\Driver;
 
 use App\Enums\StatusEnum;
 use App\Http\Requests\BaseRequest;
+use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Models\DriverLicenseType;
 use App\Rules\NationalCodeRule;
-use App\Services\Company\CompanyDataService;
 use Illuminate\Validation\Rule;
 
 class StoreDriverRequest extends BaseRequest
@@ -14,16 +14,14 @@ class StoreDriverRequest extends BaseRequest
     /**
      * @return array<string, array<int, mixed>>
      */
-    public function rules(): array
+    public function rules(DriverRepositoryInterface $driverRepository): array
     {
-        $driverTable = app(CompanyDataService::class)->table($this->companyId(), 'drivers');
-
         return [
             'national_code' => [
                 'required',
                 'string',
                 //                new NationalCodeRule,
-                Rule::unique($driverTable, 'national_code'),
+                $driverRepository->uniqueNationalCodeRule($this->companyId()),
             ],
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],

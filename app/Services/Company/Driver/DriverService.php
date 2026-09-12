@@ -17,8 +17,11 @@ class DriverService extends CompanyCrudService
     public function __construct(
         protected DriverRepositoryInterface $driverRepository,
         protected CompanyImageUploader $imageUploader,
-    ) {
-        parent::__construct($driverRepository);
+    ) {}
+
+    protected function repository(): DriverRepositoryInterface
+    {
+        return $this->driverRepository;
     }
 
     /** @param array<string, mixed> $data */

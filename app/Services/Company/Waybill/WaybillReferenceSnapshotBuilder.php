@@ -2,9 +2,9 @@
 
 namespace App\Services\Company\Waybill;
 
+use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Models\Company\Waybill;
 use App\Models\DynamicModel;
-use App\Services\Company\CompanyTableRegistry;
 
 class WaybillReferenceSnapshotBuilder
 {
@@ -41,7 +41,7 @@ class WaybillReferenceSnapshotBuilder
         ]],
     ];
 
-    public function __construct(protected CompanyTableRegistry $tableRegistry) {}
+    public function __construct(protected WaybillRepositoryInterface $waybillRepository) {}
 
     /** @param array<string, mixed> $data */
     public function forCreate(int $companyId, array $data): array
@@ -90,6 +90,9 @@ class WaybillReferenceSnapshotBuilder
 
     private function findReference(int $companyId, string $tableKey, int $id): DynamicModel
     {
-        return $this->tableRegistry->query($companyId, $tableKey)->findOrFail($id);
+        return match ($tableKey) {
+            'shipment_parties' => $this->waybillRepository->findShipmentPartyOrFail($companyId, $id),
+            'drivers' => $this->waybillRepository->findDriverOrFail($companyId, $id),
+        };
     }
 }

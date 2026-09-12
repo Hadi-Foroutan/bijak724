@@ -3,8 +3,13 @@
 namespace App\Repositories\Company;
 
 use App\Interfaces\Company\WaybillRepositoryInterface;
+use App\Models\Company\Driver;
+use App\Models\Company\ShipmentParty;
 use App\Models\Company\Waybill;
+use App\Models\TransportContract;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Arr;
+use Illuminate\Validation\Rules\Exists;
 
 class WaybillRepository extends CompanyModelRepository implements WaybillRepositoryInterface
 {
@@ -31,6 +36,65 @@ class WaybillRepository extends CompanyModelRepository implements WaybillReposit
         return $this->tableRegistry->sharedQuery($companyId, $this->tableKey)
             ->where('bijak_tracking_code', $trackingCode)
             ->exists();
+    }
+
+    public function senderExistsRule(int $companyId): Exists
+    {
+        return $this->tableRegistry->ownedExistsRule($companyId, 'shipment_parties')
+            ->where('is_sender', true);
+    }
+
+    public function receiverExistsRule(int $companyId): Exists
+    {
+        return $this->tableRegistry->ownedExistsRule($companyId, 'shipment_parties')
+            ->where('is_receiver', true);
+    }
+
+    public function driverExistsRule(int $companyId): Exists
+    {
+        return $this->tableRegistry->ownedExistsRule($companyId, 'drivers');
+    }
+
+    public function fleetExistsRule(int $companyId): Exists
+    {
+        return $this->tableRegistry->ownedExistsRule($companyId, 'fleets');
+    }
+
+    public function findShipmentPartyOrFail(int $companyId, int $shipmentPartyId): ShipmentParty
+    {
+        /** @var ShipmentParty $shipmentParty */
+        $shipmentParty = $this->tableRegistry->query($companyId, 'shipment_parties')
+            ->findOrFail($shipmentPartyId);
+
+        return $shipmentParty;
+    }
+
+    public function findDriverOrFail(int $companyId, int $driverId): Driver
+    {
+        /** @var Driver $driver */
+        $driver = $this->tableRegistry->query($companyId, 'drivers')->findOrFail($driverId);
+
+        return $driver;
+    }
+
+    public function findTransportContractOrFail(
+        int $companyId,
+        int $transportContractId,
+    ): TransportContract {
+        return TransportContract::query()
+            ->where('company_id', $companyId)
+            ->with('items')
+            ->findOrFail($transportContractId);
+    }
+
+    /** @return Collection<int, TransportContract> */
+    public function transportContractOptions(int $companyId): Collection
+    {
+        return TransportContract::query()
+            ->where('company_id', $companyId)
+            ->with('items')
+            ->orderBy('title')
+            ->get();
     }
 
     public function update(int $companyId, int $id, array $data): Waybill

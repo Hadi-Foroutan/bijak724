@@ -30,12 +30,28 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
         return TransportContract::query()->create([...$data, 'company_id' => $companyId]);
     }
 
+    public function createWithItems(int $companyId, array $data, array $items): TransportContract
+    {
+        $transportContract = $this->create($companyId, $data);
+        $transportContract->items()->createMany($items);
+
+        return $transportContract->load('items');
+    }
+
     public function update(TransportContract $transportContract, array $data): TransportContract
     {
         unset($data['company_id']);
         $transportContract->update($data);
 
         return $transportContract->refresh();
+    }
+
+    public function syncItems(TransportContract $transportContract, array $items): TransportContract
+    {
+        $transportContract->items()->delete();
+        $transportContract->items()->createMany($items);
+
+        return $transportContract->load('items');
     }
 
     public function clearDefaults(int $companyId, array $fields): void

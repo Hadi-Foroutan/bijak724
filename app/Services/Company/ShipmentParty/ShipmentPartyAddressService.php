@@ -4,24 +4,38 @@ namespace App\Services\Company\ShipmentParty;
 
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\ShipmentPartyAddressRepositoryInterface;
-use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
 
 class ShipmentPartyAddressService
 {
     public function __construct(
         protected ShipmentPartyAddressRepositoryInterface $addressRepository,
-        protected ShipmentPartyRepositoryInterface $shipmentPartyRepository,
     ) {}
+
+    public function findByPostalCode(
+        int $companyId,
+        int $shipmentPartyId,
+        string $postalCode,
+    ): ServiceResult {
+        $address = $this->addressRepository->findByPostalCode(
+            $companyId,
+            $shipmentPartyId,
+            $postalCode,
+        );
+
+        if ($address === null) {
+            return ServiceResult::error('آدرس یافت نشد', 404);
+        }
+
+        return ServiceResult::success($address);
+    }
 
     /** @param array<string, mixed> $params */
     public function index(
         int $companyId,
-        ?int $shipmentPartyId,
+        int $shipmentPartyId,
         array $params,
     ): ServiceResult {
-        $shipment  = $this->shipmentPartyRepository->find($companyId, $shipmentPartyId);
-
-        if (!$shipment) {
+        if (! $this->addressRepository->shipmentPartyExists($companyId, $shipmentPartyId)) {
             return ServiceResult::error(__('public.not_found', ['attribute' => 'دریافتی پرداختی']));
         }
 
@@ -36,7 +50,10 @@ class ShipmentPartyAddressService
         int $shipmentPartyId,
         array $data,
     ): ServiceResult {
-        $this->shipmentPartyRepository->findOrFail($companyId, $shipmentPartyId);
+        if (! $this->addressRepository->shipmentPartyExists($companyId, $shipmentPartyId)) {
+            return ServiceResult::error(__('public.not_found', ['attribute' => 'دریافتی پرداختی']), 404);
+        }
+
         $data['shipment_party_id'] = $shipmentPartyId;
 
         return ServiceResult::success($this->addressRepository->create($companyId, $data));

@@ -14,8 +14,11 @@ class ShipmentPartyService extends CompanyCrudService
 
     public function __construct(
         protected ShipmentPartyRepositoryInterface $shipmentPartyRepository,
-    ) {
-        parent::__construct($shipmentPartyRepository);
+    ) {}
+
+    protected function repository(): ShipmentPartyRepositoryInterface
+    {
+        return $this->shipmentPartyRepository;
     }
 
     /** @param array<string, mixed> $data */

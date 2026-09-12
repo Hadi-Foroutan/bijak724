@@ -9,8 +9,10 @@ class CargoService extends CompanyCrudService
 {
     protected string $resourceLabel = 'محموله';
 
-    public function __construct(CargoRepositoryInterface $cargoRepository)
+    public function __construct(protected CargoRepositoryInterface $cargoRepository) {}
+
+    protected function repository(): CargoRepositoryInterface
     {
-        parent::__construct($cargoRepository);
+        return $this->cargoRepository;
     }
 }

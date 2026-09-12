@@ -5,11 +5,11 @@ namespace App\Http\Requests\Fleet;
 use App\Enums\FleetOwnershipType;
 use App\Enums\StatusEnum;
 use App\Http\Requests\BaseRequest;
+use App\Interfaces\Company\FleetRepositoryInterface;
 use App\Models\DriverLicenseType;
 use App\Models\FleetBrand;
 use App\Models\FleetType;
 use App\Models\LoadingType;
-use App\Services\Company\CompanyDataService;
 use Illuminate\Validation\Rule;
 
 class StoreFleetRequest extends BaseRequest
@@ -22,12 +22,15 @@ class StoreFleetRequest extends BaseRequest
     ];
 
     /** @return array<string, array<int, mixed>> */
-    public function rules(): array
+    public function rules(FleetRepositoryInterface $fleetRepository): array
     {
-        $fleetTable = app(CompanyDataService::class)->table($this->companyId(), 'fleets');
-
         return [
-            'smart_card_number' => ['nullable', 'string', 'max:50', Rule::unique($fleetTable, 'smart_card_number')],
+            'smart_card_number' => [
+                'nullable',
+                'string',
+                'max:50',
+                $fleetRepository->uniqueSmartCardNumberRule($this->companyId()),
+            ],
             'status' => ['nullable', Rule::enum(StatusEnum::class)],
             'ownership_type' => ['nullable', Rule::enum(FleetOwnershipType::class)],
             'plate_first_number' => ['required', 'string', 'regex:/^\d{2}$/'],

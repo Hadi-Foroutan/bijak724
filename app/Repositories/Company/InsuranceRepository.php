@@ -3,12 +3,18 @@
 namespace App\Repositories\Company;
 
 use App\Interfaces\Company\InsuranceRepositoryInterface;
+use App\Models\Company;
 use App\Models\Insurance;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 class InsuranceRepository implements InsuranceRepositoryInterface
 {
+    public function lockCompanyForUpdate(int $companyId): void
+    {
+        Company::query()->whereKey($companyId)->lockForUpdate()->firstOrFail();
+    }
+
     public function search(int $companyId, array $filters): Collection|LengthAwarePaginator
     {
         return Insurance::searchRecords(

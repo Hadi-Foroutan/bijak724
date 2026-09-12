@@ -21,6 +21,13 @@ class ShipmentPartyAddressRepository extends CompanyModelRepository implements S
         return $this->search($companyId, $filters);
     }
 
+    public function shipmentPartyExists(int $companyId, int $shipmentPartyId): bool
+    {
+        return $this->tableRegistry->query($companyId, 'shipment_parties')
+            ->whereKey($shipmentPartyId)
+            ->exists();
+    }
+
     public function findForPartyOrFail(
         int $companyId,
         int $shipmentPartyId,
@@ -33,6 +40,19 @@ class ShipmentPartyAddressRepository extends CompanyModelRepository implements S
 
         /** @var ShipmentPartyAddress */
         return $this->loadRelations($address);
+    }
+
+    public function findByPostalCode(
+        int $companyId,
+        int $shipmentPartyId,
+        string $postalCode,
+    ): ?ShipmentPartyAddress {
+        $address = $this->query($companyId)
+            ->where('shipment_party_id', $shipmentPartyId)
+            ->where('postal_code', $postalCode)
+            ->first();
+
+        return $address === null ? null : $this->loadRelations($address);
     }
 
     public function updateForParty(

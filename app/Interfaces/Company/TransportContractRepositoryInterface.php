@@ -15,7 +15,13 @@ interface TransportContractRepositoryInterface
 
     public function create(int $companyId, array $data): TransportContract;
 
+    /** @param array<int, array<string, mixed>> $items */
+    public function createWithItems(int $companyId, array $data, array $items): TransportContract;
+
     public function update(TransportContract $transportContract, array $data): TransportContract;
+
+    /** @param array<int, array<string, mixed>> $items */
+    public function syncItems(TransportContract $transportContract, array $items): TransportContract;
 
     /** @param array<int, string> $fields */
     public function clearDefaults(int $companyId, array $fields): void;

@@ -9,8 +9,10 @@ class ProductOwnerService extends CompanyCrudService
 {
     protected string $resourceLabel = 'صاحب کالا';
 
-    public function __construct(ProductOwnerRepositoryInterface $productOwnerRepository)
+    public function __construct(protected ProductOwnerRepositoryInterface $productOwnerRepository) {}
+
+    protected function repository(): ProductOwnerRepositoryInterface
     {
-        parent::__construct($productOwnerRepository);
+        return $this->productOwnerRepository;
     }
 }
