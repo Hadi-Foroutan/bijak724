@@ -114,8 +114,10 @@ class StoreUserRequest extends BaseRequest
             ],
 
             'remove_profile_image' => ['sometimes', 'boolean'],
+            'is_profile_delete' => ['sometimes', 'boolean'],
 
             'remove_signature_image' => ['sometimes', 'boolean'],
+            'is_signature_delete' => ['sometimes', 'boolean'],
 
             'description' => [
                 'nullable',
@@ -128,5 +130,15 @@ class StoreUserRequest extends BaseRequest
                 'in:'.implode(',', UserStatusEnum::values()),
             ],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->normalizeBooleanStrings([
+            'remove_profile_image',
+            'is_profile_delete',
+            'remove_signature_image',
+            'is_signature_delete',
+        ]);
     }
 }

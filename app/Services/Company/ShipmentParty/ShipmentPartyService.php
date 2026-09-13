@@ -49,10 +49,17 @@ class ShipmentPartyService extends CompanyCrudService
         return parent::update($companyId, $id, $data);
     }
 
-    public function findByNationalIdentifier(int $companyId, string $nationalIdentifier): ServiceResult
-    {
+    public function findByNationalIdentifierAndType(
+        int $companyId,
+        string $nationalIdentifier,
+        string $type,
+    ): ServiceResult {
         return ServiceResult::success(
-            $this->shipmentPartyRepository->findByNationalIdentifier($companyId, $nationalIdentifier),
+            $this->shipmentPartyRepository->findByNationalIdentifierAndType(
+                $companyId,
+                $nationalIdentifier,
+                $type,
+            ),
         );
     }
 

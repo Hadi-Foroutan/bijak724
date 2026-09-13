@@ -7,6 +7,7 @@ use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Models\Company\Waybill;
 use App\Models\TransportContract;
 use App\Services\Company\CompanyCrudService;
+use App\Services\Company\ReferralNumber\ReferralNumberService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
@@ -19,6 +20,7 @@ class WaybillService extends CompanyCrudService
         protected WaybillReferenceSnapshotBuilder $snapshotBuilder,
         protected WaybillFinancialCalculator $financialCalculator,
         protected WaybillTrackingCodeGenerator $trackingCodeGenerator,
+        protected ReferralNumberService $referralNumberService,
     ) {}
 
     protected function repository(): WaybillRepositoryInterface
@@ -52,6 +54,12 @@ class WaybillService extends CompanyCrudService
             $data['bijak_tracking_code'] = $this->trackingCodeGenerator->generate($companyId);
             $data = $this->financialCalculator->calculate($companyId, $data);
 
+            if (! $data['is_incomplete']) {
+                $next = $this->referralNumberService->reserveNext($companyId);
+                $data['referral_number'] = (string) $next['referral_number'];
+                $data['serial_number'] = $next['serial_number'];
+            }
+
             /** @var Waybill $waybill */
             $waybill = $this->waybillRepository->create($companyId, $data);
             $this->waybillRepository->syncCargos($waybill, $companyId, $cargos);
@@ -69,6 +77,15 @@ class WaybillService extends CompanyCrudService
             $cargos = Arr::pull($data, 'cargos', []);
             $data = $this->snapshotBuilder->forUpdate($companyId, $waybill, $data);
             $data = $this->financialCalculator->calculate($companyId, $data);
+
+            if (! $waybill->is_incomplete) {
+                $data['referral_number'] = $waybill->referral_number;
+                $data['serial_number'] = $waybill->serial_number;
+            } elseif (! $data['is_incomplete']) {
+                $next = $this->referralNumberService->reserveNext($companyId);
+                $data['referral_number'] = (string) $next['referral_number'];
+                $data['serial_number'] = $next['serial_number'];
+            }
 
             /** @var Waybill $waybill */
             $waybill = $this->waybillRepository->update($companyId, $id, $data);

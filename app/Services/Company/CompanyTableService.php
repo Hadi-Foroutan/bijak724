@@ -18,27 +18,74 @@ class CompanyTableService
         $companyId = $this->companyDataOwnerResolver->resolveId($companyId);
 
         foreach ($this->tableRegistry->tableKeys() as $tableKey) {
-            $tableName = $this->tableRegistry->tableName($companyId, $tableKey);
-            $columns = $this->tableRegistry->columns($tableKey);
+            $this->syncTable($companyId, $tableKey);
+        }
+    }
 
-            if (Schema::hasTable($tableName)) {
-                $this->ensureOwnerCompanyColumn($tableName, $companyId);
-                $this->syncColumns($tableName, $columns, $companyId);
+    public function syncTable(int $companyId, string $tableKey): void
+    {
+        $companyId = $this->companyDataOwnerResolver->resolveId($companyId);
+        $tableName = $this->tableRegistry->tableName($companyId, $tableKey);
+        $columns = $this->tableRegistry->columns($tableKey);
 
-                continue;
+        if (Schema::hasTable($tableName)) {
+            $this->ensureOwnerCompanyColumn($tableName, $companyId);
+            $this->syncColumns($tableName, $columns, $companyId);
+            $this->ensureFleetPlateUniqueIndex($tableName, $tableKey);
+
+            if ($tableKey === 'referral_numbers') {
+                $this->ensureReferralNumberActiveIndex($tableName);
             }
 
-            Schema::create($tableName, function (Blueprint $table) use ($columns, $companyId) {
-                $table->id();
-                $table->unsignedBigInteger('owner_company_id')->index();
-
-                foreach ($columns as $column) {
-                    $this->addColumn($table, $column, $companyId);
-                }
-
-                $table->timestamps();
-            });
+            return;
         }
+
+        Schema::create($tableName, function (Blueprint $table) use ($columns, $companyId, $tableKey, $tableName) {
+            $table->id();
+            $table->unsignedBigInteger('owner_company_id')->index();
+
+            foreach ($columns as $column) {
+                $this->addColumn($table, $column, $companyId);
+            }
+
+            if ($tableKey === 'fleets') {
+                $table->unique($this->fleetPlateColumns(), "{$tableName}_plate_unique");
+            }
+
+            if ($tableKey === 'referral_numbers') {
+                $table->unique(['owner_company_id', 'active_slot'], "{$tableName}_active_unique");
+            }
+
+            $table->timestamps();
+        });
+    }
+
+    private function ensureReferralNumberActiveIndex(string $tableName): void
+    {
+        if (Schema::hasIndex($tableName, "{$tableName}_active_unique")) {
+            return;
+        }
+
+        Schema::table($tableName, function (Blueprint $table) use ($tableName): void {
+            $table->unique(['owner_company_id', 'active_slot'], "{$tableName}_active_unique");
+        });
+    }
+
+    private function ensureFleetPlateUniqueIndex(string $tableName, string $tableKey): void
+    {
+        if ($tableKey !== 'fleets' || Schema::hasIndex($tableName, "{$tableName}_plate_unique")) {
+            return;
+        }
+
+        Schema::table($tableName, function (Blueprint $table) use ($tableName): void {
+            $table->unique($this->fleetPlateColumns(), "{$tableName}_plate_unique");
+        });
+    }
+
+    /** @return list<string> */
+    private function fleetPlateColumns(): array
+    {
+        return ['plate_first_number', 'plate_second_letter', 'plate_third_number', 'plate_fourth_number'];
     }
 
     /** @param list<array<string, mixed>> $columns */

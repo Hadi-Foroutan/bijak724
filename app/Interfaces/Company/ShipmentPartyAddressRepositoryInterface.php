@@ -2,9 +2,11 @@
 
 namespace App\Interfaces\Company;
 
+use App\Models\Company\ShipmentParty;
 use App\Models\Company\ShipmentPartyAddress;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Validation\Rules\Unique;
 
 interface ShipmentPartyAddressRepositoryInterface extends CompanyModelRepositoryInterface
 {
@@ -13,9 +15,19 @@ interface ShipmentPartyAddressRepositoryInterface extends CompanyModelRepository
 
     public function shipmentPartyExists(int $companyId, int $shipmentPartyId): bool;
 
+    public function uniquePostalCodeForPartyRule(
+        int $companyId,
+        int $shipmentPartyId,
+        ?int $ignoreAddressId = null,
+    ): Unique;
+
     public function findForPartyOrFail(int $companyId, int $shipmentPartyId, int $addressId): ShipmentPartyAddress;
 
-    public function findByPostalCode(int $companyId, int $shipmentPartyId, string $postalCode): ?ShipmentPartyAddress;
+    public function findShipmentPartyByPostalCodeAndType(
+        int $companyId,
+        string $postalCode,
+        string $type,
+    ): ?ShipmentParty;
 
     public function updateForParty(int $companyId, int $shipmentPartyId, int $addressId, array $data): ShipmentPartyAddress;
 

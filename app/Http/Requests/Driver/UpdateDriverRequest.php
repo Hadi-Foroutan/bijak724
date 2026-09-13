@@ -21,7 +21,7 @@ class UpdateDriverRequest extends BaseRequest
                 'sometimes',
                 'required',
                 'string',
-                new NationalCodeRule,
+                //                new NationalCodeRule,
                 $driverRepository->uniqueNationalCodeRule(
                     $this->companyId(),
                     (int) $this->route('driver'),
@@ -47,5 +47,10 @@ class UpdateDriverRequest extends BaseRequest
             'description' => ['sometimes', 'nullable', 'string'],
             'status' => ['sometimes', 'required', Rule::enum(StatusEnum::class)],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->normalizeBooleanStrings(['remove_profile_image']);
     }
 }

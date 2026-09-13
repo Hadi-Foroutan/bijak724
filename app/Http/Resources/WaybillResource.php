@@ -11,7 +11,9 @@ class WaybillResource extends CompanyDynamicResource
     {
         return [
             'sender' => $this->whenLoaded('sender'),
+            'sender_address' => ShipmentPartyAddressResource::make($this->whenLoaded('senderAddress')),
             'receiver' => $this->whenLoaded('receiver'),
+            'receiver_address' => ShipmentPartyAddressResource::make($this->whenLoaded('receiverAddress')),
             'first_driver' => $this->whenLoaded('firstDriver'),
             'second_driver' => $this->whenLoaded('secondDriver'),
             'referral_driver' => $this->whenLoaded('referralDriver'),

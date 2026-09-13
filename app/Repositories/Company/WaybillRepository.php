@@ -50,6 +50,12 @@ class WaybillRepository extends CompanyModelRepository implements WaybillReposit
             ->where('is_receiver', true);
     }
 
+    public function shipmentPartyAddressExistsRule(int $companyId, int $shipmentPartyId): Exists
+    {
+        return $this->tableRegistry->ownedExistsRule($companyId, 'shipment_party_addresses')
+            ->where('shipment_party_id', $shipmentPartyId);
+    }
+
     public function driverExistsRule(int $companyId): Exists
     {
         return $this->tableRegistry->ownedExistsRule($companyId, 'drivers');

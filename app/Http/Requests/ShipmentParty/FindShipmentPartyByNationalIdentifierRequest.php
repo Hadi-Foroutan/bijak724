@@ -3,6 +3,7 @@
 namespace App\Http\Requests\ShipmentParty;
 
 use App\Http\Requests\BaseRequest;
+use Illuminate\Validation\Rule;
 
 class FindShipmentPartyByNationalIdentifierRequest extends BaseRequest
 {
@@ -13,11 +14,12 @@ class FindShipmentPartyByNationalIdentifierRequest extends BaseRequest
         ]);
     }*/
 
-    /** @return array<string, array<int, string>> */
+    /** @return array<string, array<int, mixed>> */
     public function rules(): array
     {
         return [
             'national_code' => ['required', 'string', 'regex:/^\d{10,11}$/'],
+            'type' => ['required', 'string', Rule::in(['sender', 'receiver'])],
         ];
     }
 }

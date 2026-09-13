@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\User\Fleet;
 
+use App\Enums\StatusEnum;
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Fleet\FindFleetBySmartCardNumberRequest;
+use App\Http\Requests\Fleet\FindFleetByPlateRequest;
 use App\Http\Requests\Fleet\StoreFleetRequest;
 use App\Http\Requests\Fleet\UpdateFleetRequest;
 use App\Http\Resources\FleetResource;
@@ -51,12 +52,18 @@ class FleetController extends Controller
         );
     }
 
-    public function inquiry(FindFleetBySmartCardNumberRequest $request): JsonResponse
+    public function inquiry(FindFleetByPlateRequest $request): JsonResponse
     {
-        $result = $this->fleetService->findBySmartCardNumber(
+        $result = $this->fleetService->findByPlate(
             $this->companyId($request),
-            $request->validated('smart_card_number'),
+            $request->validated(),
         );
+
+        if ($result->data->status !== StatusEnum::ACTIVE->value) {
+            $message = 'ناوگان غیرفعال است.';
+
+            return ResponseHandler::error(['status' => [$message]], $message);
+        }
 
         return ResponseHandler::success(
             FleetResource::make($result->data)->resolve($request),

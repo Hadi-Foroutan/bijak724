@@ -239,6 +239,7 @@ return [
         'role_id' => 'نقش',
         'permission_ids.*' => 'دسترسی',
         'national_code' => 'کد ملی',
+        'national_identifier' => 'کد ملی',
         'transportation_code' => 'کد سراسری حمل و نقل',
         'min_commission_percentage' => 'حداقل درصد کمیسیون',
         'max_commission_percentage' => 'حداکثر درصد کمیسیون',
@@ -248,6 +249,12 @@ return [
         'plate_third_number' => 'عدد سوم پلاک',
         'plate_fourth_number' => 'عدد چهارم پلاک',
         'license_type' => 'نوع گواهینامه',
+        'postal_code' => 'کد پستی',
+        'sheba_number' => 'شماره شبا',
+        'bank_name' => 'نام بانک',
+        'owner_name' => 'نام صاحب حساب',
+        'is_default' => 'حساب پیش‌فرض',
+        'remove_profile_image' => 'حذف عکس پروفایل',
     ],
 
 ];

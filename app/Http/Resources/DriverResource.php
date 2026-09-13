@@ -21,6 +21,7 @@ class DriverResource extends JsonResource
             'license_number' => $this->license_number,
             'license_type_id' => (int) $this->license_type,
             'license_type' => $this->whenLoaded('licenseType'),
+            'default_account' => DriverAccountResource::make($this->whenLoaded('defaultAccount')),
             'license_expiry_date' => $this->license_expiry_date,
             'phone_number_1' => $this->phone_number_1,
             'phone_number_2' => $this->phone_number_2,

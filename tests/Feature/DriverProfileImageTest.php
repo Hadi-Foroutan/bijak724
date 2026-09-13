@@ -77,7 +77,6 @@ test('it stores replaces and deletes a driver profile image inside its company f
     Storage::disk('public')->assertExists($firstPath);
 
     $updateResponse = $this->post("/api/user/drivers/{$driverId}", [
-        '_method' => 'PATCH',
         'profile_image' => driverProfileImage('replacement.png'),
     ], ['Accept' => 'application/json'])
         ->assertSuccessful();
@@ -101,7 +100,6 @@ test('profile image is optional and can be removed during driver update', functi
     $driverId = $createResponse->json('data.id');
 
     $uploadResponse = $this->post("/api/user/drivers/{$driverId}", [
-        '_method' => 'PATCH',
         'profile_image' => driverProfileImage('profile.png'),
     ], ['Accept' => 'application/json'])->assertSuccessful();
 
@@ -111,13 +109,60 @@ test('profile image is optional and can be removed during driver update', functi
 
     expect($uploadResponse->json('data.profile_image_url'))->not->toBeNull();
 
-    $this->patchJson("/api/user/drivers/{$driverId}", [
-        'remove_profile_image' => true,
-    ])
+    $this->post("/api/user/drivers/{$driverId}", [
+        ...$this->driverPayload,
+        'remove_profile_image' => 'true',
+    ], ['Accept' => 'application/json'])
         ->assertSuccessful()
         ->assertJsonPath('data.profile_image_url', null);
 
     Storage::disk('public')->assertMissing($path);
+});
+
+test('string false keeps the driver profile image and invalid delete values are rejected', function () {
+    $driverId = $this->post('/api/user/drivers', [
+        ...$this->driverPayload,
+        'profile_image' => driverProfileImage('profile.png'),
+    ], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
+    $path = DB::table("company_{$this->company->id}_drivers")
+        ->where('id', $driverId)
+        ->value('profile_image_path');
+
+    $this->postJson("/api/user/drivers/{$driverId}", [
+        'remove_profile_image' => 'false',
+    ])->assertSuccessful();
+    Storage::disk('public')->assertExists($path);
+
+    $this->postJson("/api/user/drivers/{$driverId}", [
+        'remove_profile_image' => 'invalid',
+    ])->assertJsonValidationErrors('remove_profile_image');
+    Storage::disk('public')->assertExists($path);
+});
+
+test('driver image delete flag removes the stored file and a new upload takes precedence', function () {
+    $driverId = $this->post('/api/user/drivers', [
+        ...$this->driverPayload,
+        'profile_image' => driverProfileImage('original.png'),
+    ], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
+    $driverTable = "company_{$this->company->id}_drivers";
+    $originalPath = DB::table($driverTable)->where('id', $driverId)->value('profile_image_path');
+
+    $this->post("/api/user/drivers/{$driverId}", [
+        'is_profile_delete' => true,
+        'profile_image' => driverProfileImage('new.png'),
+    ], ['Accept' => 'application/json'])->assertSuccessful();
+
+    $newPath = DB::table($driverTable)->where('id', $driverId)->value('profile_image_path');
+    expect($newPath)->not->toBe($originalPath);
+    Storage::disk('public')->assertMissing($originalPath);
+    Storage::disk('public')->assertExists($newPath);
+
+    $this->postJson("/api/user/drivers/{$driverId}", [
+        'is_profile_delete' => true,
+    ])->assertSuccessful()->assertJsonPath('data.profile_image_url', null);
+
+    expect(DB::table($driverTable)->where('id', $driverId)->value('profile_image_path'))->toBeNull();
+    Storage::disk('public')->assertMissing($newPath);
 });
 
 function driverProfileImage(string $name): UploadedFile

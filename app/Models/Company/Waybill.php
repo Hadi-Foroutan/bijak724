@@ -12,7 +12,8 @@ class Waybill extends DynamicModel
     protected string $companyTableKey = 'waybills';
 
     protected array $defaultRelations = [
-        'sender', 'receiver', 'firstDriver', 'secondDriver', 'referralDriver', 'fleet',
+        'sender', 'senderAddress.city', 'receiver', 'receiverAddress.city',
+        'firstDriver', 'secondDriver', 'referralDriver', 'fleet',
         'transportContract', 'cargos.cargo', 'cargos.packaging',
     ];
 
@@ -38,6 +39,24 @@ class Waybill extends DynamicModel
     public function receiver(): BelongsTo
     {
         return $this->belongsToCompany(ShipmentParty::class, 'receiver_id', relationName: 'receiver');
+    }
+
+    public function senderAddress(): BelongsTo
+    {
+        return $this->belongsToCompany(
+            ShipmentPartyAddress::class,
+            'sender_address_id',
+            relationName: 'senderAddress',
+        );
+    }
+
+    public function receiverAddress(): BelongsTo
+    {
+        return $this->belongsToCompany(
+            ShipmentPartyAddress::class,
+            'receiver_address_id',
+            relationName: 'receiverAddress',
+        );
     }
 
     public function firstDriver(): BelongsTo

@@ -53,4 +53,12 @@ class StoreCompanyUserRequest extends BaseRequest
             'status' => ['sometimes', 'string', Rule::enum(UserStatusEnum::class)],
         ];
     }
+
+    protected function prepareForValidation(): void
+    {
+        $this->normalizeBooleanStrings([
+            'remove_profile_image',
+            'remove_signature_image',
+        ]);
+    }
 }

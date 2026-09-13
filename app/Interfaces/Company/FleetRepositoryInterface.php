@@ -7,7 +7,11 @@ use Illuminate\Validation\Rules\Unique;
 
 interface FleetRepositoryInterface extends CompanyModelRepositoryInterface
 {
-    public function findBySmartCardNumber(int $companyId, string $smartCardNumber): Fleet;
+    /** @param array<string, string> $plate */
+    public function findByPlate(int $companyId, array $plate): Fleet;
+
+    /** @param array<string, string> $plate */
+    public function plateExists(int $companyId, array $plate, ?int $ignoreFleetId = null): bool;
 
     public function uniqueSmartCardNumberRule(int $companyId, ?int $ignoreFleetId = null): Unique;
 

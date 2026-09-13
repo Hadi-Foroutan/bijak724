@@ -11,11 +11,17 @@ class ShipmentPartyRepository extends CompanyModelRepository implements Shipment
 {
     protected string $tableKey = 'shipment_parties';
 
-    public function findByNationalIdentifier(int $companyId, string $nationalIdentifier): ShipmentParty
-    {
+    public function findByNationalIdentifierAndType(
+        int $companyId,
+        string $nationalIdentifier,
+        string $type,
+    ): ShipmentParty {
+        $roleColumn = $type === 'sender' ? 'is_sender' : 'is_receiver';
+
         /** @var ShipmentParty $shipmentParty */
         $shipmentParty = $this->query($companyId)
             ->where('national_identifier', $nationalIdentifier)
+            ->where($roleColumn, true)
             ->firstOrFail();
 
         /** @var ShipmentParty */

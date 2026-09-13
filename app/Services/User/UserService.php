@@ -17,16 +17,16 @@ use Throwable;
 class UserService
 {
     /**
-     * @var array<string, array{collection: string, remove: string}>
+     * @var array<string, array{collection: string, delete_flags: array<int, string>}>
      */
     private const IMAGE_FIELDS = [
         'profile_image' => [
             'collection' => 'profile-images',
-            'remove' => 'remove_profile_image',
+            'delete_flags' => ['is_profile_delete', 'remove_profile_image'],
         ],
         'signature_image' => [
             'collection' => 'signatures',
-            'remove' => 'remove_signature_image',
+            'delete_flags' => ['is_signature_delete', 'remove_signature_image'],
         ],
     ];
 
@@ -73,7 +73,13 @@ class UserService
 
         $this->validateParent($data);
 
-        unset($data['role_id'], $data['remove_profile_image'], $data['remove_signature_image']);
+        unset(
+            $data['role_id'],
+            $data['is_profile_delete'],
+            $data['remove_profile_image'],
+            $data['is_signature_delete'],
+            $data['remove_signature_image'],
+        );
         $uploadedPaths = [];
 
         try {
@@ -154,8 +160,12 @@ class UserService
         $uploadedPaths = [];
 
         foreach (self::IMAGE_FIELDS as $field => $definition) {
-            $shouldRemove = (bool) ($data[$definition['remove']] ?? false);
-            unset($data[$definition['remove']]);
+            $shouldRemove = false;
+
+            foreach ($definition['delete_flags'] as $deleteFlag) {
+                $shouldRemove = $shouldRemove || (bool) ($data[$deleteFlag] ?? false);
+                unset($data[$deleteFlag]);
+            }
 
             if ($shouldRemove && ! isset($images[$field])) {
                 $data[$field] = null;

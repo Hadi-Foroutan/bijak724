@@ -5,11 +5,13 @@ namespace App\Providers;
 use App\Interfaces\CityRepositoryInterface;
 use App\Interfaces\Company\CargoGroupRepositoryInterface;
 use App\Interfaces\Company\CargoRepositoryInterface;
+use App\Interfaces\Company\DriverAccountRepositoryInterface;
 use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Interfaces\Company\FleetRepositoryInterface;
 use App\Interfaces\Company\InsuranceRepositoryInterface;
 use App\Interfaces\Company\InsuranceTariffRepositoryInterface;
 use App\Interfaces\Company\ProductOwnerRepositoryInterface;
+use App\Interfaces\Company\ReferralNumberRepositoryInterface;
 use App\Interfaces\Company\ShipmentPartyAddressRepositoryInterface;
 use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
 use App\Interfaces\Company\TransportContractRepositoryInterface;
@@ -29,11 +31,13 @@ use App\Repositories\Company\CargoGroupRepository;
 use App\Repositories\Company\CargoRepository;
 use App\Repositories\Company\CompanyDataRepository;
 use App\Repositories\Company\CompanyRepository;
+use App\Repositories\Company\DriverAccountRepository;
 use App\Repositories\Company\DriverRepository;
 use App\Repositories\Company\FleetRepository;
 use App\Repositories\Company\InsuranceRepository;
 use App\Repositories\Company\InsuranceTariffRepository;
 use App\Repositories\Company\ProductOwnerRepository;
+use App\Repositories\Company\ReferralNumberRepository;
 use App\Repositories\Company\ShipmentPartyAddressRepository;
 use App\Repositories\Company\ShipmentPartyRepository;
 use App\Repositories\Company\TransportContractRepository;
@@ -56,6 +60,7 @@ class AppServiceProvider extends ServiceProvider
         CompanyDataRepositoryInterface::class => CompanyDataRepository::class,
         CompanyInterface::class => CompanyRepository::class,
         DriverRepositoryInterface::class => DriverRepository::class,
+        DriverAccountRepositoryInterface::class => DriverAccountRepository::class,
         FleetRepositoryInterface::class => FleetRepository::class,
         ShipmentPartyRepositoryInterface::class => ShipmentPartyRepository::class,
         ShipmentPartyAddressRepositoryInterface::class => ShipmentPartyAddressRepository::class,
@@ -65,6 +70,7 @@ class AppServiceProvider extends ServiceProvider
         InsuranceRepositoryInterface::class => InsuranceRepository::class,
         InsuranceTariffRepositoryInterface::class => InsuranceTariffRepository::class,
         ProductOwnerRepositoryInterface::class => ProductOwnerRepository::class,
+        ReferralNumberRepositoryInterface::class => ReferralNumberRepository::class,
         TransportContractRepositoryInterface::class => TransportContractRepository::class,
         CityRepositoryInterface::class => CityRepository::class,
         GeneralOptionRepositoryInterface::class => GeneralOptionRepository::class,

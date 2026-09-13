@@ -3,9 +3,13 @@
 namespace App\Repositories\Company;
 
 use App\Interfaces\Company\ShipmentPartyAddressRepositoryInterface;
+use App\Models\Company\ShipmentParty;
 use App\Models\Company\ShipmentPartyAddress;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Unique;
 
 class ShipmentPartyAddressRepository extends CompanyModelRepository implements ShipmentPartyAddressRepositoryInterface
 {
@@ -28,6 +32,19 @@ class ShipmentPartyAddressRepository extends CompanyModelRepository implements S
             ->exists();
     }
 
+    public function uniquePostalCodeForPartyRule(
+        int $companyId,
+        int $shipmentPartyId,
+        ?int $ignoreAddressId = null,
+    ): Unique {
+        $rule = Rule::unique(
+            $this->tableRegistry->tableName($companyId, $this->tableKey),
+            'postal_code',
+        )->where('shipment_party_id', $shipmentPartyId);
+
+        return $ignoreAddressId === null ? $rule : $rule->ignore($ignoreAddressId);
+    }
+
     public function findForPartyOrFail(
         int $companyId,
         int $shipmentPartyId,
@@ -42,17 +59,31 @@ class ShipmentPartyAddressRepository extends CompanyModelRepository implements S
         return $this->loadRelations($address);
     }
 
-    public function findByPostalCode(
+    public function findShipmentPartyByPostalCodeAndType(
         int $companyId,
-        int $shipmentPartyId,
         string $postalCode,
-    ): ?ShipmentPartyAddress {
+        string $type,
+    ): ?ShipmentParty {
+        $roleColumn = $type === 'sender' ? 'is_sender' : 'is_receiver';
+
+        /** @var ShipmentPartyAddress|null $address */
         $address = $this->query($companyId)
-            ->where('shipment_party_id', $shipmentPartyId)
             ->where('postal_code', $postalCode)
+            ->whereHas(
+                'shipmentParty',
+                fn (Builder $query): Builder => $query->where($roleColumn, true),
+            )
             ->first();
 
-        return $address === null ? null : $this->loadRelations($address);
+        if ($address === null) {
+            return null;
+        }
+
+        /** @var ShipmentParty|null $shipmentParty */
+        $shipmentParty = $address->shipmentParty;
+
+        /** @var ShipmentParty|null */
+        return $shipmentParty === null ? null : $this->loadRelations($shipmentParty);
     }
 
     public function updateForParty(

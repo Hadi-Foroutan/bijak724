@@ -17,6 +17,8 @@ interface WaybillRepositoryInterface extends CompanyModelRepositoryInterface
 
     public function receiverExistsRule(int $companyId): Exists;
 
+    public function shipmentPartyAddressExistsRule(int $companyId, int $shipmentPartyId): Exists;
+
     public function driverExistsRule(int $companyId): Exists;
 
     public function fleetExistsRule(int $companyId): Exists;

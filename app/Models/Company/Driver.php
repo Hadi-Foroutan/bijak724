@@ -5,6 +5,8 @@ namespace App\Models\Company;
 use App\Models\DriverLicenseType;
 use App\Models\DynamicModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 class Driver extends DynamicModel
@@ -13,6 +15,7 @@ class Driver extends DynamicModel
 
     protected array $defaultRelations = [
         'licenseType',
+        'defaultAccount',
     ];
 
     protected static function booted(): void
@@ -29,5 +32,17 @@ class Driver extends DynamicModel
     public function licenseType(): BelongsTo
     {
         return $this->belongsTo(DriverLicenseType::class, 'license_type');
+    }
+
+    public function accounts(): HasMany
+    {
+        return $this->hasManyCompany(DriverAccount::class, 'driver_id');
+    }
+
+    public function defaultAccount(): HasOne
+    {
+        return $this->accounts()
+            ->one()
+            ->where('is_default', true);
     }
 }

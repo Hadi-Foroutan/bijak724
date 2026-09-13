@@ -11,6 +11,7 @@ return [
         'user.users.' => 'مدیریت کاربران شرکت',
         'user.drivers.' => 'مدیریت رانندگان',
         'user.fleets.' => 'مدیریت ناوگان',
+        'user.referral-numbers.' => 'مدیریت شماره حواله‌ها',
         'user.shipment-parties.' => 'مدیریت فرستندگان و گیرندگان',
         'user.addresses.' => 'مدیریت آدرس‌های فرستندگان و گیرندگان',
         'user.waybills.' => 'مدیریت بارنامه‌ها',

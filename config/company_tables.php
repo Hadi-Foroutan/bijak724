@@ -1,17 +1,28 @@
 <?php
 
 use App\Enums\FleetOwnershipType;
+use App\Enums\ReferralNumberStatus;
 use App\Enums\StatusEnum;
 use App\Enums\UserStatusEnum;
 
 return [
     'waybills' => [
         ['name' => 'sender_id', 'type' => 'unsignedBigInteger', 'index' => true],
+        [
+            'name' => 'sender_address_id',
+            'type' => 'unsignedBigInteger',
+            'index' => true,
+        ],
         ['name' => 'sender_national_identifier', 'type' => 'string', 'length' => 20],
         ['name' => 'sender_first_name', 'type' => 'string'],
         ['name' => 'sender_last_name', 'type' => 'string'],
         ['name' => 'sender_mobile', 'type' => 'string', 'length' => 20],
         ['name' => 'receiver_id', 'type' => 'unsignedBigInteger', 'index' => true],
+        [
+            'name' => 'receiver_address_id',
+            'type' => 'unsignedBigInteger',
+            'index' => true,
+        ],
         ['name' => 'receiver_national_identifier', 'type' => 'string', 'length' => 20],
         ['name' => 'receiver_first_name', 'type' => 'string'],
         ['name' => 'receiver_last_name', 'type' => 'string'],
@@ -103,6 +114,32 @@ return [
             'nullable' => false,
         ],
     ],
+    'driver_accounts' => [
+        [
+            'name' => 'driver_id',
+            'type' => 'unsignedBigInteger',
+            'nullable' => false,
+            'index' => true,
+            'foreign' => [
+                'company_table' => 'drivers',
+                'column' => 'id',
+                'on_delete' => 'cascade',
+            ],
+        ],
+        ['name' => 'sheba_number', 'type' => 'string', 'length' => 34, 'nullable' => false],
+        ['name' => 'bank_name', 'type' => 'string', 'nullable' => false],
+        ['name' => 'owner_name', 'type' => 'string', 'nullable' => false],
+        ['name' => 'is_default', 'type' => 'boolean', 'default' => false, 'nullable' => false],
+    ],
+    'referral_numbers' => [
+        ['name' => 'title', 'type' => 'string', 'nullable' => false],
+        ['name' => 'serial_number', 'type' => 'string', 'nullable' => false],
+        ['name' => 'from_number', 'type' => 'unsignedBigInteger', 'nullable' => false],
+        ['name' => 'to_number', 'type' => 'unsignedBigInteger', 'nullable' => false],
+        ['name' => 'last_number', 'type' => 'unsignedBigInteger'],
+        ['name' => 'status', 'type' => 'enum', 'values' => ReferralNumberStatus::values(), 'default' => ReferralNumberStatus::Active->value, 'nullable' => false],
+        ['name' => 'active_slot', 'type' => 'unsignedInteger', 'api' => false, 'searchable' => false],
+    ],
     'shipment_parties' => [
         ['name' => 'national_identifier', 'type' => 'string', 'length' => 20, 'nullable' => false, 'unique' => true],
         ['name' => 'is_sender', 'type' => 'boolean', 'default' => false, 'nullable' => false],
@@ -165,7 +202,7 @@ return [
             'nullable' => false,
         ],
         ['name' => 'plate_first_number', 'type' => 'string', 'length' => 2, 'nullable' => false],
-        ['name' => 'plate_second_letter', 'type' => 'string', 'length' => 1, 'nullable' => false],
+        ['name' => 'plate_second_letter', 'type' => 'string', 'length' => 3, 'nullable' => false, 'change' => true],
         ['name' => 'plate_third_number', 'type' => 'string', 'length' => 3, 'nullable' => false],
         ['name' => 'plate_fourth_number', 'type' => 'string', 'length' => 2, 'nullable' => false],
         ['name' => 'manufacture_year', 'type' => 'unsignedSmallInteger', 'nullable' => true, 'change' => true],

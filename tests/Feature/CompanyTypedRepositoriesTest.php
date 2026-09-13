@@ -1,6 +1,7 @@
 <?php
 
 use App\Interfaces\Company\CargoRepositoryInterface;
+use App\Interfaces\Company\DriverAccountRepositoryInterface;
 use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Interfaces\Company\FleetRepositoryInterface;
 use App\Interfaces\Company\ProductOwnerRepositoryInterface;
@@ -10,12 +11,14 @@ use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Models\Company as CompanyModel;
 use App\Models\Company\Cargo;
 use App\Models\Company\Driver;
+use App\Models\Company\DriverAccount;
 use App\Models\Company\Fleet;
 use App\Models\Company\ProductOwner;
 use App\Models\Company\ShipmentParty;
 use App\Models\Company\ShipmentPartyAddress;
 use App\Models\Company\Waybill;
 use App\Repositories\Company\CargoRepository;
+use App\Repositories\Company\DriverAccountRepository;
 use App\Repositories\Company\DriverRepository;
 use App\Repositories\Company\FleetRepository;
 use App\Repositories\Company\ProductOwnerRepository;
@@ -23,6 +26,7 @@ use App\Repositories\Company\ShipmentPartyAddressRepository;
 use App\Repositories\Company\ShipmentPartyRepository;
 use App\Repositories\Company\WaybillRepository;
 use App\Services\Company\Cargo\CargoService;
+use App\Services\Company\Driver\DriverAccountService;
 use App\Services\Company\Driver\DriverService;
 use App\Services\Company\Fleet\FleetService;
 use App\Services\Company\ProductOwner\ProductOwnerService;
@@ -45,6 +49,7 @@ test('each company repository interface resolves its own repository and model', 
 
     $bindings = [
         DriverRepositoryInterface::class => [DriverRepository::class, Driver::class],
+        DriverAccountRepositoryInterface::class => [DriverAccountRepository::class, DriverAccount::class],
         FleetRepositoryInterface::class => [FleetRepository::class, Fleet::class],
         ShipmentPartyRepositoryInterface::class => [ShipmentPartyRepository::class, ShipmentParty::class],
         ShipmentPartyAddressRepositoryInterface::class => [ShipmentPartyAddressRepository::class, ShipmentPartyAddress::class],
@@ -64,6 +69,7 @@ test('each company repository interface resolves its own repository and model', 
 test('company services depend on their dedicated repository interfaces', function () {
     $services = [
         DriverService::class => DriverRepositoryInterface::class,
+        DriverAccountService::class => DriverAccountRepositoryInterface::class,
         FleetService::class => FleetRepositoryInterface::class,
         ShipmentPartyService::class => ShipmentPartyRepositoryInterface::class,
         ShipmentPartyAddressService::class => ShipmentPartyAddressRepositoryInterface::class,

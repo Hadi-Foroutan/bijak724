@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\User\ShipmentParty;
 
+use App\Enums\StatusEnum;
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ShipmentParty\FindShipmentPartyAddressByPostalCodeRequest;
 use App\Http\Requests\ShipmentParty\StoreShipmentPartyAddressRequest;
 use App\Http\Requests\ShipmentParty\UpdateShipmentPartyAddressRequest;
 use App\Http\Resources\ShipmentPartyAddressResource;
+use App\Http\Resources\ShipmentPartyResource;
 use App\Services\Company\ShipmentParty\ShipmentPartyAddressService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,14 +21,22 @@ class ShipmentPartyAddressController extends Controller
 
     public function inquiry(FindShipmentPartyAddressByPostalCodeRequest $request): JsonResponse
     {
-        $result = $this->addressService->findByPostalCode(
+        $result = $this->addressService->findShipmentPartyByPostalCodeAndType(
             $this->companyId($request),
-            $request->integer('shipment_party_id'),
             $request->validated('postal_code'),
+            $request->validated('type'),
         );
 
+        if ($result->data->status !== StatusEnum::ACTIVE->value) {
+            $message = $request->validated('type') === 'sender'
+                ? 'فرستنده غیرفعال است.'
+                : 'گیرنده غیرفعال است.';
+
+            return ResponseHandler::error(['status' => [$message]], $message);
+        }
+
         return ResponseHandler::success(
-            ShipmentPartyAddressResource::make($result->data)->resolve($request),
+            ShipmentPartyResource::make($result->data)->resolve($request),
         );
     }
 

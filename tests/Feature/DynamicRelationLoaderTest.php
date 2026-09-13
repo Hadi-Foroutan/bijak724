@@ -21,6 +21,16 @@ test('it loads configured static relations for dynamic records and paginators', 
         $table->unsignedBigInteger('license_type');
         $table->timestamps();
     });
+    Schema::create('company_42_driver_accounts', function (Blueprint $table): void {
+        $table->id();
+        $table->unsignedBigInteger('owner_company_id')->index();
+        $table->unsignedBigInteger('driver_id')->index();
+        $table->string('sheba_number', 34);
+        $table->string('bank_name');
+        $table->string('owner_name');
+        $table->boolean('is_default')->default(false);
+        $table->timestamps();
+    });
 
     $licenseType = DriverLicenseType::query()->create([
         'name' => 'پایه یک',
@@ -38,6 +48,8 @@ test('it loads configured static relations for dynamic records and paginators', 
 
     expect($drivers->getCollection()->first())->toBeInstanceOf(CompanyDriver::class)
         ->and($drivers->getCollection()->first()->relationLoaded('licenseType'))->toBeTrue()
+        ->and($drivers->getCollection()->first()->relationLoaded('defaultAccount'))->toBeTrue()
+        ->and($drivers->getCollection()->first()->defaultAccount)->toBeNull()
         ->and($drivers->getCollection()->first()->licenseType->is($licenseType))->toBeTrue();
 });
 

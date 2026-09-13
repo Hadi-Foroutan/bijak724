@@ -51,7 +51,7 @@ class DriverService extends CompanyCrudService
         $driver = $this->driverRepository->findOrFail($companyId, $id);
         $currentPath = $driver->profile_image_path;
         $image = $this->pullProfileImage($data);
-        $removeProfileImage = (bool) ($data['remove_profile_image'] ?? false);
+        $removeProfileImage = $data['remove_profile_image'] ?? false;
         unset($data['remove_profile_image']);
 
         $newPath = null;
@@ -68,7 +68,7 @@ class DriverService extends CompanyCrudService
         } catch (Throwable $throwable) {
             $this->imageUploader->delete($newPath);
 
-            throw $throwable;
+            return ServiceResult::error(__('public.internal_error', ['attribute' => 'خطایی هنگام آپلود']));
         }
 
         if (array_key_exists('profile_image_path', $data) && $currentPath !== $data['profile_image_path']) {

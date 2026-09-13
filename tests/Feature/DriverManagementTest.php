@@ -102,7 +102,7 @@ test('it updates and deletes a driver', function () {
         $this->driverPayload,
     );
 
-    $this->patchJson("/api/user/drivers/{$driver->id}", [
+    $this->postJson("/api/user/drivers/{$driver->id}", [
         'last_name' => 'محمدی',
         'status' => StatusEnum::INACTIVE->value,
     ])
@@ -110,6 +110,10 @@ test('it updates and deletes a driver', function () {
         ->assertJsonPath('data.last_name', 'محمدی')
         ->assertJsonPath('data.full_name', 'علی محمدی')
         ->assertJsonPath('data.status', StatusEnum::INACTIVE->value);
+
+    $this->patchJson("/api/user/drivers/{$driver->id}", [
+        'last_name' => 'نادری',
+    ])->assertMethodNotAllowed();
 
     $this->deleteJson("/api/user/drivers/{$driver->id}")
         ->assertSuccessful();

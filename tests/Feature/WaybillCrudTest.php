@@ -4,11 +4,14 @@ use App\Enums\TransportContractItemName;
 use App\Http\Middleware\CheckPermission;
 use App\Interfaces\CompanyDataRepositoryInterface;
 use App\Models\Cargo;
+use App\Models\City;
 use App\Models\Company;
 use App\Models\DriverLicenseType;
 use App\Models\Packaging;
+use App\Models\State;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(LazilyRefreshDatabase::class);
 
@@ -48,6 +51,24 @@ beforeEach(function (): void {
         'first_name' => 'رضا',
         'last_name' => 'گیرنده',
         'mobile' => '09120000002',
+    ]);
+    $state = State::query()->forceCreate(['name' => 'تهران', 'code' => 11]);
+    $city = City::query()->forceCreate([
+        'name' => 'تهران',
+        'code' => 1101,
+        'state_id' => $state->id,
+    ]);
+    $this->senderAddress = $repository->create($this->company->id, 'shipment_party_addresses', [
+        'shipment_party_id' => $this->sender->id,
+        'postal_code' => '1111111111',
+        'city_code' => $city->code,
+        'address' => 'تهران، آدرس فرستنده',
+    ]);
+    $this->receiverAddress = $repository->create($this->company->id, 'shipment_party_addresses', [
+        'shipment_party_id' => $this->receiver->id,
+        'postal_code' => '2222222222',
+        'city_code' => $city->code,
+        'address' => 'تهران، آدرس گیرنده',
     ]);
 
     $licenseType = DriverLicenseType::query()->create(['name' => 'پایه یک', 'code' => 1]);
@@ -90,11 +111,27 @@ beforeEach(function (): void {
         'plate_fourth_number' => '67',
         'has_violation' => false,
     ]);
+    $defaultReferralId = $this->getJson('/api/user/referral-numbers')
+        ->assertSuccessful()
+        ->json('data.0.id');
+    $this->patchJson("/api/user/referral-numbers/{$defaultReferralId}", [
+        'status' => 'inactive',
+    ])->assertSuccessful();
+    $this->referralNumberId = $this->postJson('/api/user/referral-numbers', [
+        'title' => 'دفتر حواله',
+        'serial_number' => 'SERIAL-1',
+        'from_number' => 1,
+        'to_number' => 10,
+    ])->assertCreated()->json('data.id');
 });
 
 test('it creates a complete waybill with snapshots cargos and calculated contract amounts', function () {
     $response = $this->postJson('/api/user/waybills', completeWaybillPayload($this))
         ->assertCreated()
+        ->assertJsonPath('data.sender_address_id', $this->senderAddress->id)
+        ->assertJsonPath('data.sender_address.postal_code', '1111111111')
+        ->assertJsonPath('data.receiver_address_id', $this->receiverAddress->id)
+        ->assertJsonPath('data.receiver_address.postal_code', '2222222222')
         ->assertJsonPath('data.sender_first_name', 'علی')
         ->assertJsonPath('data.receiver_last_name', 'گیرنده')
         ->assertJsonPath('data.driver1_national_code', '1234567890')
@@ -102,6 +139,7 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertJsonPath('data.referral_driver_id', $this->thirdDriver->id)
         ->assertJsonPath('data.referral_driver_first_name', 'عباس')
         ->assertJsonPath('data.referral_driver.phone_number_1', '09123333333')
+        ->assertJsonPath('data.referral_number', '2')
         ->assertJsonPath('data.description', 'توضیحات بارنامه')
         ->assertJsonPath('data.advance_freight_amount', 0)
         ->assertJsonPath('data.weighbridge_amount', 5000)
@@ -127,6 +165,7 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertSuccessful()
         ->assertJsonPath('data.bijak_number', 'BIJAK-1')
         ->assertJsonPath('data.serial_number', 'SERIAL-1')
+        ->assertJsonPath('data.referral_number', '2')
         ->assertJsonPath('data.description', 'توضیحات بارنامه')
         ->assertJsonPath('data.bijak_tracking_code', $response->json('data.bijak_tracking_code'))
         ->assertJsonPath('data.sender_first_name', 'علی')
@@ -149,6 +188,7 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertJsonPath('data.sender_first_name', 'علی')
         ->assertJsonPath('data.referral_driver_id', $this->firstDriver->id)
         ->assertJsonPath('data.referral_driver_first_name', 'راننده جدید')
+        ->assertJsonPath('data.referral_number', '2')
         ->assertJsonPath('data.cargos.0.id', $cargoItemId);
 });
 
@@ -157,6 +197,89 @@ test('it stores an incomplete waybill', function () {
         ->assertCreated()
         ->assertJsonPath('data.is_incomplete', true)
         ->assertJsonCount(0, 'data.cargos');
+});
+
+test('it reserves a referral number only when a waybill is issued', function () {
+    $draftId = $this->postJson('/api/user/waybills', ['is_incomplete' => true])
+        ->assertCreated()
+        ->json('data.id');
+
+    $this->getJson('/api/user/referral-numbers/inquiry')
+        ->assertSuccessful()
+        ->assertJsonPath('data.referral_number', 2);
+
+    $this->putJson("/api/user/waybills/{$draftId}", completeWaybillPayload($this))
+        ->assertSuccessful()
+        ->assertJsonPath('data.referral_number', '2')
+        ->assertJsonPath('data.serial_number', 'SERIAL-1');
+
+    $this->getJson('/api/user/referral-numbers/inquiry')
+        ->assertSuccessful()
+        ->assertJsonPath('data.referral_number', 3);
+
+    $this->putJson("/api/user/waybills/{$draftId}", [
+        ...completeWaybillPayload($this),
+        'referral_number' => '999',
+        'serial_number' => 'WRONG',
+    ])->assertSuccessful()
+        ->assertJsonPath('data.referral_number', '2')
+        ->assertJsonPath('data.serial_number', 'SERIAL-1');
+
+    $this->getJson('/api/user/referral-numbers/inquiry')
+        ->assertSuccessful()
+        ->assertJsonPath('data.referral_number', 3);
+});
+
+test('it completes the referral range at the final issued waybill', function () {
+    $rangeId = $this->referralNumberId;
+
+    $this->patchJson("/api/user/referral-numbers/{$rangeId}", ['to_number' => 2])
+        ->assertSuccessful();
+
+    $this->postJson('/api/user/waybills', completeWaybillPayload($this))
+        ->assertCreated()
+        ->assertJsonPath('data.referral_number', '2');
+
+    $this->getJson("/api/user/referral-numbers/{$rangeId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.last_number', 2)
+        ->assertJsonPath('data.status', 'completed');
+
+    $this->getJson('/api/user/referral-numbers/inquiry')->assertNotFound();
+    $this->postJson('/api/user/waybills', completeWaybillPayload($this))
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('referral_number');
+});
+
+test('the default range completes after issuing number 999999', function () {
+    $this->patchJson("/api/user/referral-numbers/{$this->referralNumberId}", [
+        'status' => 'inactive',
+    ])->assertSuccessful();
+
+    $tableName = "company_{$this->company->id}_referral_numbers";
+    $defaultId = DB::table($tableName)->where('title', 'پیشفرض')->value('id');
+    DB::table($tableName)
+        ->where('id', $defaultId)
+        ->update(['last_number' => 999998]);
+    $this->patchJson("/api/user/referral-numbers/{$defaultId}", [
+        'status' => 'active',
+    ])->assertSuccessful();
+
+    $this->getJson('/api/user/referral-numbers/inquiry')
+        ->assertSuccessful()
+        ->assertJsonPath('data.referral_number', 999999)
+        ->assertJsonPath('data.serial_number', '1405');
+
+    $this->postJson('/api/user/waybills', completeWaybillPayload($this))
+        ->assertCreated()
+        ->assertJsonPath('data.referral_number', '999999')
+        ->assertJsonPath('data.serial_number', '1405');
+
+    $this->getJson("/api/user/referral-numbers/{$defaultId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.last_number', 999999)
+        ->assertJsonPath('data.status', 'completed');
+    $this->getJson('/api/user/referral-numbers/inquiry')->assertNotFound();
 });
 
 test('the referral driver can be the first or second driver', function () {
@@ -184,7 +307,8 @@ test('it validates all required complete waybill data and company references', f
     $this->postJson('/api/user/waybills', ['is_incomplete' => false])
         ->assertUnprocessable()
         ->assertJsonValidationErrors([
-            'sender_id', 'receiver_id', 'driver1_id', 'referral_driver_id', 'fleet_id', 'transport_contract_id',
+            'sender_id', 'sender_address_id', 'receiver_id', 'receiver_address_id',
+            'driver1_id', 'referral_driver_id', 'fleet_id', 'transport_contract_id',
             'base_freight_amount', 'cargos',
         ]);
 
@@ -194,6 +318,20 @@ test('it validates all required complete waybill data and company references', f
     $this->postJson('/api/user/waybills', $payload)
         ->assertUnprocessable()
         ->assertJsonValidationErrors('sender_id');
+
+    $payload = completeWaybillPayload($this);
+    $payload['sender_address_id'] = $this->receiverAddress->id;
+
+    $this->postJson('/api/user/waybills', $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('sender_address_id');
+
+    $payload = completeWaybillPayload($this);
+    $payload['receiver_address_id'] = $this->senderAddress->id;
+
+    $this->postJson('/api/user/waybills', $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('receiver_address_id');
 
     $otherCompany = Company::factory()->create();
     $payload = completeWaybillPayload($this);
@@ -235,8 +373,9 @@ test('it requires the same complete body when updating a complete waybill', func
     ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors([
-            'sender_id', 'receiver_id', 'driver1_id', 'referral_driver_id', 'fleet_id',
-            'transport_contract_id', 'base_freight_amount', 'cargos',
+            'sender_id', 'sender_address_id', 'receiver_id', 'receiver_address_id',
+            'driver1_id', 'referral_driver_id', 'fleet_id', 'transport_contract_id',
+            'base_freight_amount', 'cargos',
         ]);
 });
 
@@ -246,7 +385,9 @@ function completeWaybillPayload(object $test): array
     return [
         'is_incomplete' => false,
         'sender_id' => $test->sender->id,
+        'sender_address_id' => $test->senderAddress->id,
         'receiver_id' => $test->receiver->id,
+        'receiver_address_id' => $test->receiverAddress->id,
         'driver1_id' => $test->firstDriver->id,
         'driver2_id' => $test->secondDriver->id,
         'referral_driver_id' => $test->thirdDriver->id,

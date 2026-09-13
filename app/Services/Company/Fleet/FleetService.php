@@ -22,16 +22,18 @@ class FleetService extends CompanyCrudService
         return $this->fleetRepository;
     }
 
-    public function findBySmartCardNumber(int $companyId, string $smartCardNumber): ServiceResult
+    /** @param array<string, string> $plate */
+    public function findByPlate(int $companyId, array $plate): ServiceResult
     {
         return ServiceResult::success(
-            $this->fleetRepository->findBySmartCardNumber($companyId, $smartCardNumber),
+            $this->fleetRepository->findByPlate($companyId, $plate),
         );
     }
 
     /** @param array<string, mixed> $data */
     public function create(int $companyId, array $data): ServiceResult
     {
+        $this->validateUniquePlate($companyId, $data);
         $data['status'] ??= StatusEnum::ACTIVE->value;
         $data['ownership_type'] ??= FleetOwnershipType::Unknown->value;
         $data['has_violation'] ??= false;
@@ -53,6 +55,12 @@ class FleetService extends CompanyCrudService
         }
 
         $fleet = $this->fleetRepository->findOrFail($companyId, $id);
+        $this->validateUniquePlate($companyId, array_replace($fleet->only([
+            'plate_first_number',
+            'plate_second_letter',
+            'plate_third_number',
+            'plate_fourth_number',
+        ]), $data), $id);
         $systemId = array_key_exists('system_id', $data)
             ? $this->nullableInteger($data['system_id'])
             : $this->nullableInteger($fleet->getAttribute('system_id'));
@@ -63,6 +71,16 @@ class FleetService extends CompanyCrudService
         $this->validateSystemAndTip($systemId, $tipCode);
 
         return parent::update($companyId, $id, $data);
+    }
+
+    /** @param array<string, mixed> $data */
+    private function validateUniquePlate(int $companyId, array $data, ?int $ignoreFleetId = null): void
+    {
+        if ($this->fleetRepository->plateExists($companyId, $data, $ignoreFleetId)) {
+            throw ValidationException::withMessages([
+                'plate_first_number' => 'این پلاک قبلاً برای ناوگان دیگری ثبت شده است.',
+            ]);
+        }
     }
 
     private function validateSystemAndTip(?int $systemId, ?int $tipCode): void

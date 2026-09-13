@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Enums\CompanyParentEnum;
 use App\Models\Company;
 use App\Services\Company\CompanyTableService;
+use App\Services\Company\ReferralNumber\ReferralNumberService;
 use App\Services\Company\TransportContract\DefaultTransportContractService;
 
 class CompanyObserver
@@ -12,6 +13,7 @@ class CompanyObserver
     public function __construct(
         protected CompanyTableService $companyTableService,
         protected DefaultTransportContractService $defaultTransportContractService,
+        protected ReferralNumberService $referralNumberService,
     ) {}
 
     /**
@@ -21,11 +23,11 @@ class CompanyObserver
     {
         $this->defaultTransportContractService->createForCompany($company);
 
-        if ($company->parent_type === CompanyParentEnum::BRANCH->value) {
-            return;
+        if ($company->parent_type !== CompanyParentEnum::BRANCH->value) {
+            $this->companyTableService->sync($company->id);
         }
 
-        $this->companyTableService->sync($company->id);
+        $this->referralNumberService->ensureDefaultForCompany($company->id);
     }
 
     /**

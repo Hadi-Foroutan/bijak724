@@ -10,6 +10,7 @@ use App\Models\FleetType;
 use App\Models\LoadingType;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 
 uses(LazilyRefreshDatabase::class);
 
@@ -128,13 +129,22 @@ test('it updates and deletes a fleet', function () {
         ->assertNotFound();
 });
 
-test('it finds a fleet by smart card number only inside the current company', function () {
+test('it finds a fleet by its complete plate only inside the current company', function () {
     $this->postJson('/api/user/fleets', fleetPayload($this))->assertCreated();
 
-    $this->getJson('/api/user/fleets/inquiry/1234567890')
+    $this->getJson('/api/user/fleets/inquiry?'.http_build_query(fleetPlate()))
         ->assertSuccessful()
         ->assertJsonPath('data.smart_card_number', '1234567890')
         ->assertJsonPath('data.fleet_type.tip_code', 1001);
+
+    $this->postJson('/api/user/fleets/inquiry', fleetPlate())
+        ->assertSuccessful()
+        ->assertJsonPath('data.plate.first_number', '12');
+
+    $this->getJson('/api/user/fleets/inquiry?'.http_build_query([
+        ...fleetPlate(),
+        'plate_fourth_number' => '68',
+    ]))->assertNotFound();
 
     $otherCompany = Company::query()->forceCreate([
         'parent_type' => 'original',
@@ -153,8 +163,100 @@ test('it finds a fleet by smart card number only inside the current company', fu
     app('auth')->forgetGuards();
 
     $this->withToken($otherToken)
-        ->getJson('/api/user/fleets/inquiry/1234567890')
+        ->getJson('/api/user/fleets/inquiry?'.http_build_query(fleetPlate()))
         ->assertNotFound();
+});
+
+test('it requires every plate part for fleet inquiry', function () {
+    $this->getJson('/api/user/fleets/inquiry?plate_first_number=12')
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors([
+            'plate_second_letter',
+            'plate_third_number',
+            'plate_fourth_number',
+        ]);
+
+    $this->postJson('/api/user/fleets/inquiry', [
+        ...fleetPlate(),
+        'plate_third_number' => '34',
+    ])->assertUnprocessable()->assertJsonValidationErrors('plate_third_number');
+});
+
+test('it reports an inactive fleet during plate inquiry', function () {
+    $this->postJson('/api/user/fleets', [
+        ...fleetPayload($this),
+        'status' => StatusEnum::INACTIVE->value,
+    ])->assertCreated();
+
+    $this->getJson('/api/user/fleets/inquiry?'.http_build_query(fleetPlate()))
+        ->assertUnprocessable()
+        ->assertJsonPath('message', 'ناوگان غیرفعال است.')
+        ->assertJsonPath('errors.status.0', 'ناوگان غیرفعال است.');
+
+    $this->postJson('/api/user/fleets/inquiry', fleetPlate())
+        ->assertUnprocessable()
+        ->assertJsonPath('message', 'ناوگان غیرفعال است.');
+});
+
+test('it accepts up to three characters in the plate letter for create update and inquiry', function () {
+    $fleetId = $this->postJson('/api/user/fleets', [
+        ...fleetPayload($this),
+        'plate_second_letter' => 'الف',
+    ])->assertCreated()
+        ->assertJsonPath('data.plate.second_letter', 'الف')
+        ->json('data.id');
+
+    $this->getJson('/api/user/fleets/inquiry?'.http_build_query([
+        ...fleetPlate(),
+        'plate_second_letter' => 'الف',
+    ]))->assertSuccessful()->assertJsonPath('data.id', $fleetId);
+
+    $this->patchJson("/api/user/fleets/{$fleetId}", [
+        'plate_second_letter' => 'ابج',
+    ])->assertSuccessful()->assertJsonPath('data.plate.second_letter', 'ابج');
+
+    $this->postJson('/api/user/fleets', [
+        ...fleetPayload($this),
+        'smart_card_number' => '9999999999',
+        'plate_second_letter' => 'ابجد',
+    ])->assertUnprocessable()->assertJsonValidationErrors('plate_second_letter');
+
+    $this->patchJson("/api/user/fleets/{$fleetId}", [
+        'plate_second_letter' => 'ابجد',
+    ])->assertUnprocessable()->assertJsonValidationErrors('plate_second_letter');
+
+    $this->postJson('/api/user/fleets/inquiry', [
+        ...fleetPlate(),
+        'plate_second_letter' => 'ابجد',
+    ])->assertUnprocessable()->assertJsonValidationErrors('plate_second_letter');
+});
+
+test('it rejects duplicate fleet plates on create and partial update', function () {
+    $firstFleetId = $this->postJson('/api/user/fleets', fleetPayload($this))
+        ->assertCreated()
+        ->json('data.id');
+
+    $this->postJson('/api/user/fleets', [
+        ...fleetPayload($this),
+        'smart_card_number' => '9999999999',
+    ])->assertUnprocessable()->assertJsonValidationErrors('plate_first_number');
+
+    $secondFleetId = $this->postJson('/api/user/fleets', [
+        ...fleetPayload($this),
+        'smart_card_number' => '9999999999',
+        'plate_fourth_number' => '68',
+    ])->assertCreated()->json('data.id');
+
+    $this->patchJson("/api/user/fleets/{$secondFleetId}", [
+        'plate_fourth_number' => '67',
+    ])->assertUnprocessable()->assertJsonValidationErrors('plate_first_number');
+
+    $this->patchJson("/api/user/fleets/{$firstFleetId}", [
+        'plate_fourth_number' => '67',
+    ])->assertSuccessful();
+
+    $tableName = "company_{$this->company->id}_fleets";
+    $this->assertTrue(Schema::hasIndex($tableName, "{$tableName}_plate_unique"));
 });
 
 test('it rejects a fleet type that does not belong to the selected system', function () {
@@ -308,5 +410,15 @@ function fleetPayload(object $test): array
         'insurance_date' => '2026-01-02',
         'technical_inspection_valid_until' => '2027-01-01',
         'has_violation' => false,
+    ];
+}
+
+function fleetPlate(): array
+{
+    return [
+        'plate_first_number' => '12',
+        'plate_second_letter' => 'ب',
+        'plate_third_number' => '345',
+        'plate_fourth_number' => '67',
     ];
 }

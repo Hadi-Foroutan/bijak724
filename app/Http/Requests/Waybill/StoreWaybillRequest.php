@@ -39,7 +39,25 @@ class StoreWaybillRequest extends BaseRequest
     ): array {
         return [
             'sender_id' => [$requiredWhenComplete, 'nullable', 'integer', $waybillRepository->senderExistsRule($companyId)],
+            'sender_address_id' => [
+                $requiredWhenComplete,
+                'nullable',
+                'integer',
+                $waybillRepository->shipmentPartyAddressExistsRule(
+                    $companyId,
+                    $this->integer('sender_id'),
+                ),
+            ],
             'receiver_id' => [$requiredWhenComplete, 'nullable', 'integer', $waybillRepository->receiverExistsRule($companyId)],
+            'receiver_address_id' => [
+                $requiredWhenComplete,
+                'nullable',
+                'integer',
+                $waybillRepository->shipmentPartyAddressExistsRule(
+                    $companyId,
+                    $this->integer('receiver_id'),
+                ),
+            ],
             'driver1_id' => [$requiredWhenComplete, 'nullable', 'integer', $waybillRepository->driverExistsRule($companyId)],
             'driver2_id' => ['nullable', 'integer', 'different:driver1_id', $waybillRepository->driverExistsRule($companyId)],
             'referral_driver_id' => [$requiredWhenComplete, 'nullable', 'integer', $waybillRepository->driverExistsRule($companyId)],
@@ -56,9 +74,9 @@ class StoreWaybillRequest extends BaseRequest
             'quantity' => [$requiredWhenComplete, 'nullable', 'integer', 'min:1'],
             'loading_started_at' => [$requiredWhenComplete, 'nullable', 'date'],
             'loading_ended_at' => [$requiredWhenComplete, 'nullable', 'date', 'after_or_equal:loading_started_at'],
-            'referral_number' => [$requiredWhenComplete, 'nullable', 'string', 'max:255'],
+            'referral_number' => ['nullable', 'string', 'max:255'],
             'bijak_number' => [$requiredWhenComplete, 'nullable', 'string', 'max:255'],
-            'serial_number' => [$requiredWhenComplete, 'nullable', 'string', 'max:255'],
+            'serial_number' => ['nullable', 'string', 'max:255'],
             'issued_at' => [$requiredWhenComplete, 'nullable', 'date'],
             'liability_insurance' => [$requiredWhenComplete, 'nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],

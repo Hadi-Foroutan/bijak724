@@ -53,7 +53,7 @@ test('it returns a company driver by national code using the driver resource', f
         driverInquiryPayload($this->driverLicenseType->id),
     );
 
-    $this->getJson('/api/user/drivers/inquiry/1234567891')
+    $this->getJson('/api/user/drivers/inquiry?national_code=1234567891')
         ->assertSuccessful()
         ->assertJsonPath('data.id', $driver->id)
         ->assertJsonPath('data.national_code', '1234567891')
@@ -63,9 +63,29 @@ test('it returns a company driver by national code using the driver resource', f
 });
 
 test('it validates the national code used for driver inquiry', function () {
-    $this->getJson('/api/user/drivers/inquiry/1234')
+    $this->getJson('/api/user/drivers/inquiry?national_code=1234')
         ->assertUnprocessable()
         ->assertJsonValidationErrors('national_code');
+});
+
+test('it reports an inactive driver during inquiry', function () {
+    app(CompanyDataRepositoryInterface::class)->create(
+        $this->company->id,
+        'drivers',
+        [
+            ...driverInquiryPayload($this->driverLicenseType->id),
+            'status' => StatusEnum::INACTIVE->value,
+        ],
+    );
+
+    $this->getJson('/api/user/drivers/inquiry?national_code=1234567891')
+        ->assertUnprocessable()
+        ->assertJsonPath('message', 'راننده غیرفعال است.')
+        ->assertJsonPath('errors.status.0', 'راننده غیرفعال است.');
+
+    $this->postJson('/api/user/drivers/inquiry', ['national_code' => '1234567891'])
+        ->assertUnprocessable()
+        ->assertJsonPath('message', 'راننده غیرفعال است.');
 });
 
 test('it does not return a driver from another company', function () {
@@ -84,7 +104,7 @@ test('it does not return a driver from another company', function () {
         driverInquiryPayload($this->driverLicenseType->id),
     );
 
-    $this->getJson('/api/user/drivers/inquiry/1234567891')
+    $this->getJson('/api/user/drivers/inquiry?national_code=1234567891')
         ->assertNotFound();
 });
 

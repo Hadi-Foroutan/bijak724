@@ -11,22 +11,22 @@ class ShipmentPartyAddressService
         protected ShipmentPartyAddressRepositoryInterface $addressRepository,
     ) {}
 
-    public function findByPostalCode(
+    public function findShipmentPartyByPostalCodeAndType(
         int $companyId,
-        int $shipmentPartyId,
         string $postalCode,
+        string $type,
     ): ServiceResult {
-        $address = $this->addressRepository->findByPostalCode(
+        $shipmentParty = $this->addressRepository->findShipmentPartyByPostalCodeAndType(
             $companyId,
-            $shipmentPartyId,
             $postalCode,
+            $type,
         );
 
-        if ($address === null) {
+        if ($shipmentParty === null) {
             return ServiceResult::error('آدرس یافت نشد', 404);
         }
 
-        return ServiceResult::success($address);
+        return ServiceResult::success($shipmentParty);
     }
 
     /** @param array<string, mixed> $params */

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\User\Driver;
 
+use App\Enums\StatusEnum;
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Driver\FindDriverByNationalCodeRequest;
@@ -52,6 +53,12 @@ class DriverController extends Controller
             $this->companyId($request),
             $request->validated('national_code'),
         );
+
+        if ($result->data->status !== StatusEnum::ACTIVE->value) {
+            $message = 'راننده غیرفعال است.';
+
+            return ResponseHandler::error(['status' => [$message]], $message);
+        }
 
         return ResponseHandler::success(
             DriverResource::make($result->data)->resolve($request),

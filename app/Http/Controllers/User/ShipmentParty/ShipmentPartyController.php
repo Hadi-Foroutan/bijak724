@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\User\ShipmentParty;
 
+use App\Enums\StatusEnum;
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ShipmentParty\FindShipmentPartyByNationalIdentifierRequest;
@@ -49,10 +50,19 @@ class ShipmentPartyController extends Controller
 
     public function inquiry(FindShipmentPartyByNationalIdentifierRequest $request): JsonResponse
     {
-        $result = $this->shipmentPartyService->findByNationalIdentifier(
+        $result = $this->shipmentPartyService->findByNationalIdentifierAndType(
             $this->companyId($request),
             $request->validated('national_code'),
+            $request->validated('type'),
         );
+
+        if ($result->data->status !== StatusEnum::ACTIVE->value) {
+            $message = $request->validated('type') === 'sender'
+                ? 'فرستنده غیرفعال است.'
+                : 'گیرنده غیرفعال است.';
+
+            return ResponseHandler::error(['status' => [$message]], $message);
+        }
 
         return ResponseHandler::success(
             ShipmentPartyResource::make($result->data)->resolve($request),

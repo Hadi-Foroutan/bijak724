@@ -96,6 +96,65 @@ test('shipment parties and their nested addresses have complete company scoped c
     ]);
 });
 
+test('postal code is unique for each shipment party on create and update', function () {
+    $state = State::query()->forceCreate(['name' => 'تهران', 'code' => 11]);
+    $city = City::query()->forceCreate([
+        'name' => 'تهران',
+        'code' => 1101,
+        'state_id' => $state->id,
+    ]);
+
+    $firstPartyId = $this->postJson('/api/user/shipment-parties', [
+        'national_identifier' => '12345678901',
+        'is_sender' => true,
+        'is_receiver' => false,
+    ])->assertCreated()->json('data.id');
+    $secondPartyId = $this->postJson('/api/user/shipment-parties', [
+        'national_identifier' => '12345678902',
+        'is_sender' => false,
+        'is_receiver' => true,
+    ])->assertCreated()->json('data.id');
+
+    $firstAddressId = $this->postJson("/api/user/shipment-parties/{$firstPartyId}/addresses", [
+        'postal_code' => '1234567890',
+        'city_code' => $city->code,
+        'address' => 'آدرس اول',
+    ])->assertCreated()->json('data.id');
+
+    $this->postJson("/api/user/shipment-parties/{$firstPartyId}/addresses", [
+        'postal_code' => '1234567890',
+        'city_code' => $city->code,
+        'address' => 'آدرس تکراری',
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('postal_code');
+
+    $this->postJson("/api/user/shipment-parties/{$secondPartyId}/addresses", [
+        'postal_code' => '1234567890',
+        'city_code' => $city->code,
+        'address' => 'همان کد پستی برای طرف حمل دیگر',
+    ])->assertCreated();
+
+    $secondAddressId = $this->postJson("/api/user/shipment-parties/{$firstPartyId}/addresses", [
+        'postal_code' => '0987654321',
+        'city_code' => $city->code,
+        'address' => 'آدرس دوم',
+    ])->assertCreated()->json('data.id');
+
+    $this->patchJson("/api/user/shipment-parties/{$firstPartyId}/addresses/{$secondAddressId}", [
+        'postal_code' => '1234567890',
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('postal_code');
+
+    $this->patchJson("/api/user/shipment-parties/{$firstPartyId}/addresses/{$firstAddressId}", [
+        'postal_code' => '1234567890',
+        'description' => 'بدون تغییر کد پستی',
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.description', 'بدون تغییر کد پستی');
+});
+
 test('shipment party must be a sender or receiver and can be both', function () {
     $this->postJson('/api/user/shipment-parties', [
         'national_identifier' => '12345678902',

@@ -82,7 +82,6 @@ test('company uploads and replaces profile and signature images for its user', f
     $firstSignaturePath = $user->signature_image;
 
     $updateResponse = $this->post("/api/user/users/{$user->id}", [
-        '_method' => 'PATCH',
         'profile_image' => userUploadImage('replacement-profile.png'),
         'signature_image' => userUploadImage('replacement-signature.png'),
     ], ['Accept' => 'application/json'])
@@ -106,6 +105,48 @@ test('company uploads and replaces profile and signature images for its user', f
 
     Storage::disk('public')->assertMissing($profilePath);
     Storage::disk('public')->assertMissing($signaturePath);
+});
+
+test('company user can delete each image independently and replace an image in the same request', function () {
+    $userId = $this->post('/api/user/users', [
+        ...imageUploadCompanyUserPayload(),
+        'profile_image' => userUploadImage('profile.png'),
+        'signature_image' => userUploadImage('signature.png'),
+    ], ['Accept' => 'application/json'])->assertSuccessful()->json('data.id');
+    $user = User::query()->findOrFail($userId);
+    $profilePath = $user->profile_image;
+    $signaturePath = $user->signature_image;
+
+    $this->postJson("/api/user/users/{$userId}", [
+        'is_profile_delete' => 'true',
+    ])->assertSuccessful()
+        ->assertJsonPath('data.profile_image_url', null);
+
+    $user->refresh();
+    expect($user->profile_image)->toBeNull()
+        ->and($user->signature_image)->toBe($signaturePath);
+    Storage::disk('public')->assertMissing($profilePath);
+    Storage::disk('public')->assertExists($signaturePath);
+
+    $this->post("/api/user/users/{$userId}", [
+        'is_signature_delete' => true,
+        'signature_image' => userUploadImage('new-signature.png'),
+    ], ['Accept' => 'application/json'])->assertSuccessful();
+
+    $user->refresh();
+    expect($user->signature_image)->not->toBe($signaturePath);
+    Storage::disk('public')->assertMissing($signaturePath);
+    Storage::disk('public')->assertExists($user->signature_image);
+
+    $newSignaturePath = $user->signature_image;
+
+    $this->postJson("/api/user/users/{$userId}", [
+        'is_signature_delete' => 'true',
+    ])->assertSuccessful()
+        ->assertJsonPath('data.signature_image_url', null);
+
+    expect($user->refresh()->signature_image)->toBeNull();
+    Storage::disk('public')->assertMissing($newSignaturePath);
 });
 
 /** @return array<string, mixed> */

@@ -4,11 +4,13 @@ use App\Http\Controllers\User\Cargo\CargoController;
 use App\Http\Controllers\User\CargoGroupController;
 use App\Http\Controllers\User\CompanyUserController;
 use App\Http\Controllers\User\Dashboard\DashboardController;
+use App\Http\Controllers\User\Driver\DriverAccountController;
 use App\Http\Controllers\User\Driver\DriverController;
 use App\Http\Controllers\User\Fleet\FleetController;
 use App\Http\Controllers\User\InsuranceController;
 use App\Http\Controllers\User\InsuranceTariffController;
 use App\Http\Controllers\User\ProductOwner\ProductOwnerController;
+use App\Http\Controllers\User\ReferralNumberController;
 use App\Http\Controllers\User\ShipmentParty\ShipmentPartyAddressController;
 use App\Http\Controllers\User\ShipmentParty\ShipmentPartyController;
 use App\Http\Controllers\User\TransportContractController;
@@ -31,7 +33,22 @@ Route::prefix('drivers')->name('drivers.')->group(function () {
     Route::match(['get', 'post'], '/inquiry', [DriverController::class, 'inquiry'])
         ->name('inquiry');
 });
-Route::apiResource('drivers', DriverController::class);
+Route::apiResource('drivers', DriverController::class)
+    ->except(['update']);
+Route::post('drivers/{driver}', [DriverController::class, 'update'])
+    ->name('drivers.update');
+Route::apiResource('drivers.accounts', DriverAccountController::class)
+    ->names([
+        'index' => 'drivers.accounts.index',
+        'store' => 'drivers.accounts.store',
+        'show' => 'drivers.accounts.show',
+        'update' => 'drivers.accounts.update',
+        'destroy' => 'drivers.accounts.destroy',
+    ])
+    ->parameters([
+        'drivers' => 'driver',
+        'accounts' => 'account',
+    ]);
 
 Route::prefix('fleets')->name('fleets.')->group(function () {
     Route::match(['get', 'post'], '/inquiry', [FleetController::class, 'inquiry'])
@@ -39,15 +56,20 @@ Route::prefix('fleets')->name('fleets.')->group(function () {
 });
 Route::apiResource('fleets', FleetController::class);
 
+Route::get('referral-numbers/inquiry', [ReferralNumberController::class, 'inquiry'])
+    ->name('referral-numbers.inquiry');
+Route::apiResource('referral-numbers', ReferralNumberController::class)
+    ->parameters(['referral-numbers' => 'referralNumber']);
+
 Route::prefix('shipment-parties')->name('shipment-parties.')->group(function () {
-    Route::match(['get','post'], '/inquiry', [ShipmentPartyController::class, 'inquiry'])->name('inquiry');
+    Route::match(['get', 'post'], '/inquiry', [ShipmentPartyController::class, 'inquiry'])->name('inquiry');
 });
 Route::apiResource('shipment-parties', ShipmentPartyController::class)
     ->parameters(['shipment-parties' => 'shipmentParty']);
 
 Route::prefix('shipment-parties')->name('shipment-parties.')->group(function () {
     Route::match(['get', 'post'], '/addresses/inquiry', [ShipmentPartyAddressController::class, 'inquiry'])->name('addresses.inquiry');
-    Route::match(['get','post'], '/inquiry', [ShipmentPartyController::class, 'inquiry'])->name('inquiry');
+    Route::match(['get', 'post'], '/inquiry', [ShipmentPartyController::class, 'inquiry'])->name('inquiry');
 });
 Route::apiResource('shipment-parties.addresses', ShipmentPartyAddressController::class)
     ->names([
