@@ -31,7 +31,7 @@ class StorePermissionRequest extends BaseRequest
             ],
             'display_name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'status' => ['in:' . implode(',',StatusEnum::values())],
+            'status' => ['in:'.implode(',', StatusEnum::values())],
             'is_default' => ['sometimes', 'boolean'],
         ];
     }
@@ -39,7 +39,7 @@ class StorePermissionRequest extends BaseRequest
     public function messages(): array
     {
         return [
-            'name.regex' => 'نام دسترسی باید فقط شامل حروف انگلیسی و خط تیره باشد و با دو یا سه نقطه بخش‌بندی شود.',
+            'name.regex' => __('public.permission_name_invalid'),
         ];
     }
 }

@@ -74,6 +74,8 @@ return [
         ['name' => 'waybill_id', 'type' => 'unsignedBigInteger', 'nullable' => false, 'index' => true, 'foreign' => ['company_table' => 'waybills', 'column' => 'id', 'on_delete' => 'cascade']],
         ['name' => 'cargo_id', 'type' => 'unsignedBigInteger', 'nullable' => false, 'index' => true, 'foreign' => ['table' => 'cargos', 'column' => 'id']],
         ['name' => 'packaging_id', 'type' => 'unsignedBigInteger', 'nullable' => false, 'index' => true, 'foreign' => ['table' => 'packagings', 'column' => 'id']],
+        ['name' => 'product_owner_id', 'type' => 'unsignedBigInteger', 'index' => true, 'foreign' => ['company_table' => 'product_owner', 'column' => 'id', 'on_delete' => 'null']],
+        ['name' => 'description', 'type' => 'text'],
         ['name' => 'title', 'type' => 'string', 'nullable' => false],
         ['name' => 'origin_weight', 'type' => 'decimal', 'total' => 15, 'places' => 3, 'nullable' => false],
         ['name' => 'value', 'type' => 'unsignedBigInteger', 'nullable' => false],

@@ -27,7 +27,7 @@ class StoreWaybillRequest extends BaseRequest
             ...$this->referenceRules($waybillRepository, $companyId, $requiredWhenComplete),
             ...$this->documentRules($requiredWhenComplete),
             ...$this->financialRules($companyId, $requiredWhenComplete),
-            ...$this->cargoRules($requiredWhenComplete),
+            ...$this->cargoRules($waybillRepository, $companyId, $requiredWhenComplete),
         ];
     }
 
@@ -105,12 +105,14 @@ class StoreWaybillRequest extends BaseRequest
     }
 
     /** @return array<string, array<int, mixed>> */
-    private function cargoRules(mixed $requiredWhenComplete): array
+    private function cargoRules(WaybillRepositoryInterface $waybillRepository, int $companyId, mixed $requiredWhenComplete): array
     {
         return [
             'cargos' => [$requiredWhenComplete, 'nullable', 'array', 'min:1', 'max:10'],
-            'cargos.*.cargo_id' => ['required', 'integer', Rule::exists(Cargo::class, 'id')],
-            'cargos.*.packaging_id' => ['required', 'integer', Rule::exists(Packaging::class, 'id')],
+            'cargos.*.cargo_id' => ['required', 'integer', Rule::exists(Cargo::class, 'code')],
+            'cargos.*.packaging_id' => ['required', 'integer', Rule::exists(Packaging::class, 'code')],
+            'cargos.*.product_owner_id' => ['nullable', 'integer', $waybillRepository->productOwnerExistsRule($companyId)],
+            'cargos.*.description' => ['nullable', 'string'],
             'cargos.*.title' => ['required', 'string', 'max:255'],
             'cargos.*.origin_weight' => ['required', 'numeric', 'min:0'],
             'cargos.*.value' => ['required', 'integer', 'min:0'],

@@ -18,6 +18,8 @@ class WaybillCargoResource extends JsonResource
             'id' => $this->id,
             'cargo_id' => $this->cargo_id,
             'packaging_id' => $this->packaging_id,
+            'product_owner_id' => $this->product_owner_id,
+            'description' => $this->description,
             'title' => $this->title,
             'origin_weight' => $this->numericValue($this->origin_weight),
             'value' => $this->value,
@@ -31,6 +33,7 @@ class WaybillCargoResource extends JsonResource
             'container_number_2' => $this->container_number_2,
             'cargo' => $this->whenLoaded('cargo'),
             'packaging' => $this->whenLoaded('packaging'),
+            'product_owner' => $this->whenLoaded('productOwner'),
         ];
     }
 

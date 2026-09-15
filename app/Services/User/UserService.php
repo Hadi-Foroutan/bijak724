@@ -289,7 +289,7 @@ class UserService
 
         if ($parent === null || $this->wouldCreateParentCycle($parent, $user)) {
             throw ValidationException::withMessages([
-                'parent_id' => 'کاربر بالادستی باید یکی از اعضای فعال همان شرکت باشد.',
+                'parent_id' => __('public.parent_user_invalid'),
             ]);
         }
     }

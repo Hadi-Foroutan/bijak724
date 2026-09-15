@@ -70,8 +70,8 @@ class ShipmentPartyService extends CompanyCrudService
         }
 
         throw ValidationException::withMessages([
-            'is_sender' => 'طرف حمل باید حداقل فرستنده یا گیرنده باشد.',
-            'is_receiver' => 'طرف حمل باید حداقل فرستنده یا گیرنده باشد.',
+            'is_sender' => __('public.shipment_party_role_required'),
+            'is_receiver' => __('public.shipment_party_role_required'),
         ]);
     }
 }

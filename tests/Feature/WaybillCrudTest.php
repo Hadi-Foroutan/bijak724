@@ -34,6 +34,10 @@ beforeEach(function (): void {
         ->update(['primary_value' => 2]);
 
     $repository = app(CompanyDataRepositoryInterface::class);
+    $this->productOwner = $repository->create($this->company->id, 'product_owner', [
+        'name' => 'صاحب کالا',
+        'phone' => '09120000003',
+    ]);
     $this->sender = $repository->create($this->company->id, 'shipment_parties', [
         'national_identifier' => '10101010101',
         'is_sender' => true,
@@ -150,7 +154,13 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertJsonPath('data.payable_amount', 132000)
         ->assertJsonCount(1, 'data.cargos')
         ->assertJsonPath('data.cargos.0.origin_weight', 1250.5)
-        ->assertJsonMissingPath('data.cargos.0.description');
+        ->assertJsonPath('data.cargos.0.cargo_id', $this->cargo->id)
+        ->assertJsonPath('data.cargos.0.cargo.code', $this->cargo->code)
+        ->assertJsonPath('data.cargos.0.packaging_id', $this->packaging->id)
+        ->assertJsonPath('data.cargos.0.packaging.code', $this->packaging->code)
+        ->assertJsonPath('data.cargos.0.product_owner_id', $this->productOwner->id)
+        ->assertJsonPath('data.cargos.0.product_owner.name', 'صاحب کالا')
+        ->assertJsonPath('data.cargos.0.description', 'توضیحات محموله');
 
     expect($response->json('data.bijak_tracking_code'))
         ->toBeString()
@@ -197,6 +207,37 @@ test('it stores an incomplete waybill', function () {
         ->assertCreated()
         ->assertJsonPath('data.is_incomplete', true)
         ->assertJsonCount(0, 'data.cargos');
+});
+
+test('it accepts a cargo without a product owner or description', function () {
+    $payload = completeWaybillPayload($this);
+    unset($payload['cargos'][0]['product_owner_id'], $payload['cargos'][0]['description']);
+
+    $this->postJson('/api/user/waybills', $payload)
+        ->assertCreated()
+        ->assertJsonPath('data.cargos.0.product_owner_id', null)
+        ->assertJsonPath('data.cargos.0.description', null);
+});
+
+test('it rejects unknown cargo and packaging codes and a product owner from another company', function () {
+    $payload = completeWaybillPayload($this);
+    $payload['cargos'][0]['cargo_id'] = 99999999;
+    $payload['cargos'][0]['packaging_id'] = 99999999;
+
+    $this->postJson('/api/user/waybills', $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['cargos.0.cargo_id', 'cargos.0.packaging_id']);
+
+    $otherCompany = Company::factory()->create();
+    $otherRepository = app(CompanyDataRepositoryInterface::class);
+    $otherRepository->create($otherCompany->id, 'product_owner', ['name' => 'صاحب کالای دیگر']);
+    $otherOwner = $otherRepository->create($otherCompany->id, 'product_owner', ['name' => 'صاحب کالای دوم']);
+    $payload = completeWaybillPayload($this);
+    $payload['cargos'][0]['product_owner_id'] = $otherOwner->id;
+
+    $this->postJson('/api/user/waybills', $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('cargos.0.product_owner_id');
 });
 
 test('it reserves a referral number only when a waybill is issued', function () {
@@ -410,8 +451,10 @@ function completeWaybillPayload(object $test): array
         'freight_at_origin' => true,
         'is_fixed' => false,
         'cargos' => [[
-            'cargo_id' => $test->cargo->id,
-            'packaging_id' => $test->packaging->id,
+            'cargo_id' => $test->cargo->code,
+            'packaging_id' => $test->packaging->code,
+            'product_owner_id' => $test->productOwner->id,
+            'description' => 'توضیحات محموله',
             'title' => 'محموله گندم',
             'origin_weight' => 1250.5,
             'value' => 50000000,

@@ -39,7 +39,7 @@ class CompanyRequiredForRole implements ValidationRule
         );
 
         if ($isAdmin) {
-            $fail('برای کاربران ادمین و سوپر ادمین، انتخاب شرکت مجاز نیست.');
+            $fail(__('public.admin_company_forbidden'));
         }
     }
 }

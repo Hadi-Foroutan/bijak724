@@ -14,7 +14,7 @@ class Waybill extends DynamicModel
     protected array $defaultRelations = [
         'sender', 'senderAddress.city', 'receiver', 'receiverAddress.city',
         'firstDriver', 'secondDriver', 'referralDriver', 'fleet',
-        'transportContract', 'cargos.cargo', 'cargos.packaging',
+        'transportContract', 'cargos.cargo', 'cargos.packaging', 'cargos.productOwner',
     ];
 
     /** @return array<string, string> */

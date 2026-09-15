@@ -45,7 +45,7 @@ class ReferralNumberController extends Controller
 
     public function inquiry(Request $request): JsonResponse
     {
-        return ResponseHandler::success($this->referralNumberService->inquiry($this->companyId($request)));
+        return ResponseHandler::success($this->referralNumberService->inquiry($this->companyId($request))->data);
     }
 
     public function update(UpdateReferralNumberRequest $request, int $referralNumber): JsonResponse

@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\Company\ReferralNumber;
 use App\Services\Company\CompanyCrudService;
 use App\Services\Company\CompanyDataOwnerResolver;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -30,24 +31,26 @@ class ReferralNumberService extends CompanyCrudService
         return $this->referralNumberRepository;
     }
 
-    public function ensureDefaultForCompany(int $companyId): void
+    public function ensureDefaultForCompany(int $companyId): ServiceResult
     {
-        DB::transaction(function () use ($companyId): void {
+        return DB::transaction(function () use ($companyId): ServiceResult {
             $this->lockCompany($companyId);
 
             if ($this->referralNumberRepository->query($companyId)->exists()) {
-                return;
+                return ServiceResult::success();
             }
 
-            $this->referralNumberRepository->create($companyId, [
+            $record = $this->referralNumberRepository->create($companyId, [
                 'title' => 'پیشفرض',
-                'serial_number' => '1406',
+                'serial_number' => '1405',
                 'from_number' => self::DEFAULT_FROM_NUMBER,
                 'to_number' => self::DEFAULT_TO_NUMBER,
                 'last_number' => self::DEFAULT_FROM_NUMBER,
                 'status' => ReferralNumberStatus::Active->value,
                 'active_slot' => 1,
             ]);
+
+            return ServiceResult::success($record);
         });
     }
 
@@ -93,31 +96,28 @@ class ReferralNumberService extends CompanyCrudService
         });
     }
 
-    /** @return array<string, int|string> */
-    public function inquiry(int $companyId): array
+    public function inquiry(int $companyId): ServiceResult
     {
         $record = $this->referralNumberRepository->active($companyId);
 
         if ($record === null || $record->last_number >= $record->to_number) {
-            abort(404, 'شماره حوالهٔ فعالی یافت نشد.');
+            abort(404, __('public.referral_not_found'));
         }
 
-        return $this->nextNumber($record);
+        return ServiceResult::success($this->nextNumber($record));
     }
 
     /**
      * Must be called inside the waybill issuance transaction.
-     *
-     * @return array<string, int|string>
      */
-    public function reserveNext(int $companyId): array
+    public function reserveNext(int $companyId): ServiceResult
     {
         $this->lockCompany($companyId);
         $record = $this->referralNumberRepository->active($companyId);
 
         if ($record === null || $record->last_number >= $record->to_number) {
             throw ValidationException::withMessages([
-                'referral_number' => 'شماره حوالهٔ فعالی برای صدور بارنامه وجود ندارد.',
+                'referral_number' => __('public.referral_issuance_unavailable'),
             ]);
         }
 
@@ -130,7 +130,7 @@ class ReferralNumberService extends CompanyCrudService
             'active_slot' => $next['referral_number'] >= $record->to_number ? null : 1,
         ]);
 
-        return $next;
+        return ServiceResult::success($next);
     }
 
     /** @param array<string, mixed> $data */
@@ -142,7 +142,7 @@ class ReferralNumberService extends CompanyCrudService
 
         if ($from >= $to || $last !== null && ($last < $from || $last > $to)) {
             throw ValidationException::withMessages([
-                'to_number' => 'بازهٔ شماره حواله با آخرین شمارهٔ ثبت‌شده سازگار نیست.',
+                'to_number' => __('public.referral_range_invalid'),
             ]);
         }
     }
@@ -163,7 +163,7 @@ class ReferralNumberService extends CompanyCrudService
         if ($data['status'] === ReferralNumberStatus::Active->value
             && $this->referralNumberRepository->active($companyId, $ignoreId) !== null) {
             throw ValidationException::withMessages([
-                'status' => 'برای این شرکت یک شماره حوالهٔ فعال وجود دارد.',
+                'status' => __('public.referral_active_exists'),
             ]);
         }
     }
@@ -185,6 +185,7 @@ class ReferralNumberService extends CompanyCrudService
             'referral_number' => $record->last_number === null
                 ? (int) $record->from_number + 1
                 : (int) $record->last_number + 1,
+            'date' => Carbon::now()->format('Y-m-d'),
         ];
     }
 }

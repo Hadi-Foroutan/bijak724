@@ -7,25 +7,26 @@ use Symfony\Component\HttpFoundation\Response as ResponseAlias;
 
 class ResponseHandler
 {
-    public static function success($data = [], string $message = null, int $status = ResponseAlias::HTTP_OK): JsonResponse
+    public static function success($data = [], ?string $message = null, int $status = ResponseAlias::HTTP_OK): JsonResponse
     {
         // اگر داده رشته باشه تبدیل به آرایه می‌کنیم
         return response()->json([
             'success' => true,
-            'message' => $message ?? 'عملیات موفق بود',
+            'message' => $message ?? __('public.operation_success'),
             'data' => $data,
         ], $status);
     }
 
-    public static function error($errors, string $message = null, int $status = ResponseAlias::HTTP_UNPROCESSABLE_ENTITY): JsonResponse
+    public static function error($errors, ?string $message = null, int $status = ResponseAlias::HTTP_UNPROCESSABLE_ENTITY): JsonResponse
     {
         // اگر ارور رشته بود تبدیل به آرایه
-        if (is_string($errors))
+        if (is_string($errors)) {
             $errors = ['error' => [$errors]];
+        }
 
         return response()->json([
             'success' => false,
-            'message' => $message ?? 'خطایی رخ داده است',
+            'message' => $message ?? __('public.operation_error'),
             'errors' => $errors,
         ], $status);
     }

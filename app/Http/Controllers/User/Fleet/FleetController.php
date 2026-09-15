@@ -60,7 +60,7 @@ class FleetController extends Controller
         );
 
         if ($result->data->status !== StatusEnum::ACTIVE->value) {
-            $message = 'ناوگان غیرفعال است.';
+            $message = __('public.fleet_inactive');
 
             return ResponseHandler::error(['status' => [$message]], $message);
         }

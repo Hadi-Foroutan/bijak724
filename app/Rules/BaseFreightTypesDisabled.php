@@ -26,7 +26,7 @@ class BaseFreightTypesDisabled implements ValidationRule
 
             foreach (['is_owned', 'is_rental', 'is_free', 'is_unknown'] as $field) {
                 if (filter_var($item[$field] ?? false, FILTER_VALIDATE_BOOLEAN)) {
-                    $fail('برای آیتم کرایه پایه، انتخاب نوع ملکی، استیجاری، آزاد یا نامشخص مجاز نیست.');
+                    $fail(__('public.base_freight_type_forbidden'));
 
                     return;
                 }

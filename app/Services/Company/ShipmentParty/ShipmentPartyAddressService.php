@@ -23,7 +23,7 @@ class ShipmentPartyAddressService
         );
 
         if ($shipmentParty === null) {
-            return ServiceResult::error('آدرس یافت نشد', 404);
+            return ServiceResult::error(__('public.address_not_found'), 404);
         }
 
         return ServiceResult::success($shipmentParty);

@@ -55,7 +55,7 @@ class DriverController extends Controller
         );
 
         if ($result->data->status !== StatusEnum::ACTIVE->value) {
-            $message = 'راننده غیرفعال است.';
+            $message = __('public.driver_inactive');
 
             return ResponseHandler::error(['status' => [$message]], $message);
         }

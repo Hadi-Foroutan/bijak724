@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\ReferralNumberStatus;
+use App\Helpers\ServiceResult;
 use App\Http\Middleware\CheckPermission;
 use App\Models\Company;
 use App\Models\User;
@@ -181,11 +182,14 @@ test('default creation is repeatable and does not replace an existing range', fu
     $service = app(ReferralNumberService::class);
     $defaultId = $this->getJson('/api/user/referral-numbers')->json('data.0.id');
 
-    $service->ensureDefaultForCompany($this->company->id);
+    expect($service->ensureDefaultForCompany($this->company->id))
+        ->toBeInstanceOf(ServiceResult::class);
     $this->getJson('/api/user/referral-numbers')->assertJsonCount(1, 'data');
 
     $this->deleteJson("/api/user/referral-numbers/{$defaultId}")->assertSuccessful();
-    $service->ensureDefaultForCompany($this->company->id);
+    $result = $service->ensureDefaultForCompany($this->company->id);
+    expect($result)->toBeInstanceOf(ServiceResult::class)
+        ->and($result->data->serial_number)->toBe('1405');
     $this->getJson('/api/user/referral-numbers')
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.last_number', 100000);

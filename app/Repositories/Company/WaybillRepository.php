@@ -3,9 +3,11 @@
 namespace App\Repositories\Company;
 
 use App\Interfaces\Company\WaybillRepositoryInterface;
+use App\Models\Cargo;
 use App\Models\Company\Driver;
 use App\Models\Company\ShipmentParty;
 use App\Models\Company\Waybill;
+use App\Models\Packaging;
 use App\Models\TransportContract;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Arr;
@@ -16,6 +18,8 @@ class WaybillRepository extends CompanyModelRepository implements WaybillReposit
     private const CARGO_FIELDS = [
         'cargo_id',
         'packaging_id',
+        'product_owner_id',
+        'description',
         'title',
         'origin_weight',
         'value',
@@ -64,6 +68,11 @@ class WaybillRepository extends CompanyModelRepository implements WaybillReposit
     public function fleetExistsRule(int $companyId): Exists
     {
         return $this->tableRegistry->ownedExistsRule($companyId, 'fleets');
+    }
+
+    public function productOwnerExistsRule(int $companyId): Exists
+    {
+        return $this->tableRegistry->ownedExistsRule($companyId, 'product_owner');
     }
 
     public function findShipmentPartyOrFail(int $companyId, int $shipmentPartyId): ShipmentParty
@@ -123,6 +132,17 @@ class WaybillRepository extends CompanyModelRepository implements WaybillReposit
 
     public function syncCargos(Waybill $waybill, int $companyId, array $cargos): void
     {
+        if ($cargos !== []) {
+            $cargoIdsByCode = Cargo::query()->whereIn('code', array_column($cargos, 'cargo_id'))->pluck('id', 'code');
+            $packagingIdsByCode = Packaging::query()->whereIn('code', array_column($cargos, 'packaging_id'))->pluck('id', 'code');
+
+            $cargos = array_map(static fn (array $cargo): array => [
+                ...$cargo,
+                'cargo_id' => $cargoIdsByCode[$cargo['cargo_id']],
+                'packaging_id' => $packagingIdsByCode[$cargo['packaging_id']],
+            ], $cargos);
+        }
+
         if ($this->hasSameCargos($waybill, $cargos)) {
             return;
         }
@@ -161,7 +181,7 @@ class WaybillRepository extends CompanyModelRepository implements WaybillReposit
             Arr::only($cargo, self::CARGO_FIELDS),
         );
 
-        foreach (['cargo_id', 'packaging_id', 'value', 'quantity'] as $field) {
+        foreach (['cargo_id', 'packaging_id', 'product_owner_id', 'value', 'quantity'] as $field) {
             $normalized[$field] = $normalized[$field] === null ? null : (int) $normalized[$field];
         }
 

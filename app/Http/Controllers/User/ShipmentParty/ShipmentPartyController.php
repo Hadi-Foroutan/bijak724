@@ -58,8 +58,8 @@ class ShipmentPartyController extends Controller
 
         if ($result->data->status !== StatusEnum::ACTIVE->value) {
             $message = $request->validated('type') === 'sender'
-                ? 'فرستنده غیرفعال است.'
-                : 'گیرنده غیرفعال است.';
+                ? __('public.sender_inactive')
+                : __('public.receiver_inactive');
 
             return ResponseHandler::error(['status' => [$message]], $message);
         }

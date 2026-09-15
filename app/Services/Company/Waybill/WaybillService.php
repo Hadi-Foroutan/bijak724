@@ -55,7 +55,7 @@ class WaybillService extends CompanyCrudService
             $data = $this->financialCalculator->calculate($companyId, $data);
 
             if (! $data['is_incomplete']) {
-                $next = $this->referralNumberService->reserveNext($companyId);
+                $next = $this->referralNumberService->reserveNext($companyId)->data;
                 $data['referral_number'] = (string) $next['referral_number'];
                 $data['serial_number'] = $next['serial_number'];
             }
@@ -82,7 +82,7 @@ class WaybillService extends CompanyCrudService
                 $data['referral_number'] = $waybill->referral_number;
                 $data['serial_number'] = $waybill->serial_number;
             } elseif (! $data['is_incomplete']) {
-                $next = $this->referralNumberService->reserveNext($companyId);
+                $next = $this->referralNumberService->reserveNext($companyId)->data;
                 $data['referral_number'] = (string) $next['referral_number'];
                 $data['serial_number'] = $next['serial_number'];
             }

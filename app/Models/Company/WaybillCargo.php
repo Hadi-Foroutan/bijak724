@@ -11,7 +11,7 @@ class WaybillCargo extends DynamicModel
 {
     protected string $companyTableKey = 'waybill_cargos';
 
-    protected array $defaultRelations = ['cargo', 'packaging'];
+    protected array $defaultRelations = ['cargo', 'packaging', 'productOwner'];
 
     protected function casts(): array
     {
@@ -35,5 +35,10 @@ class WaybillCargo extends DynamicModel
     public function packaging(): BelongsTo
     {
         return $this->belongsTo(Packaging::class);
+    }
+
+    public function productOwner(): BelongsTo
+    {
+        return $this->belongsToCompany(ProductOwner::class, 'product_owner_id', relationName: 'productOwner');
     }
 }

@@ -78,7 +78,7 @@ class FleetService extends CompanyCrudService
     {
         if ($this->fleetRepository->plateExists($companyId, $data, $ignoreFleetId)) {
             throw ValidationException::withMessages([
-                'plate_first_number' => 'این پلاک قبلاً برای ناوگان دیگری ثبت شده است.',
+                'plate_first_number' => __('public.duplicate_fleet_plate'),
             ]);
         }
     }
@@ -91,13 +91,13 @@ class FleetService extends CompanyCrudService
 
         if ($systemId === null) {
             throw ValidationException::withMessages([
-                'system_id' => 'برای تیپ انتخاب‌شده، سیستم ناوگان الزامی است.',
+                'system_id' => __('public.fleet_system_required'),
             ]);
         }
 
         if (! $this->fleetRepository->tipBelongsToSystem($tipCode, $systemId)) {
             throw ValidationException::withMessages([
-                'tip_code' => 'تیپ انتخاب‌شده متعلق به سیستم ناوگان نیست.',
+                'tip_code' => __('public.fleet_tip_system_mismatch'),
             ]);
         }
     }
