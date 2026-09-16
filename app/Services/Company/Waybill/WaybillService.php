@@ -49,7 +49,7 @@ class WaybillService extends CompanyCrudService
     public function create(int $companyId, array $data): ServiceResult
     {
         return DB::transaction(function () use ($companyId, $data): ServiceResult {
-            $cargos = Arr::pull($data, 'cargos', []);
+            $cargos = Arr::pull($data, 'cargos', []) ?? [];
             $data = $this->snapshotBuilder->forCreate($companyId, $data);
             $data['bijak_tracking_code'] = $this->trackingCodeGenerator->generate($companyId);
             $data = $this->financialCalculator->calculate($companyId, $data);
@@ -74,7 +74,7 @@ class WaybillService extends CompanyCrudService
         return DB::transaction(function () use ($companyId, $id, $data): ServiceResult {
             /** @var Waybill $waybill */
             $waybill = $this->waybillRepository->findOrFail($companyId, $id);
-            $cargos = Arr::pull($data, 'cargos', []);
+            $cargos = Arr::pull($data, 'cargos', []) ?? [];
             $data = $this->snapshotBuilder->forUpdate($companyId, $waybill, $data);
             $data = $this->financialCalculator->calculate($companyId, $data);
 

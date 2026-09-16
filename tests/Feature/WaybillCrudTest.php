@@ -7,6 +7,7 @@ use App\Models\Cargo;
 use App\Models\City;
 use App\Models\Company;
 use App\Models\DriverLicenseType;
+use App\Models\Insurance;
 use App\Models\Packaging;
 use App\Models\State;
 use App\Models\User;
@@ -19,6 +20,7 @@ beforeEach(function (): void {
     $this->withoutMiddleware(CheckPermission::class);
     $this->user = User::factory()->create();
     $this->company = Company::factory()->create();
+    $this->insurance = Insurance::factory()->for($this->company)->create();
     $this->withToken($this->user->createToken(
         'waybill-session',
         ['company-support', "company:{$this->company->id}"],
@@ -145,6 +147,9 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertJsonPath('data.referral_driver.phone_number_1', '09123333333')
         ->assertJsonPath('data.referral_number', '2')
         ->assertJsonPath('data.description', 'توضیحات بارنامه')
+        ->assertJsonPath('data.liability_insurance', $this->insurance->id)
+        ->assertJsonPath('data.insurance.id', $this->insurance->id)
+        ->assertJsonPath('data.insurance.title', $this->insurance->title)
         ->assertJsonPath('data.advance_freight_amount', 0)
         ->assertJsonPath('data.weighbridge_amount', 5000)
         ->assertJsonPath('data.commission_amount', 10000)
@@ -207,6 +212,57 @@ test('it stores an incomplete waybill', function () {
         ->assertCreated()
         ->assertJsonPath('data.is_incomplete', true)
         ->assertJsonCount(0, 'data.cargos');
+});
+
+test('an incomplete waybill accepts null values without requiring any other field', function () {
+    $this->postJson('/api/user/waybills', [
+        'is_incomplete' => true,
+        'sender_id' => null,
+        'sender_address_id' => null,
+        'receiver_id' => null,
+        'receiver_address_id' => null,
+        'driver1_id' => null,
+        'driver2_id' => null,
+        'referral_driver_id' => null,
+        'fleet_id' => null,
+        'transport_contract_id' => null,
+        'base_freight_amount' => null,
+        'payable_amount' => null,
+        'freight_at_origin' => null,
+        'is_fixed' => null,
+        'cargos' => null,
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.is_incomplete', true)
+        ->assertJsonPath('data.freight_at_origin', false)
+        ->assertJsonPath('data.is_fixed', false)
+        ->assertJsonCount(0, 'data.cargos');
+});
+
+test('an incomplete fixed waybill does not require a payable amount', function () {
+    $this->postJson('/api/user/waybills', [
+        'is_incomplete' => true,
+        'is_fixed' => true,
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.is_incomplete', true)
+        ->assertJsonPath('data.is_fixed', true)
+        ->assertJsonPath('data.payable_amount', null);
+});
+
+test('an incomplete waybill can store a partially filled cargo row', function () {
+    $this->postJson('/api/user/waybills', [
+        'is_incomplete' => true,
+        'cargos' => [[
+            'title' => 'محموله نیمه‌کاره',
+            'description' => 'ادامه اطلاعات بعداً ثبت می‌شود',
+        ]],
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.is_incomplete', true)
+        ->assertJsonPath('data.cargos.0.title', 'محموله نیمه‌کاره')
+        ->assertJsonPath('data.cargos.0.cargo_id', null)
+        ->assertJsonPath('data.cargos.0.packaging_id', null);
 });
 
 test('it accepts a cargo without a product owner or description', function () {
@@ -374,6 +430,14 @@ test('it validates all required complete waybill data and company references', f
         ->assertUnprocessable()
         ->assertJsonValidationErrors('receiver_address_id');
 
+    $otherCompanyInsurance = Insurance::factory()->create();
+    $payload = completeWaybillPayload($this);
+    $payload['liability_insurance'] = $otherCompanyInsurance->id;
+
+    $this->postJson('/api/user/waybills', $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('liability_insurance');
+
     $otherCompany = Company::factory()->create();
     $payload = completeWaybillPayload($this);
     $payload['transport_contract_id'] = $otherCompany->transportContracts()->sole()->id;
@@ -381,6 +445,27 @@ test('it validates all required complete waybill data and company references', f
     $this->postJson('/api/user/waybills', $payload)
         ->assertUnprocessable()
         ->assertJsonValidationErrors('transport_contract_id');
+});
+
+test('it uses Persian attribute names in waybill validation messages', function () {
+    $response = $this->postJson('/api/user/waybills', [
+        'is_incomplete' => false,
+        'cargos' => [[
+            'cargo_id' => null,
+            'packaging_id' => null,
+            'is_returned' => null,
+        ]],
+    ])->assertUnprocessable();
+
+    $response
+        ->assertJsonPath('errors.base_freight_amount.0', 'تکمیل گزینه مبلغ کرایه پایه الزامی است')
+        ->assertJsonPath('errors.bijak_number.0', 'تکمیل گزینه شماره بیجک الزامی است')
+        ->assertJsonPath('errors.sender_id.0', 'تکمیل گزینه فرستنده الزامی است');
+
+    expect($response->json('errors'))
+        ->toHaveKey('cargos.0.cargo_id', ['تکمیل گزینه کد محموله الزامی است'])
+        ->toHaveKey('cargos.0.packaging_id', ['تکمیل گزینه کد دسته‌بندی بسته‌بندی الزامی است'])
+        ->toHaveKey('cargos.0.is_returned', ['تکمیل گزینه برگشتی بودن محموله الزامی است']);
 });
 
 test('a waybill accepts at most ten cargos', function () {
@@ -441,7 +526,7 @@ function completeWaybillPayload(object $test): array
         'bijak_number' => 'BIJAK-1',
         'serial_number' => 'SERIAL-1',
         'issued_at' => '2026-09-07 11:00:00',
-        'liability_insurance' => 'INS-1',
+        'liability_insurance' => $test->insurance->id,
         'bijak_tracking_code' => 'FRONT-CODE',
         'description' => 'توضیحات بارنامه',
         'transport_contract_id' => $test->contract->id,

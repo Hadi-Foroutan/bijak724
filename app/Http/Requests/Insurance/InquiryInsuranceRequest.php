@@ -6,7 +6,7 @@ use App\Enums\StatusEnum;
 use App\Http\Requests\BaseRequest;
 use Illuminate\Validation\Rule;
 
-class StoreInsuranceRequest extends BaseRequest
+class InquiryInsuranceRequest extends BaseRequest
 {
     public function rules(): array
     {

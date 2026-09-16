@@ -8,6 +8,8 @@ use Illuminate\Support\Collection;
 
 interface TransportContractRepositoryInterface
 {
+    public function lockCompanyForUpdate(int $companyId): void;
+
     /** @return Collection<int, TransportContract>|LengthAwarePaginator */
     public function search(int $companyId, array $filters): Collection|LengthAwarePaginator;
 

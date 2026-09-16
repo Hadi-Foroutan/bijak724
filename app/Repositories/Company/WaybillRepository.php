@@ -7,10 +7,12 @@ use App\Models\Cargo;
 use App\Models\Company\Driver;
 use App\Models\Company\ShipmentParty;
 use App\Models\Company\Waybill;
+use App\Models\Insurance;
 use App\Models\Packaging;
 use App\Models\TransportContract;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Arr;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Exists;
 
 class WaybillRepository extends CompanyModelRepository implements WaybillRepositoryInterface
@@ -73,6 +75,11 @@ class WaybillRepository extends CompanyModelRepository implements WaybillReposit
     public function productOwnerExistsRule(int $companyId): Exists
     {
         return $this->tableRegistry->ownedExistsRule($companyId, 'product_owner');
+    }
+
+    public function insuranceExistsRule(int $companyId): Exists
+    {
+        return Rule::exists(Insurance::class, 'id')->where('company_id', $companyId);
     }
 
     public function findShipmentPartyOrFail(int $companyId, int $shipmentPartyId): ShipmentParty
@@ -138,8 +145,8 @@ class WaybillRepository extends CompanyModelRepository implements WaybillReposit
 
             $cargos = array_map(static fn (array $cargo): array => [
                 ...$cargo,
-                'cargo_id' => $cargoIdsByCode[$cargo['cargo_id']],
-                'packaging_id' => $packagingIdsByCode[$cargo['packaging_id']],
+                'cargo_id' => isset($cargo['cargo_id']) ? $cargoIdsByCode[$cargo['cargo_id']] : null,
+                'packaging_id' => isset($cargo['packaging_id']) ? $packagingIdsByCode[$cargo['packaging_id']] : null,
             ], $cargos);
         }
 

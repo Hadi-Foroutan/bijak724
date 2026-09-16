@@ -24,6 +24,7 @@ class DefaultTransportContractService
                 'contract_date' => now()->addYear()->toDateString(),
                 'customer_name' => 'عمومی',
                 'status' => StatusEnum::ACTIVE->value,
+                'is_default' => true,
                 'default_unknown' => true,
                 'default_free' => true,
                 'default_rental' => true,

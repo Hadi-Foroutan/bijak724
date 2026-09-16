@@ -19,6 +19,7 @@ class UpdateTransportContractRequest extends BaseRequest
             'contract_date' => ['sometimes', 'required', 'date_format:Y-m-d'],
             'customer_name' => ['sometimes', 'required', 'string', 'max:255'],
             'status' => ['sometimes', 'required', Rule::enum(StatusEnum::class)],
+            'is_default' => ['sometimes', 'required', 'boolean'],
             'default_owned' => ['sometimes', 'required', 'boolean'],
             'default_rental' => ['sometimes', 'required', 'boolean'],
             'default_free' => ['sometimes', 'required', 'boolean'],

@@ -63,16 +63,18 @@ class TransportContractService
     /** @param array<string, mixed> $data */
     private function clearDefaultWhenSelected(int $companyId, array $data): void
     {
-        $selectedDefaultFields = array_values(array_filter(
-            array_map(
+        $selectedDefaultFields = array_values(array_filter([
+            ($data['is_default'] ?? false) ? 'is_default' : null,
+            ...array_map(
                 fn (TransportContractItemType $type): ?string => ($data[$type->defaultField()] ?? false)
                     ? $type->defaultField()
                     : null,
                 TransportContractItemType::cases(),
             ),
-        ));
+        ]));
 
         if ($selectedDefaultFields !== []) {
+            $this->transportContractRepository->lockCompanyForUpdate($companyId);
             $this->transportContractRepository->clearDefaults($companyId, $selectedDefaultFields);
         }
     }

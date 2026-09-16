@@ -10,15 +10,16 @@ class WaybillResource extends CompanyDynamicResource
     protected function relations(Request $request): array
     {
         return [
-            'sender' => $this->whenLoaded('sender'),
+            'sender' => ShipmentPartyResource::make($this->whenLoaded('sender')),
             'sender_address' => ShipmentPartyAddressResource::make($this->whenLoaded('senderAddress')),
-            'receiver' => $this->whenLoaded('receiver'),
+            'receiver' => ShipmentPartyResource::make($this->whenLoaded('receiver')),
             'receiver_address' => ShipmentPartyAddressResource::make($this->whenLoaded('receiverAddress')),
-            'first_driver' => $this->whenLoaded('firstDriver'),
-            'second_driver' => $this->whenLoaded('secondDriver'),
-            'referral_driver' => $this->whenLoaded('referralDriver'),
-            'fleet' => $this->whenLoaded('fleet'),
-            'transport_contract' => $this->whenLoaded('transportContract'),
+            'first_driver' => DriverResource::make($this->whenLoaded('firstDriver')),
+            'second_driver' => DriverResource::make($this->whenLoaded('secondDriver')),
+            'referral_driver' => DriverResource::make($this->whenLoaded('referralDriver')),
+            'fleet' => FleetResource::make($this->whenLoaded('fleet')),
+            'transport_contract' => TransportContractResource::make($this->whenLoaded('transportContract')),
+            'insurance' => InsuranceResource::make($this->whenLoaded('insurance')),
             'cargos' => WaybillCargoResource::collection($this->whenLoaded('cargos')),
         ];
     }

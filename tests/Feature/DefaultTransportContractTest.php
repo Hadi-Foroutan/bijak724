@@ -16,6 +16,7 @@ test('it creates a universal default transport contract for every new company', 
         ->and($transportContract->contract_number)->toBe('1')
         ->and($transportContract->contract_date->toDateString())->toBe($nextYearDate)
         ->and($transportContract->customer_name)->toBe('عمومی')
+        ->and($transportContract->is_default)->toBeTrue()
         ->and($transportContract->default_unknown)->toBeTrue()
         ->and($transportContract->default_free)->toBeTrue()
         ->and($transportContract->default_rental)->toBeTrue()

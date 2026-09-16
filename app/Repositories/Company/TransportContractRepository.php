@@ -3,12 +3,18 @@
 namespace App\Repositories\Company;
 
 use App\Interfaces\Company\TransportContractRepositoryInterface;
+use App\Models\Company;
 use App\Models\TransportContract;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 class TransportContractRepository implements TransportContractRepositoryInterface
 {
+    public function lockCompanyForUpdate(int $companyId): void
+    {
+        Company::query()->whereKey($companyId)->lockForUpdate()->firstOrFail();
+    }
+
     public function search(int $companyId, array $filters): Collection|LengthAwarePaginator
     {
         return TransportContract::searchRecords(

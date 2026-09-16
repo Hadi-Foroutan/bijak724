@@ -95,6 +95,9 @@ Route::get('transport-contracts/options', [TransportContractController::class, '
 Route::apiResource('transport-contracts', TransportContractController::class)
     ->parameters(['transport-contracts' => 'transportContract']);
 
+Route::prefix('insurances')->name('insurances.')->group(function () {
+    Route::match(['get', 'post'], '/inquiry', [InsuranceController::class, 'inquiry'])->name('inquiry');
+});
 Route::apiResource('insurances', InsuranceController::class);
 Route::apiResource('insurances.tariffs', InsuranceTariffController::class)
     ->parameters(['tariffs' => 'tariff']);

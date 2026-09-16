@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Insurance\InquiryInsuranceRequest;
 use App\Http\Requests\Insurance\StoreInsuranceRequest;
 use App\Http\Requests\Insurance\UpdateInsuranceRequest;
 use App\Http\Resources\InsuranceResource;
@@ -21,6 +22,12 @@ class InsuranceController extends Controller
         $result = $this->insuranceService->index($this->companyId($request), $request->all());
 
         return ResponseHandler::success($this->resourceCollection($result->data, InsuranceResource::class, $request));
+    }
+
+    public function inquiry(InquiryInsuranceRequest $request): JsonResponse
+    {
+        $result = $this->insuranceService->inquiry($this->companyId($request), $request->all());
+        return ResponseHandler::success($result->data);
     }
 
     public function store(StoreInsuranceRequest $request): JsonResponse

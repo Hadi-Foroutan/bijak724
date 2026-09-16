@@ -3,6 +3,7 @@
 namespace App\Models\Company;
 
 use App\Models\DynamicModel;
+use App\Models\Insurance;
 use App\Models\TransportContract;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -14,7 +15,8 @@ class Waybill extends DynamicModel
     protected array $defaultRelations = [
         'sender', 'senderAddress.city', 'receiver', 'receiverAddress.city',
         'firstDriver', 'secondDriver', 'referralDriver', 'fleet',
-        'transportContract', 'cargos.cargo', 'cargos.packaging', 'cargos.productOwner',
+        'transportContract', 'insurance.insuranceCompany',
+        'cargos.cargo', 'cargos.packaging', 'cargos.productOwner',
     ];
 
     /** @return array<string, string> */
@@ -82,6 +84,11 @@ class Waybill extends DynamicModel
     public function transportContract(): BelongsTo
     {
         return $this->belongsTo(TransportContract::class);
+    }
+
+    public function insurance(): BelongsTo
+    {
+        return $this->belongsTo(Insurance::class, 'liability_insurance');
     }
 
     public function cargos(): HasMany

@@ -31,6 +31,11 @@ class InsuranceService
         });
     }
 
+    public function inquiry(int $companyId,array $data): ServiceResult
+    {
+        return ServiceResult::success(['fee_amount' => 20_000]);
+    }
+
     public function show(int $companyId, int $id): ServiceResult
     {
         return ServiceResult::success($this->insuranceRepository->findOrFail($companyId, $id));

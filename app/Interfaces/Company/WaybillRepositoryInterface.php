@@ -25,6 +25,8 @@ interface WaybillRepositoryInterface extends CompanyModelRepositoryInterface
 
     public function productOwnerExistsRule(int $companyId): Exists;
 
+    public function insuranceExistsRule(int $companyId): Exists;
+
     public function findShipmentPartyOrFail(int $companyId, int $shipmentPartyId): ShipmentParty;
 
     public function findDriverOrFail(int $companyId, int $driverId): Driver;
