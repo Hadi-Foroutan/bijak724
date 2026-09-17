@@ -18,10 +18,10 @@ class InsuranceTariffResource extends JsonResource
             'id' => $this->id,
             'insurance_id' => $this->insurance_id,
             'cargo_group_id' => $this->cargo_group_id,
-            'cargo_group' => $this->whenLoaded('cargoGroup', fn (): array => [
+            'cargo_group' => $this->whenLoaded('cargoGroup', fn (): ?array => $this->cargoGroup === null ? null : [
                 'id' => $this->cargoGroup->id,
                 'name' => $this->cargoGroup->name,
-                'cargo_code' => $this->cargoGroup->cargo_code,
+                'group_number' => $this->cargoGroup->group_number,
             ]),
             'cargo_value_from' => (float) $this->cargo_value_from,
             'cargo_value_to' => $this->cargo_value_to === null ? null : (float) $this->cargo_value_to,

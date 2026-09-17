@@ -23,7 +23,7 @@ class InsuranceTariffFactory extends Factory
     {
         return [
             'insurance_id' => Insurance::factory(),
-            'cargo_group_id' => CargoGroup::factory(),
+            'cargo_group_id' => fn (): ?int => CargoGroup::query()->value('id'),
             'cargo_value_from' => 0,
             'cargo_value_to' => 100000000,
             'fixed_premium' => 500000,

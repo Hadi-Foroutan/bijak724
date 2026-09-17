@@ -14,7 +14,8 @@ beforeEach(function (): void {
     $this->withoutMiddleware(CheckPermission::class);
     $this->company = Company::factory()->create();
     $this->user = User::factory()->create(['company_id' => $this->company->id]);
-    $this->group = CargoGroup::factory()->create(['name' => 'مواد غذایی', 'cargo_code' => 210]);
+    $this->defaultGroup = CargoGroup::query()->where('group_number', 1)->firstOrFail();
+    $this->group = CargoGroup::query()->where('group_number', 2)->firstOrFail();
     $this->firstCargo = Cargo::query()->create(['name' => 'برنج', 'code' => 1001]);
     $this->secondCargo = Cargo::query()->create(['name' => 'گندم', 'code' => 1002]);
 
@@ -27,6 +28,11 @@ beforeEach(function (): void {
 });
 
 test('cargo groups are read only and expose company specific cargo assignments', function () {
+    $this->getJson("/api/user/cargo-groups/{$this->defaultGroup->id}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.group_number', 1)
+        ->assertJsonCount(2, 'data.cargos');
+
     $this->putJson("/api/user/cargo-groups/{$this->group->id}/cargos", [
         'cargo_ids' => [$this->firstCargo->id, $this->secondCargo->id],
     ])
@@ -48,12 +54,30 @@ test('cargo groups are read only and expose company specific cargo assignments',
     expect(CargoGroupCargo::query()->where('company_id', $this->company->id)->count())->toBe(1)
         ->and(CargoGroupCargo::query()->where('company_id', $otherCompany->id)->count())->toBe(1);
 
-    $this->getJson('/api/user/cargo-groups?search=مواد')
+    $this->getJson('/api/user/cargo-groups?search=گروه 2')
         ->assertSuccessful()
         ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.group_number', 2)
         ->assertJsonPath('data.0.cargos.0.id', $this->secondCargo->id);
 
     $this->postJson('/api/user/cargo-groups', ['name' => 'غیرمجاز'])->assertMethodNotAllowed();
+});
+
+test('moving a cargo to group one removes its explicit company assignment', function () {
+    $this->putJson("/api/user/cargo-groups/{$this->group->id}/cargos", [
+        'cargo_ids' => [$this->firstCargo->id],
+    ])->assertSuccessful();
+
+    $this->putJson("/api/user/cargo-groups/{$this->defaultGroup->id}/cargos", [
+        'cargo_ids' => [$this->firstCargo->id],
+    ])->assertSuccessful()
+        ->assertJsonPath('data.group_number', 1)
+        ->assertJsonFragment(['id' => $this->firstCargo->id]);
+
+    $this->assertDatabaseMissing('cargo_group_cargos', [
+        'company_id' => $this->company->id,
+        'cargo_id' => $this->firstCargo->id,
+    ]);
 });
 
 test('cargo group sync validates every shared cargo id', function () {

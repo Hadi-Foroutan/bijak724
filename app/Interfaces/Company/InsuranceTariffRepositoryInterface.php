@@ -17,4 +17,11 @@ interface InsuranceTariffRepositoryInterface
     public function update(InsuranceTariff $tariff, array $data): InsuranceTariff;
 
     public function delete(InsuranceTariff $tariff): void;
+
+    public function findApplicable(
+        int $companyId,
+        int $insuranceId,
+        int $cargoGroupId,
+        float $cargoValue,
+    ): ?InsuranceTariff;
 }

@@ -26,7 +26,8 @@ class InsuranceController extends Controller
 
     public function inquiry(InquiryInsuranceRequest $request): JsonResponse
     {
-        $result = $this->insuranceService->inquiry($this->companyId($request), $request->all());
+        $result = $this->insuranceService->inquiry($this->companyId($request), $request->validated());
+
         return ResponseHandler::success($result->data);
     }
 

@@ -20,9 +20,11 @@ class CargoGroupFactory extends Factory
      */
     public function definition(): array
     {
+        $groupNumber = fake()->unique()->numberBetween(1, 5);
+
         return [
-            'name' => fake()->unique()->words(2, true),
-            'cargo_code' => fake()->unique()->numberBetween(1000, 999999),
+            'name' => "گروه {$groupNumber}",
+            'group_number' => $groupNumber,
             'status' => StatusEnum::ACTIVE->value,
         ];
     }

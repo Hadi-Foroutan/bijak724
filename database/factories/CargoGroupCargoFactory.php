@@ -24,7 +24,8 @@ class CargoGroupCargoFactory extends Factory
     {
         return [
             'company_id' => Company::factory(),
-            'cargo_group_id' => CargoGroup::factory(),
+            'cargo_group_id' => fn (): int => CargoGroup::query()->value('id')
+                ?? CargoGroup::factory()->create()->id,
             'cargo_id' => fn (): int => Cargo::query()->value('id')
                 ?? Cargo::query()->create([
                     'name' => fake()->words(2, true),

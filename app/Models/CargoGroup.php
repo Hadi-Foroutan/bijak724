@@ -15,16 +15,16 @@ class CargoGroup extends Model
     /** @use HasFactory<CargoGroupFactory> */
     use AdvancedSearch, HasFactory;
 
-    protected array $searchableFields = ['name', 'cargo_code', 'status'];
+    protected array $searchableFields = ['name', 'group_number', 'status'];
 
-    protected array $globalSearchFields = ['name', 'cargo_code'];
+    protected array $globalSearchFields = ['name', 'group_number'];
 
-    protected $fillable = ['name', 'cargo_code', 'status'];
+    protected $fillable = ['name', 'group_number', 'status'];
 
     protected function casts(): array
     {
         return [
-            'cargo_code' => 'integer',
+            'group_number' => 'integer',
             'status' => StatusEnum::class,
         ];
     }

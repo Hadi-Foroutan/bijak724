@@ -17,7 +17,7 @@ class CargoGroupResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'cargo_code' => $this->cargo_code,
+            'group_number' => $this->group_number,
             'status' => $this->status->value,
             'cargos' => CargoGroupCargoResource::collection($this->whenLoaded('cargoAssignments')),
         ];

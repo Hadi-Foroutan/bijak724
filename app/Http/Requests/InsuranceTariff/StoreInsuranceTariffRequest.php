@@ -23,7 +23,13 @@ class StoreInsuranceTariffRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'cargo_group_id' => ['required', 'integer', Rule::exists('cargo_groups', 'id')],
+            'cargo_group_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('cargo_groups', 'id'),
+                Rule::unique('insurance_tariffs', 'cargo_group_id')
+                    ->where('insurance_id', $this->route('insurance')),
+            ],
             'cargo_value_from' => ['required', 'numeric', 'min:0'],
             'cargo_value_to' => ['nullable', 'numeric', 'gte:cargo_value_from'],
             'fixed_premium' => ['nullable', 'numeric', 'min:0', 'required_without:premium_percentage'],

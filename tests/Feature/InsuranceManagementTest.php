@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Middleware\CheckPermission;
+use App\Models\Cargo;
 use App\Models\CargoGroup;
+use App\Models\CargoGroupCargo;
 use App\Models\Company;
 use App\Models\Insurance;
 use App\Models\InsuranceCompany;
@@ -19,10 +21,8 @@ beforeEach(function (): void {
         'org_code' => 101,
         'status' => 'active',
     ]);
-    $this->cargoGroup = CargoGroup::factory()->create([
-        'name' => 'کالای عمومی',
-        'cargo_code' => 110,
-    ]);
+    $this->defaultCargoGroup = CargoGroup::query()->where('group_number', 1)->firstOrFail();
+    $this->cargoGroup = CargoGroup::query()->where('group_number', 2)->firstOrFail();
 
     $token = $this->user->createToken(
         'insurance-session',
@@ -82,7 +82,8 @@ test('insurance tariff accepts fixed percentage or both and is company scoped', 
         'description' => 'تعرفه گروه عمومی',
     ])
         ->assertCreated()
-        ->assertJsonPath('data.cargo_group.name', 'کالای عمومی')
+        ->assertJsonPath('data.cargo_group.name', 'گروه 2')
+        ->assertJsonPath('data.cargo_group.group_number', 2)
         ->assertJsonPath('data.fixed_premium', 250000)
         ->assertJsonPath('data.premium_percentage', 1.25)
         ->json('data.id');
@@ -106,7 +107,7 @@ test('insurance tariff accepts fixed percentage or both and is company scoped', 
     $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [
         'cargo_group_id' => $this->cargoGroup->id,
         'cargo_value_from' => 0,
-    ])->assertUnprocessable()->assertJsonValidationErrors(['fixed_premium', 'premium_percentage']);
+    ])->assertUnprocessable()->assertJsonValidationErrors(['cargo_group_id', 'fixed_premium', 'premium_percentage']);
 
     $otherInsurance = Insurance::factory()->create();
     $this->getJson("/api/user/insurances/{$otherInsurance->id}")->assertNotFound();
@@ -118,6 +119,98 @@ test('insurance tariff accepts fixed percentage or both and is company scoped', 
 
     $this->deleteJson("/api/user/insurances/{$insuranceId}/tariffs/{$tariffId}")->assertSuccessful();
     $this->assertDatabaseMissing('insurance_tariffs', ['id' => $tariffId]);
+});
+
+test('insurance inquiry calculates and sums cargo fees using company cargo groups', function () {
+    $insuranceId = $this->postJson('/api/user/insurances', insurancePayload($this->insuranceCompany->id, 'INS-400'))
+        ->assertCreated()
+        ->json('data.id');
+    $groupedCargo = Cargo::query()->create(['name' => 'محموله گروه دوم', 'code' => 4001]);
+    $defaultCargo = Cargo::query()->create(['name' => 'محموله گروه پیش‌فرض', 'code' => 4002]);
+
+    CargoGroupCargo::query()->create([
+        'company_id' => $this->company->id,
+        'cargo_group_id' => $this->cargoGroup->id,
+        'cargo_id' => $groupedCargo->id,
+    ]);
+
+    $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [
+        'cargo_group_id' => $this->cargoGroup->id,
+        'cargo_value_from' => 50000,
+        'cargo_value_to' => 60000,
+        'fixed_premium' => 250,
+        'premium_percentage' => 2,
+        'excess_amount' => 1000,
+    ])->assertCreated();
+
+    $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [
+        'cargo_group_id' => $this->defaultCargoGroup->id,
+        'cargo_value_from' => 0,
+        'cargo_value_to' => 100000,
+        'fixed_premium' => 100,
+        'premium_percentage' => 1,
+        'excess_amount' => 0,
+    ])->assertCreated();
+
+    $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [
+        'cargo_group_id' => null,
+        'cargo_value_from' => 0,
+        'cargo_value_to' => 100000,
+        'fixed_premium' => 999,
+    ])->assertCreated();
+
+    $this->postJson('/api/user/insurances/inquiry', [
+        'insurance_id' => $insuranceId,
+        'cargos' => [
+            ['id' => $groupedCargo->id, 'value' => 11000],
+            ['id' => $defaultCargo->id, 'value' => 10000],
+        ],
+    ])->assertSuccessful()->assertJsonPath('data.fee_amount', 650);
+});
+
+test('insurance inquiry falls back to an ungrouped tariff matching the cargo value range', function () {
+    $insuranceId = $this->postJson('/api/user/insurances', insurancePayload($this->insuranceCompany->id, 'INS-401'))
+        ->assertCreated()
+        ->json('data.id');
+    $cargo = Cargo::query()->create(['name' => 'محموله تعرفه عمومی', 'code' => 4010]);
+
+    $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [
+        'cargo_group_id' => null,
+        'cargo_value_from' => 0,
+        'cargo_value_to' => 9999,
+        'fixed_premium' => 10,
+    ])->assertCreated()->assertJsonPath('data.cargo_group_id', null);
+
+    $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [
+        'cargo_group_id' => null,
+        'cargo_value_from' => 10000,
+        'cargo_value_to' => 20000,
+        'fixed_premium' => 100,
+        'premium_percentage' => 2,
+        'excess_amount' => 5000,
+    ])->assertCreated();
+
+    $this->postJson('/api/user/insurances/inquiry', [
+        'insurance_id' => $insuranceId,
+        'cargos' => [['id' => $cargo->id, 'value' => 15000]],
+    ])->assertSuccessful()->assertJsonPath('data.fee_amount', 300);
+});
+
+test('insurance inquiry validates ownership and reports a missing cargo tariff', function () {
+    $insurance = Insurance::factory()->for($this->company)->create();
+    $otherInsurance = Insurance::factory()->create();
+    $cargo = Cargo::query()->create(['name' => 'محموله بدون تعرفه', 'code' => 4020]);
+
+    $this->postJson('/api/user/insurances/inquiry', [
+        'insurance_id' => $otherInsurance->id,
+        'cargos' => [['id' => $cargo->id, 'value' => 10000]],
+    ])->assertUnprocessable()->assertJsonValidationErrors('insurance_id');
+
+    $this->postJson('/api/user/insurances/inquiry', [
+        'insurance_id' => $insurance->id,
+        'cargos' => [['id' => $cargo->id, 'value' => 10000]],
+    ])->assertUnprocessable()
+        ->assertJsonPath('errors.error.0', "تعرفه بیمه برای محموله با شناسه {$cargo->id} یافت نشد.");
 });
 
 test('insurance validation rejects invalid dates and duplicate company contract numbers', function () {
