@@ -8,4 +8,18 @@ use App\Models\Company\Waybill;
 interface WaybillRepositoryInterface extends CompanyModelRepositoryInterface
 {
     public function trackingCodeExists(int $companyId, string $trackingCode): bool;
+
+    public function referralNumberExists(
+        int $companyId,
+        string $serialNumber,
+        string $referralNumber,
+        ?int $ignoreWaybillId = null,
+    ): bool;
+
+    public function bijakNumberExists(
+        int $companyId,
+        string $serialNumber,
+        string $bijakNumber,
+        ?int $ignoreWaybillId = null,
+    ): bool;
 }

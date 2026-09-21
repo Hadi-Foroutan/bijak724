@@ -32,6 +32,7 @@ class CompanyTableService
             $this->ensureOwnerCompanyColumn($tableName, $companyId);
             $this->syncColumns($tableName, $columns, $companyId);
             $this->ensureFleetPlateUniqueIndex($tableName, $tableKey);
+            $this->ensureWaybillNumberUniqueIndexes($tableName, $tableKey);
 
             if ($tableKey === 'referral_numbers') {
                 $this->ensureReferralNumberActiveIndex($tableName);
@@ -54,6 +55,17 @@ class CompanyTableService
 
             if ($tableKey === 'referral_numbers') {
                 $table->unique(['owner_company_id', 'active_slot'], "{$tableName}_active_unique");
+            }
+
+            if ($tableKey === 'waybills') {
+                $table->unique(
+                    ['owner_company_id', 'serial_number', 'referral_number'],
+                    "{$tableName}_serial_referral_unique",
+                );
+                $table->unique(
+                    ['owner_company_id', 'serial_number', 'bijak_number'],
+                    "{$tableName}_serial_bijak_unique",
+                );
             }
 
             $table->timestamps();
@@ -80,6 +92,28 @@ class CompanyTableService
         Schema::table($tableName, function (Blueprint $table) use ($tableName): void {
             $table->unique($this->fleetPlateColumns(), "{$tableName}_plate_unique");
         });
+    }
+
+    private function ensureWaybillNumberUniqueIndexes(string $tableName, string $tableKey): void
+    {
+        if ($tableKey !== 'waybills') {
+            return;
+        }
+
+        $indexes = [
+            "{$tableName}_serial_referral_unique" => ['owner_company_id', 'serial_number', 'referral_number'],
+            "{$tableName}_serial_bijak_unique" => ['owner_company_id', 'serial_number', 'bijak_number'],
+        ];
+
+        foreach ($indexes as $indexName => $columns) {
+            if (Schema::hasIndex($tableName, $indexName)) {
+                continue;
+            }
+
+            Schema::table($tableName, function (Blueprint $table) use ($columns, $indexName): void {
+                $table->unique($columns, $indexName);
+            });
+        }
     }
 
     /** @return list<string> */

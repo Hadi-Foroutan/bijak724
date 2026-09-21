@@ -15,8 +15,10 @@ use App\Models\Insurance;
 use App\Models\Packaging;
 use App\Models\State;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 uses(LazilyRefreshDatabase::class);
 
@@ -376,6 +378,86 @@ test('it reserves a referral number only when a waybill is issued', function () 
         ->assertJsonPath('data.referral_number', 2);
 });
 
+test('waybill serial and document numbers have company scoped unique indexes', function () {
+    $tableName = "company_{$this->company->id}_waybills";
+
+    expect(Schema::hasIndex($tableName, "{$tableName}_serial_referral_unique"))->toBeTrue()
+        ->and(Schema::hasIndex($tableName, "{$tableName}_serial_bijak_unique"))->toBeTrue();
+});
+
+test('database rejects duplicate referral and bijak numbers in the same serial', function () {
+    $tableName = "company_{$this->company->id}_waybills";
+    $base = [
+        'owner_company_id' => $this->company->id,
+        'serial_number' => 'DB-SERIAL',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ];
+
+    DB::table($tableName)->insert([
+        ...$base,
+        'referral_number' => '7001',
+        'bijak_number' => '8001',
+    ]);
+
+    expect(fn () => DB::table($tableName)->insert([
+        ...$base,
+        'referral_number' => '7001',
+        'bijak_number' => '8002',
+    ]))->toThrow(QueryException::class);
+
+    expect(fn () => DB::table($tableName)->insert([
+        ...$base,
+        'referral_number' => '7002',
+        'bijak_number' => '8001',
+    ]))->toThrow(QueryException::class);
+});
+
+test('it rejects a used bijak number in the same serial without consuming a referral number', function () {
+    $this->postJson('/api/user/waybills', completeWaybillPayload($this))
+        ->assertCreated();
+
+    $this->postJson('/api/user/waybills', completeWaybillPayload($this))
+        ->assertUnprocessable()
+        ->assertJsonPath(
+            'errors.error.0',
+            __('public.waybill_bijak_number_used', [
+                'number' => 1001,
+                'serial' => 'SERIAL-1',
+            ]),
+        );
+
+    $this->getJson("/api/user/referral-numbers/{$this->referralNumberId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.last_number', 1);
+});
+
+test('it rejects a referral number that is already assigned to a waybill', function () {
+    $this->postJson('/api/user/waybills', completeWaybillPayload($this))
+        ->assertCreated();
+
+    DB::table("company_{$this->company->id}_referral_numbers")
+        ->where('id', $this->referralNumberId)
+        ->update(['last_number' => null]);
+
+    $payload = completeWaybillPayload($this);
+    $payload['bijak_number'] = 1002;
+
+    $this->postJson('/api/user/waybills', $payload)
+        ->assertUnprocessable()
+        ->assertJsonPath(
+            'errors.error.0',
+            __('public.waybill_referral_number_used', [
+                'number' => 1,
+                'serial' => 'SERIAL-1',
+            ]),
+        );
+
+    $this->getJson("/api/user/referral-numbers/{$this->referralNumberId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.last_number', null);
+});
+
 test('it completes the referral range at the final issued waybill', function () {
     $rangeId = $this->referralNumberId;
 
@@ -439,6 +521,7 @@ test('the referral driver can be the first or second driver', function () {
 
     $secondDriverPayload = completeWaybillPayload($this);
     $secondDriverPayload['referral_driver_id'] = $this->secondDriver->id;
+    $secondDriverPayload['bijak_number'] = 1002;
 
     $secondResponse = $this->postJson('/api/user/waybills', $secondDriverPayload)
         ->assertCreated()

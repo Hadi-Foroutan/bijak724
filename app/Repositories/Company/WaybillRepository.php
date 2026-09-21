@@ -17,6 +17,36 @@ class WaybillRepository extends CompanyModelRepository implements WaybillReposit
             ->exists();
     }
 
+    public function referralNumberExists(
+        int $companyId,
+        string $serialNumber,
+        string $referralNumber,
+        ?int $ignoreWaybillId = null,
+    ): bool {
+        return $this->numberExists(
+            $companyId,
+            $serialNumber,
+            'referral_number',
+            $referralNumber,
+            $ignoreWaybillId,
+        );
+    }
+
+    public function bijakNumberExists(
+        int $companyId,
+        string $serialNumber,
+        string $bijakNumber,
+        ?int $ignoreWaybillId = null,
+    ): bool {
+        return $this->numberExists(
+            $companyId,
+            $serialNumber,
+            'bijak_number',
+            $bijakNumber,
+            $ignoreWaybillId,
+        );
+    }
+
     public function update(int $companyId, int $id, array $data): Waybill
     {
         unset($data['owner_company_id']);
@@ -33,5 +63,19 @@ class WaybillRepository extends CompanyModelRepository implements WaybillReposit
         $waybill = $this->loadRelations($waybill->refresh());
 
         return $waybill;
+    }
+
+    private function numberExists(
+        int $companyId,
+        string $serialNumber,
+        string $numberColumn,
+        string $number,
+        ?int $ignoreWaybillId,
+    ): bool {
+        return $this->query($companyId)
+            ->where('serial_number', $serialNumber)
+            ->where($numberColumn, $number)
+            ->when($ignoreWaybillId !== null, fn ($query) => $query->whereKeyNot($ignoreWaybillId))
+            ->exists();
     }
 }

@@ -5,6 +5,7 @@ namespace App\Services\Company\ReferralNumber;
 use App\Enums\ReferralNumberStatus;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\ReferralNumberRepositoryInterface;
+use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Models\Company;
 use App\Models\Company\ReferralNumber;
 use App\Services\Company\CompanyCrudService;
@@ -25,6 +26,7 @@ class ReferralNumberService extends CompanyCrudService
     public function __construct(
         protected ReferralNumberRepositoryInterface $referralNumberRepository,
         protected CompanyDataOwnerResolver $companyDataOwnerResolver,
+        protected WaybillRepositoryInterface $waybillRepository,
     ) {}
 
     protected function repository(): ReferralNumberRepositoryInterface
@@ -124,6 +126,21 @@ class ReferralNumberService extends CompanyCrudService
         }
 
         $next = $this->nextNumber($record);
+
+        if ($this->waybillRepository->referralNumberExists(
+            $companyId,
+            (string) $next['serial_number'],
+            (string) $next['referral_number'],
+        )) {
+            return ServiceResult::error(
+                __('public.waybill_referral_number_used', [
+                    'number' => $next['referral_number'],
+                    'serial' => $next['serial_number'],
+                ]),
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
+        }
+
         $record->update([
             'last_number' => $next['referral_number'],
             'status' => $next['referral_number'] >= $record->to_number

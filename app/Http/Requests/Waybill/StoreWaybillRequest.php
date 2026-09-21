@@ -161,8 +161,8 @@ class StoreWaybillRequest extends BaseRequest
                 'integer',
                 'min:0',
             ],
-            'freight_at_origin' => [$requiredWhenComplete, 'nullable', 'boolean'],
-            'is_fixed' => [$requiredWhenComplete, 'nullable', 'boolean'],
+            'freight_at_origin' => ['nullable', 'boolean'],
+            'is_fixed' => ['nullable', 'boolean'],
         ];
     }
 
@@ -180,17 +180,17 @@ class StoreWaybillRequest extends BaseRequest
             'cargos.*.packaging_id' => [$requiredWhenComplete, 'nullable', 'integer', Rule::exists(Packaging::class, 'code')],
             'cargos.*.product_owner_id' => ['nullable', 'integer', $productOwnerRepository->existsRule($companyId)],
             'cargos.*.description' => ['nullable', 'string'],
-            'cargos.*.title' => [$requiredWhenComplete, 'nullable', 'string', 'max:255'],
+            'cargos.*.title' => ['nullable', 'string', 'max:255'],
             'cargos.*.origin_weight' => [$requiredWhenComplete, 'nullable', 'numeric', 'min:0'],
             'cargos.*.value' => [$requiredWhenComplete, 'nullable', 'integer', 'min:0'],
             'cargos.*.quantity' => [$requiredWhenComplete, 'nullable', 'integer', 'min:1'],
-            'cargos.*.is_traffic' => [$requiredWhenComplete, 'nullable', 'boolean'],
-            'cargos.*.is_returned' => [$requiredWhenComplete, 'nullable', 'boolean'],
-            'cargos.*.cottage_number' => ['nullable', 'string', 'max:255'],
-            'cargos.*.cottage_number_2' => ['nullable', 'string', 'max:255'],
-            'cargos.*.driver_account_number' => ['nullable', 'string', 'max:255'],
-            'cargos.*.container_number' => ['nullable', 'string', 'max:255'],
-            'cargos.*.container_number_2' => ['nullable', 'string', 'max:255'],
+            'cargos.*.is_traffic' => ['nullable', 'boolean'],
+//            'cargos.*.is_returned' => [$requiredWhenComplete, 'nullable', 'boolean'],
+//            'cargos.*.cottage_number' => ['nullable', 'string', 'max:255'],
+//            'cargos.*.cottage_number_2' => ['nullable', 'string', 'max:255'],
+//            'cargos.*.driver_account_number' => ['nullable', 'string', 'max:255'],
+//            'cargos.*.container_number' => ['nullable', 'string', 'max:255'],
+//            'cargos.*.container_number_2' => ['nullable', 'string', 'max:255'],
         ];
     }
 }
