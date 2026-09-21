@@ -12,7 +12,7 @@ class AuthenticationException extends Exception
     public function render(Request $request): JsonResponse
     {
         return response()->json([
-            'message' => 'احراز هویت نشده'
+            'message' => __('public.unauthenticated'),
         ], Response::HTTP_UNAUTHORIZED);
     }
 }

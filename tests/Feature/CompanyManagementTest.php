@@ -61,26 +61,37 @@ test('it creates a company and its configured tables', function () {
         'name' => 'Example Company',
         'national_code' => '10000000001',
         'city_code' => 1101,
-        'account' => [
-            'first_name' => 'کاربر',
-            'last_name' => 'شرکت',
-            'phone' => '09120000001',
-            'national_code' => '1234567891',
-            'username' => 'example-company',
-            'password' => 'company-password',
-        ],
     ];
 
     $this->postJson('/api/admin/companies', $payload)
         ->assertCreated()
         ->assertJsonPath('data.organization_code', 'ORG-1000')
-        ->assertJsonPath('data.account.username', 'example-company');
+        ->assertJsonPath('data.account', null);
 
     $company = Company::query()->where('organization_code', 'ORG-1000')->firstOrFail();
 
     $this->assertModelExists($company);
     expect(Schema::hasTable("company_{$company->id}_waybills"))->toBeTrue();
     expect(Schema::hasTable("company_{$company->id}_drivers"))->toBeTrue();
+
+    $insurance = $company->insurances()->with(['insuranceCompany', 'tariffs'])->sole();
+    expect($insurance->insuranceCompany->org_code)->toBe(26)
+        ->and($insurance->insuranceCompany->name)->toBe('شرکت بیمه کوثر')
+        ->and($insurance->title)->toBe('بیمه کوثر')
+        ->and($insurance->contract_number)->toBe('1')
+        ->and($insurance->is_default)->toBeTrue()
+        ->and($insurance->status->value)->toBe('active')
+        ->and($insurance->start_date->toDateString())->toBe(now()->toDateString())
+        ->and($insurance->end_date->toDateString())->toBe(now()->addYear()->toDateString())
+        ->and($insurance->tariffs)->toHaveCount(2)
+        ->and($insurance->tariffs[0]->cargo_group_id)->toBeNull()
+        ->and($insurance->tariffs[0]->cargo_value_from)->toBe('1.00')
+        ->and($insurance->tariffs[0]->cargo_value_to)->toBe('10000000000.00')
+        ->and($insurance->tariffs[0]->premium_percentage)->toBe('0.0200')
+        ->and($insurance->tariffs[1]->cargo_group_id)->toBeNull()
+        ->and($insurance->tariffs[1]->cargo_value_from)->toBe('10000000000.00')
+        ->and($insurance->tariffs[1]->cargo_value_to)->toBe('99999999999.00')
+        ->and($insurance->tariffs[1]->premium_percentage)->toBe('0.0190');
 });
 
 test('it updates a company', function () {
@@ -119,7 +130,6 @@ test('it validates company creation payloads', function () {
             'national_code',
             'city_code',
             'status',
-            'account',
         ]);
 });
 
@@ -134,15 +144,34 @@ test('it requires unique company identifiers', function () {
         'name' => 'Duplicate Code Company',
         'national_code' => '10000000002',
         'city_code' => 1101,
-        'account' => [
-            'first_name' => 'کاربر',
-            'last_name' => 'شرکت',
-            'phone' => '09120000002',
-            'national_code' => '1234567891',
-            'username' => 'duplicate-company',
-            'password' => 'company-password',
-        ],
     ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors('organization_code');
+});
+
+test('a branch can only select an original root company as its parent', function () {
+    $original = Company::factory()->create([
+        'parent_type' => 'original',
+        'parent_id' => null,
+    ]);
+    $branch = Company::query()->forceCreate([
+        'parent_id' => $original->id,
+        'parent_type' => 'branch',
+        'panel_code' => '10991',
+        'organization_code' => 'ORG-10991',
+        'name' => 'شعبه والد نامعتبر',
+        'national_code' => '10991000001',
+        'city_code' => 1101,
+    ]);
+
+    $this->postJson('/api/admin/companies', [
+        'parent_type' => 'branch',
+        'parent_id' => $branch->id,
+        'organization_code' => 'ORG-10992',
+        'name' => 'زیرشعبه نامعتبر',
+        'national_code' => '10992000001',
+        'city_code' => 1101,
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('parent_id');
 });

@@ -8,12 +8,43 @@ use App\Models\User;
 use App\Models\UserPermission;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 uses(LazilyRefreshDatabase::class);
+
+test('every permission route belongs to a configured group', function () {
+    $excludedRoutes = [
+        'sanctum.csrf-cookie',
+        'storage.*',
+        'scramble.*',
+        'boost.*',
+        '*.login',
+        '*.logout',
+        '*.checkToken',
+    ];
+    $groupPatterns = array_keys(config('permission_groups.groups', []));
+
+    $ungroupedRoutes = collect(Route::getRoutes())
+        ->map(fn ($route) => $route->getName())
+        ->filter(fn (?string $name): bool => filled($name))
+        ->reject(fn (string $name): bool => collect($excludedRoutes)
+            ->contains(fn (string $pattern): bool => Str::is($pattern, $name)))
+        ->reject(fn (string $name): bool => collect($groupPatterns)
+            ->contains(fn (string $pattern): bool => Str::is(
+                Str::contains($pattern, '*') ? $pattern : "{$pattern}*",
+                $name,
+            )))
+        ->values();
+
+    expect($ungroupedRoutes)->toBeEmpty();
+});
 
 test('it resets and regenerates route permissions with groups and role links', function () {
     config()->set('permission_groups.non_default_permissions', [
         'admin.users.destroy',
+        'user.users.*',
+        'user.fleets.destroy',
     ]);
 
     $superAdminRole = Role::query()->create([
@@ -26,14 +57,30 @@ test('it resets and regenerates route permissions with groups and role links', f
         'display_name' => 'Admin',
     ]);
 
-    Role::query()->create([
+    $userRole = Role::query()->create([
         'name' => RoleEnum::USER->value,
         'display_name' => 'User',
+    ]);
+
+    $companyManagerRole = Role::query()->create([
+        'name' => RoleEnum::COMPANY_MANAGER->value,
+        'display_name' => 'Company Manager',
     ]);
 
     $stalePermission = Permission::query()->create([
         'name' => 'stale.permission',
         'display_name' => 'Stale Permission',
+    ]);
+
+    $existingCustomPermission = Permission::query()->create([
+        'name' => 'admin.users.index',
+        'display_name' => 'Existing Custom Permission',
+    ]);
+
+    $existingNonDefaultPermission = Permission::query()->create([
+        'name' => 'user.fleets.destroy',
+        'display_name' => 'Existing Non-default Permission',
+        'is_default' => false,
     ]);
 
     $staleGroup = PermissionGroup::query()->create([
@@ -66,16 +113,33 @@ test('it resets and regenerates route permissions with groups and role links', f
         'updated_at' => now(),
     ]);
 
+    $user->roles()->sync([$userRole->id]);
+    $user->permissions()->attach([
+        $existingCustomPermission->id,
+        $existingNonDefaultPermission->id,
+    ]);
+
+    $companyManager = User::query()->forceCreate([
+        'national_code' => '1234567891',
+        'first_name' => 'Company',
+        'last_name' => 'Manager',
+        'phone' => '09123456780',
+        'email' => 'manager@example.com',
+        'username' => 'company-manager',
+        'password' => 'password',
+    ]);
+    $companyManager->roles()->sync([$companyManagerRole->id]);
+
     $this->artisan('generate-permissions')
         ->expectsOutputToContain('Permission groups:')
         ->assertSuccessful();
 
     expect(Permission::query()->where('name', 'stale.permission')->exists())->toBeFalse();
-    expect(DB::table((new UserPermission)->getTable())->count())->toBe(0);
     expect(Permission::query()->min('id'))->toBe(1);
     expect(PermissionGroup::query()->min('id'))->toBe(1);
     expect(DB::table('permissions_groups')->min('id'))->toBe(1);
     expect(DB::table('role_permissions')->min('id'))->toBe(1);
+    expect(DB::table((new UserPermission)->getTable())->min('id'))->toBe(1);
 
     $permission = Permission::query()
         ->where('name', 'admin.users.index')
@@ -96,15 +160,62 @@ test('it resets and regenerates route permissions with groups and role links', f
 
     expect($adminRole->fresh()->permissions()->where('name', 'admin.users.index')->exists())->toBeTrue();
     expect($superAdminRole->fresh()->permissions()->count())->toBe(Permission::query()->count());
+    expect($userRole->fresh()->permissions()->where('is_default', false)->exists())->toBeFalse();
+    expect($userRole->fresh()->permissions()->where('name', 'like', 'user.users.%')->exists())->toBeFalse();
     expect($permission->is_default)->toBeTrue();
     expect($nonDefaultPermission->is_default)->toBeFalse();
 
-    $userPermissionId = DB::table((new UserPermission)->getTable())->insertGetId([
-        'user_id' => $user->id,
-        'permission_id' => $permission->id,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
+    $dashboardGroup = PermissionGroup::query()
+        ->where('name', 'مدیریت داشبورد کاربر')
+        ->firstOrFail();
+    $driverGroup = PermissionGroup::query()
+        ->where('name', 'مدیریت رانندگان')
+        ->firstOrFail();
+    $fleetGroup = PermissionGroup::query()
+        ->where('name', 'مدیریت ناوگان')
+        ->firstOrFail();
+    $shipmentPartyGroup = PermissionGroup::query()
+        ->where('name', 'مدیریت فرستندگان و گیرندگان')
+        ->firstOrFail();
+    $addressGroup = PermissionGroup::query()
+        ->where('name', 'مدیریت آدرس‌های فرستندگان و گیرندگان')
+        ->firstOrFail();
+    $waybillGroup = PermissionGroup::query()
+        ->where('name', 'مدیریت بارنامه‌ها')
+        ->firstOrFail();
+    $cargoGroup = PermissionGroup::query()
+        ->where('name', 'مدیریت محموله‌ها')
+        ->firstOrFail();
+    $productOwnerGroup = PermissionGroup::query()
+        ->where('name', 'مدیریت صاحبان کالا')
+        ->firstOrFail();
+    $generalGroup = PermissionGroup::query()
+        ->where('name', 'اطلاعات عمومی کاربران')
+        ->firstOrFail();
 
-    expect($userPermissionId)->toBe(1);
+    expect($dashboardGroup->permissions()->pluck('name')->all())
+        ->toBe(['user.dashboard.index']);
+    expect($driverGroup->permissions()->count())->toBe(6)
+        ->and($driverGroup->permissions()->where('name', 'user.drivers.inquiry')->exists())->toBeTrue();
+    expect($fleetGroup->permissions()->count())->toBe(6)
+        ->and($fleetGroup->permissions()->where('name', 'user.fleets.inquiry')->exists())->toBeTrue();
+    expect($shipmentPartyGroup->permissions()->count())->toBe(6)
+        ->and($shipmentPartyGroup->permissions()->where('name', 'user.shipment-parties.inquiry')->exists())->toBeTrue()
+        ->and($addressGroup->permissions()->count())->toBe(5)
+        ->and($addressGroup->permissions()->where('name', 'user.addresses.index')->exists())->toBeTrue()
+        ->and(Permission::query()->where('name', 'user.shipment-parties.addresses.index')->exists())->toBeFalse()
+        ->and($waybillGroup->permissions()->count())->toBe(6)
+        ->and($waybillGroup->permissions()->where('name', 'user.waybills.options')->exists())->toBeTrue()
+        ->and($cargoGroup->permissions()->count())->toBe(5)
+        ->and($productOwnerGroup->permissions()->count())->toBe(5)
+        ->and($generalGroup->permissions()->count())->toBe(7);
+
+    expect($user->permissions()->where('name', 'user.drivers.index')->exists())->toBeTrue();
+    expect($user->permissions()->where('name', 'user.fleets.destroy')->exists())->toBeFalse();
+    expect($user->permissions()->where('name', 'user.users.destroy')->exists())->toBeFalse();
+    expect($user->permissions()->where('name', 'admin.users.index')->exists())->toBeTrue();
+    expect($companyManager->permissions()->where('name', 'user.fleets.destroy')->exists())->toBeTrue();
+    expect($companyManager->permissions()->where('name', 'user.users.destroy')->exists())->toBeTrue();
+    expect($companyManager->permissions()->count())
+        ->toBe($companyManagerRole->fresh()->permissions()->count());
 });

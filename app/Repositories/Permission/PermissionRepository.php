@@ -43,12 +43,12 @@ class PermissionRepository implements PermissionInterface
         return $role->permissions()->get();
     }
 
-    public function findRole($user)
+    public function findRole($user): ?Role
     {
         return $user->roles()->first();
     }
 
-    public function findByName($name)
+    public function findByName($name): ?Role
     {
         return Role::whereName($name)->first();
     }

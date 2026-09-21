@@ -10,10 +10,31 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Role extends Model
 {
     use AdvancedSearch,SoftDeletes;
+
+    protected array $searchableFields = [
+        'id',
+        'name',
+        'display_name',
+        'description',
+    ];
+
+    protected array $globalSearchFields = [
+        'name',
+        'display_name',
+        'description',
+    ];
+
     protected $fillable = [
         'name',
         'display_name',
         'description',
+    ];
+
+    protected $hidden = [
+        'pivot',
+        'deleted_at',
+        'created_at',
+        'updated_at',
     ];
 
     public function permissions(): BelongsToMany

@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\RoleEnum;
+use App\Interfaces\RoleInterface;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
@@ -81,5 +82,38 @@ test('role service replaces user permissions with role default permissions', fun
     expect($result->success)->toBeTrue();
     expect($user->permissions()->pluck('permissions.id')->all())->toBe([
         $defaultPermission->id,
+    ]);
+});
+
+test('assigning a company manager role assigns all role permissions directly to user', function () {
+    $role = Role::query()->create([
+        'name' => RoleEnum::COMPANY_MANAGER->value,
+        'display_name' => 'Company Manager',
+    ]);
+
+    $defaultPermission = Permission::query()->create([
+        'name' => 'user.drivers.index',
+        'display_name' => 'List Drivers',
+    ]);
+
+    $nonDefaultPermission = Permission::query()->create([
+        'name' => 'user.fleets.destroy',
+        'display_name' => 'Delete Fleet',
+        'is_default' => false,
+    ]);
+
+    $role->permissions()->attach([
+        $defaultPermission->id,
+        $nonDefaultPermission->id,
+    ]);
+
+    $user = createUserForDefaultPermissionTest('2');
+
+    app(RoleInterface::class)->assignRoleToUser($role, $user);
+
+    expect($user->roles()->whereKey($role->id)->exists())->toBeTrue();
+    expect($user->permissions()->pluck('permissions.id')->sort()->values()->all())->toBe([
+        $defaultPermission->id,
+        $nonDefaultPermission->id,
     ]);
 });

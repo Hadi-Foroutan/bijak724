@@ -29,6 +29,11 @@ beforeEach(function (): void {
     ]);
     $user->roles()->attach($adminRole);
 
+    Role::query()->create([
+        'name' => RoleEnum::COMPANY_MANAGER->value,
+        'display_name' => 'مدیر شرکت',
+    ]);
+
     Sanctum::actingAs($user, ['*']);
 
     $this->company = Company::query()->forceCreate([
@@ -76,6 +81,66 @@ test('paginated company lists preserve pagination metadata', function () {
         ->assertJsonPath('data.data.0.organization_code', 'ORG-10001')
         ->assertJsonPath('data.current_page', 1)
         ->assertJsonPath('data.per_page', 1);
+});
+
+test('parent company options only contain original root companies', function () {
+    $branch = Company::query()->forceCreate([
+        'parent_id' => $this->company->id,
+        'parent_type' => 'branch',
+        'panel_code' => '10102',
+        'organization_code' => 'ORG-10102',
+        'name' => 'شعبه غیرقابل انتخاب',
+        'national_code' => '10100000002',
+        'city_code' => 1101,
+    ]);
+    $otherOriginal = Company::query()->forceCreate([
+        'parent_type' => 'original',
+        'panel_code' => '10103',
+        'organization_code' => 'ORG-10103',
+        'name' => 'شرکت اصلی دوم',
+        'national_code' => '10100000003',
+        'city_code' => 1101,
+    ]);
+
+    $this->getJson('/api/admin/companies?parent_options=1&paginate=1&itemsPerPage=10')
+        ->assertSuccessful()
+        ->assertJsonPath('data.total', 2)
+        ->assertJsonFragment(['id' => $this->company->id])
+        ->assertJsonFragment(['id' => $otherOriginal->id])
+        ->assertJsonMissing(['id' => $branch->id]);
+});
+
+test('company list can be returned as a reusable nested tree', function () {
+    $branch = Company::query()->forceCreate([
+        'parent_id' => $this->company->id,
+        'parent_type' => 'branch',
+        'panel_code' => '10002',
+        'organization_code' => 'ORG-10002',
+        'name' => 'شعبه اول',
+        'national_code' => '10000000002',
+        'city_code' => 1101,
+    ]);
+    $subBranch = Company::query()->forceCreate([
+        'parent_id' => $branch->id,
+        'parent_type' => 'branch',
+        'panel_code' => '10003',
+        'organization_code' => 'ORG-10003',
+        'name' => 'زیر شعبه',
+        'national_code' => '10000000003',
+        'city_code' => 1101,
+    ]);
+
+    $this->getJson('/api/admin/companies?tree=1')
+        ->assertSuccessful()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', '1')
+        ->assertJsonPath('data.0.id2', $this->company->id)
+        ->assertJsonPath('data.0.label', 'شرکت تست')
+        ->assertJsonPath('data.0.children.0.id', '1-1')
+        ->assertJsonPath('data.0.children.0.id2', $branch->id)
+        ->assertJsonPath('data.0.children.0.children.0.id', '1-1-1')
+        ->assertJsonPath('data.0.children.0.children.0.id2', $subBranch->id)
+        ->assertJsonPath('data.0.children.0.children.0.children', []);
 });
 
 test('support token context uses the company resource contract', function () {

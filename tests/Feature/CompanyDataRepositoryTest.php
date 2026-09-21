@@ -1,8 +1,27 @@
 <?php
 
-use App\Interfaces\CompanyDataRepositoryInterface;
+use App\Interfaces\Company\CargoRepositoryInterface;
+use App\Interfaces\Company\DriverAccountRepositoryInterface;
+use App\Interfaces\Company\DriverRepositoryInterface;
+use App\Interfaces\Company\FleetRepositoryInterface;
+use App\Interfaces\Company\ProductOwnerRepositoryInterface;
+use App\Interfaces\Company\ReferralNumberRepositoryInterface;
+use App\Interfaces\Company\ShipmentPartyAddressRepositoryInterface;
+use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
+use App\Interfaces\Company\WaybillCargoRepositoryInterface;
+use App\Interfaces\Company\WaybillRepositoryInterface;
+use App\Models\Company\Cargo;
+use App\Models\Company\Driver;
+use App\Models\Company\DriverAccount;
+use App\Models\Company\Fleet;
+use App\Models\Company\ProductOwner;
+use App\Models\Company\ReferralNumber;
+use App\Models\Company\ShipmentParty;
+use App\Models\Company\ShipmentPartyAddress;
+use App\Models\Company\Waybill;
+use App\Models\Company\WaybillCargo;
 use App\Models\DynamicModel;
-use App\Services\Company\CompanyDataService;
+use App\Services\Company\CompanyTableRegistry;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Schema;
@@ -10,40 +29,65 @@ use Illuminate\Support\Facades\Schema;
 uses(LazilyRefreshDatabase::class);
 
 beforeEach(function (): void {
-    Schema::create('company_42_waybills', function (Blueprint $table): void {
+    Schema::create('company_42_cargos', function (Blueprint $table): void {
         $table->id();
-        $table->string('tracking_code');
+        $table->unsignedBigInteger('owner_company_id')->index();
+        $table->string('name');
+        $table->string('national_code');
         $table->timestamps();
     });
 });
 
-test('repository contract queries and creates company scoped records', function () {
-    $repository = app(CompanyDataRepositoryInterface::class);
+test('dedicated repository queries and creates records through its own model', function () {
+    $repository = app(CargoRepositoryInterface::class);
 
-    $waybill = $repository->create(42, 'waybills', [
-        'tracking_code' => 'WB-001',
+    $cargo = $repository->create(42, [
+        'name' => 'بار تست',
+        'national_code' => 'CARGO-42',
     ]);
 
-    expect($waybill)->toBeInstanceOf(DynamicModel::class);
-    expect($repository->table(42, 'waybills'))->toBe('company_42_waybills');
-    expect($repository->query(42, 'waybills')->value('tracking_code'))->toBe('WB-001');
-    expect($repository->query(42, 'waybills', 'waybill')->where('waybill.id', $waybill->id)->exists())->toBeTrue();
+    expect($cargo)->toBeInstanceOf(Cargo::class)
+        ->and($cargo)->toBeInstanceOf(DynamicModel::class)
+        ->and($repository->query(42)->getModel()->getTable())->toBe('company_42_cargos')
+        ->and($repository->query(42)->value('national_code'))->toBe('CARGO-42');
 });
 
-test('company data service passes company and table arguments in the correct order', function () {
-    $repository = app(CompanyDataRepositoryInterface::class);
+test('dedicated repository applies dynamic table search configuration', function () {
+    $repository = app(CargoRepositoryInterface::class);
 
-    $repository->create(42, 'waybills', [
-        'tracking_code' => 'WB-001',
-    ]);
-    $repository->create(42, 'waybills', [
-        'tracking_code' => 'WB-002',
-    ]);
+    $repository->create(42, ['name' => 'بار اول', 'national_code' => 'CARGO-1']);
+    $repository->create(42, ['name' => 'بار دوم', 'national_code' => 'CARGO-2']);
 
-    $result = app(CompanyDataService::class)->list(42, 'waybills', [
-        'tracking_code' => 'WB-002',
+    $result = $repository->search(42, [
+        'eq-national_code' => 'CARGO-2',
+        'paginate' => true,
     ]);
 
-    expect($result->total())->toBe(1);
-    expect($result->first()->tracking_code)->toBe('WB-002');
+    expect($result->total())->toBe(1)
+        ->and($result->first()->national_code)->toBe('CARGO-2');
+});
+
+test('every dynamic table repository declares its dedicated model', function () {
+    $repositories = [
+        CargoRepositoryInterface::class => [Cargo::class, 'cargos'],
+        DriverRepositoryInterface::class => [Driver::class, 'drivers'],
+        DriverAccountRepositoryInterface::class => [DriverAccount::class, 'driver_accounts'],
+        FleetRepositoryInterface::class => [Fleet::class, 'fleets'],
+        ProductOwnerRepositoryInterface::class => [ProductOwner::class, 'product_owner'],
+        ReferralNumberRepositoryInterface::class => [ReferralNumber::class, 'referral_numbers'],
+        ShipmentPartyRepositoryInterface::class => [ShipmentParty::class, 'shipment_parties'],
+        ShipmentPartyAddressRepositoryInterface::class => [ShipmentPartyAddress::class, 'shipment_party_addresses'],
+        WaybillRepositoryInterface::class => [Waybill::class, 'waybills'],
+        WaybillCargoRepositoryInterface::class => [WaybillCargo::class, 'waybill_cargos'],
+    ];
+
+    foreach ($repositories as $repositoryInterface => [$modelClass, $tableKey]) {
+        $model = app($repositoryInterface)->query(42)->getModel();
+
+        expect($model)->toBeInstanceOf($modelClass)
+            ->and($model->getTable())->toBe("company_42_{$tableKey}");
+    }
+
+    expect((new ReflectionClass(DynamicModel::class))->isAbstract())->toBeTrue()
+        ->and(method_exists(CompanyTableRegistry::class, 'query'))->toBeFalse();
 });

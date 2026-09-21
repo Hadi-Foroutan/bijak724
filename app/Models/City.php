@@ -17,6 +17,13 @@ class City extends Model
         'tax_id',
         'tax_ostan',
         'anbar_code',
+        'state__name',
+    ];
+
+    protected array $globalSearchFields = [
+        'name',
+        'code',
+        'anbar_code',
     ];
 
     protected array $searchableFields = [
@@ -31,5 +38,20 @@ class City extends Model
     public function state(): BelongsTo
     {
         return $this->belongsTo(State::class);
+    }
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'code' => 'integer',
+            'state_id' => 'integer',
+            'tax_id' => 'integer',
+            'tax_ostan' => 'integer',
+        ];
     }
 }

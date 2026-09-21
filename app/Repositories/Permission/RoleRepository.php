@@ -10,9 +10,10 @@ class RoleRepository implements RoleInterface
 {
     public function all(array $params)
     {
-        $roles = Role::searchRecords($params)->addedQuery(function ($query) {
-            return $query->with(['permissions:id']);
-        });
+        $roles = Role::searchRecords(
+            $params,
+            fn ($query) => $query->with(['permissions:id']),
+        );
 
         $roles->each(function (Role $role): void {
             $permissionIds = $role->permissions->modelKeys();
@@ -42,6 +43,7 @@ class RoleRepository implements RoleInterface
     public function update(Role $role, array $data): ?Role
     {
         $role->update($data);
+
         return $role->fresh();
     }
 
@@ -53,6 +55,14 @@ class RoleRepository implements RoleInterface
     public function assignRoleToUser(Role $role, User $user): void
     {
         $user->roles()->sync([$role->id]);
+
+        if (in_array($role->name, config('permission_groups.default_only_roles', []), true)) {
+            $this->syncDefaultPermissionsToUser($user, $role);
+
+            return;
+        }
+
+        $this->syncPermissionsToUser($user, $role);
     }
 
     public function syncDefaultPermissionsToUser(User $user, Role $role): void
@@ -67,11 +77,11 @@ class RoleRepository implements RoleInterface
 
     public function syncPermissionsToUser(User $user, Role $role): void
     {
-        $defaultPermissionIds = $role->permissions()
+        $permissionIds = $role->permissions()
             ->pluck('permissions.id')
             ->all();
 
-        $user->permissions()->sync($defaultPermissionIds);
+        $user->permissions()->sync($permissionIds);
     }
 
     public function syncRolePermissions(Role $role, array $permissions): void

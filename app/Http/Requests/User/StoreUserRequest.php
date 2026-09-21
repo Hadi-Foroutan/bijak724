@@ -18,7 +18,14 @@ class StoreUserRequest extends BaseRequest
             'company_id' => [
                 'nullable',
                 'exists:companies,id',
-                new CompanyRequiredForRole()
+                new CompanyRequiredForRole,
+            ],
+
+            'parent_id' => [
+                'sometimes',
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->whereNull('deleted_at'),
             ],
 
             'first_name' => [
@@ -51,7 +58,7 @@ class StoreUserRequest extends BaseRequest
                 'required',
                 'string',
                 Rule::unique('users', 'national_code')->ignore($user),
-//                new NationalCodeRule(),
+                //                new NationalCodeRule(),
             ],
 
             'email' => [
@@ -90,11 +97,27 @@ class StoreUserRequest extends BaseRequest
                 'string',
             ],
 
-            'signature' => [
+            'signature_image' => [
+                'sometimes',
                 'nullable',
                 'image',
-                'mimes:jpeg,jpg,png',
+                'mimes:jpeg,jpg,png,webp',
+                'max:'.config('company_uploads.image_max_size_kb', 5120),
             ],
+
+            'profile_image' => [
+                'sometimes',
+                'nullable',
+                'image',
+                'mimes:jpeg,jpg,png,webp',
+                'max:'.config('company_uploads.image_max_size_kb', 5120),
+            ],
+
+            'remove_profile_image' => ['sometimes', 'boolean'],
+            'is_profile_delete' => ['sometimes', 'boolean'],
+
+            'remove_signature_image' => ['sometimes', 'boolean'],
+            'is_signature_delete' => ['sometimes', 'boolean'],
 
             'description' => [
                 'nullable',
@@ -104,8 +127,18 @@ class StoreUserRequest extends BaseRequest
             'status' => [
                 'required',
                 'string',
-                'in:' . implode(',', UserStatusEnum::values()),
+                'in:'.implode(',', UserStatusEnum::values()),
             ],
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->normalizeBooleanStrings([
+            'remove_profile_image',
+            'is_profile_delete',
+            'remove_signature_image',
+            'is_signature_delete',
+        ]);
     }
 }

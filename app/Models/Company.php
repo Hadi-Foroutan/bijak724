@@ -73,6 +73,23 @@ class Company extends Model
         'status',
     ];
 
+    protected array $globalSearchFields = [
+        'organization_code',
+        'panel_code',
+        'name',
+        'national_code',
+        'contact_code1',
+        'contact_code2',
+        'contact_code3',
+        'technical_contact_first_name',
+        'technical_contact_last_name',
+        'technical_contact_phone',
+        'address',
+        'postal_code',
+        'email',
+        'brand',
+    ];
+
     /*
     |--------------------------------------------------------------------------
     | Relationships
@@ -99,6 +116,21 @@ class Company extends Model
         return $this->hasOne(User::class);
     }
 
+    public function transportContracts(): HasMany
+    {
+        return $this->hasMany(TransportContract::class);
+    }
+
+    public function insurances(): HasMany
+    {
+        return $this->hasMany(Insurance::class);
+    }
+
+    public function cargoGroupAssignments(): HasMany
+    {
+        return $this->hasMany(CargoGroupCargo::class);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Scopes
@@ -112,12 +144,12 @@ class Company extends Model
 
     public function scopeOriginal($query)
     {
-        return $query->where('parent_type', CompanyParentEnum::ORIGINAL);
+        return $query->where('parent_type', CompanyParentEnum::ORIGINAL->value);
     }
 
     public function scopeBranches($query)
     {
-        return $query->where('parent_type', CompanyParentEnum::BRANCH);
+        return $query->where('parent_type', CompanyParentEnum::BRANCH->value);
     }
 
     /*
@@ -128,12 +160,12 @@ class Company extends Model
 
     public function isBranch(): bool
     {
-        return $this->parent_type === CompanyParentEnum::BRANCH;
+        return $this->parent_type === CompanyParentEnum::BRANCH->value;
     }
 
     public function isOriginal(): bool
     {
-        return $this->parent_type === CompanyParentEnum::ORIGINAL;
+        return $this->parent_type === CompanyParentEnum::ORIGINAL->value;
     }
 
     /*

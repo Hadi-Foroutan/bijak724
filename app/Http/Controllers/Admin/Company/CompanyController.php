@@ -6,6 +6,7 @@ use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Company\StoreCompanyRequest;
 use App\Http\Requests\Company\UpdateCompanyRequest;
+use App\Http\Resources\Companies\TreeCompaniesResource;
 use App\Http\Resources\CompanyResource;
 use App\Models\Company;
 use App\Services\Company\CompanyService;
@@ -22,6 +23,12 @@ class CompanyController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        if ($request->boolean('tree')) {
+            $res = $this->companyService->tree($request->all());
+
+            return ResponseHandler::success(TreeCompaniesResource::collection($res->data));
+        }
+
         $res = $this->companyService->index($request->all());
 
         return ResponseHandler::success($this->companiesResource($res->data, $request));

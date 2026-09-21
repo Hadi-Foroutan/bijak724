@@ -2,8 +2,11 @@
 
 namespace App\Services\Company;
 
+use App\Enums\RoleEnum;
+use App\Enums\StatusEnum;
 use App\Http\Resources\CompanyResource;
 use App\Models\Company;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\Auth\AccessTokenService;
 use Illuminate\Support\Str;
@@ -36,7 +39,40 @@ class CompanySupportTokenService
      */
     public function abilitiesFor(Company $company): array
     {
-        return [self::SUPPORT_ABILITY, $this->companyAbility($company->id)];
+        return [
+            self::SUPPORT_ABILITY,
+            $this->companyAbility($company->id),
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function supportPermissions(): array
+    {
+        return $this->supportRole()?->permissions()
+            ->where('status', StatusEnum::ACTIVE->value)
+            ->orderBy('name')
+            ->pluck('name')
+            ->values()
+            ->all() ?? [];
+    }
+
+    public function canAccessSupportPermission(PersonalAccessToken $token, string $permission): bool
+    {
+        if (! $this->isSupportAccessToken($token)) {
+            return false;
+        }
+
+        return in_array($permission, $this->supportPermissions(), true);
+    }
+
+    public function supportRole(): ?Role
+    {
+        return Role::query()
+            ->where('name', RoleEnum::COMPANY_MANAGER->value)
+            ->where('status', StatusEnum::ACTIVE->value)
+            ->first();
     }
 
     /**
@@ -50,6 +86,11 @@ class CompanySupportTokenService
     public function isSupportToken(User $user): bool
     {
         return $this->supportToken($user) !== null;
+    }
+
+    public function isSupportAccessToken(PersonalAccessToken $token): bool
+    {
+        return $this->accessTokenService->hasAbility($token, self::SUPPORT_ABILITY);
     }
 
     public function isCompanyToken(User $user): bool
@@ -85,7 +126,7 @@ class CompanySupportTokenService
             return null;
         }
 
-        return $this->accessTokenService->hasAbility($token, self::SUPPORT_ABILITY)
+        return $this->isSupportAccessToken($token)
             ? $token
             : null;
     }
@@ -100,7 +141,7 @@ class CompanySupportTokenService
         }
 
         return [
-            'access_type' => $this->accessTokenService->hasAbility($token, self::SUPPORT_ABILITY)
+            'access_type' => $this->isSupportAccessToken($token)
                 ? 'support'
                 : 'company_user',
             'company' => CompanyResource::make($company)->resolve(),
@@ -108,8 +149,24 @@ class CompanySupportTokenService
                 'id' => $admin->id,
                 'full_name' => $admin->full_name,
             ],
+            'permissions' => $this->permissionsForToken($token),
             'expires_at' => $token->expires_at?->toIso8601String(),
         ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function permissionsForToken(PersonalAccessToken $token): array
+    {
+        if ($this->isSupportAccessToken($token)) {
+            return $this->supportPermissions();
+        }
+
+        return array_values(array_filter(
+            $this->accessTokenService->abilities($token),
+            fn (string $ability): bool => Str::is(['user.*', 'profile.*'], $ability),
+        ));
     }
 
     private function companyIdFromToken(PersonalAccessToken $token): ?int

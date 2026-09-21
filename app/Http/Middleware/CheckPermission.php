@@ -9,6 +9,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckPermission
@@ -41,9 +42,15 @@ class CheckPermission
         }
 
         if ($currentUser instanceof User
-            && $this->supportTokenService->isSupportToken($currentUser)
-            && Str::is('user.*', $routeName)) {
-            return $next($request);
+            && $this->supportTokenService->isSupportToken($currentUser)) {
+            $token = $currentUser->currentAccessToken();
+
+            return $token instanceof PersonalAccessToken
+                && $this->supportTokenService->canAccessSupportPermission($token, $routeName)
+                ? $next($request)
+                : response()->json([
+                    'message' => __('public.access_denied', ['attribute' => 'صفحه']),
+                ], Response::HTTP_FORBIDDEN);
         }
 
         // چک کردن سوپر ادمین بودن (اگر برای یوزر هم تعریف شده باشد)
@@ -51,11 +58,10 @@ class CheckPermission
             return $next($request);
         }
 
-        // بررسی پرمیشن‌های یوزر از طریق رول‌های خودش
-        $hasPermission = $currentUser->roles()
-            ->whereHas('permissions', function ($query) use ($routeName) {
-                $query->where('name', $routeName)->where('status', StatusEnum::ACTIVE->value);
-            })
+        // دسترسی نهایی سیستم از پرمیشن‌های مستقیم کاربر خوانده می‌شود.
+        $hasPermission = $currentUser->permissions()
+            ->where('name', $routeName)
+            ->where('status', StatusEnum::ACTIVE->value)
             ->exists();
 
         // ۳. نتیجه نهایی

@@ -17,6 +17,10 @@ return new class extends Migration
             $table->foreignId('company_id')
                 ->nullable()
                 ->constrained('companies')
+                ->cascadeOnDelete();
+            $table->foreignId('parent_id')
+                ->nullable()
+                ->constrained('users')
                 ->nullOnDelete();
             $table->string('national_code')->unique();
             $table->string('full_name')->nullable();

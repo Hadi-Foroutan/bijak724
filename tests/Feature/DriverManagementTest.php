@@ -2,8 +2,9 @@
 
 use App\Enums\StatusEnum;
 use App\Http\Middleware\CheckPermission;
-use App\Interfaces\CompanyDataRepositoryInterface;
+use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Models\Company;
+use App\Models\DriverLicenseType;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 
@@ -38,13 +39,18 @@ beforeEach(function (): void {
     )->plainTextToken;
     $this->withToken($companyToken);
 
+    $this->driverLicenseType = DriverLicenseType::query()->create([
+        'name' => 'پایه یک',
+        'code' => 1,
+    ]);
+
     $this->driverPayload = [
         'national_code' => '1234567891',
-        'name' => 'علی',
+        'first_name' => 'علی',
         'last_name' => 'احمدی',
         'father_name' => 'رضا',
         'license_number' => 'LIC-1001',
-        'license_type' => 'پایه یک',
+        'license_type' => $this->driverLicenseType->id,
         'license_expiry_date' => '2028-08-17',
         'phone_number_1' => '09121234567',
         'phone_number_2' => '02112345678',
@@ -61,6 +67,7 @@ test('it creates shows and lists drivers in the company table', function () {
     )
         ->assertCreated()
         ->assertJsonPath('data.national_code', '1234567891')
+        ->assertJsonPath('data.full_name', 'علی احمدی')
         ->assertJsonPath('data.status', StatusEnum::ACTIVE->value);
 
     $driverId = $response->json('data.id');
@@ -75,26 +82,37 @@ test('it creates shows and lists drivers in the company table', function () {
         ->assertSuccessful()
         ->assertJsonPath('data.last_name', 'احمدی');
 
-    $this->getJson('/api/user/drivers?search=احمدی')
+    $this->getJson('/api/user/drivers?search=احمدی&paginate=1&itemsPerPage=1')
         ->assertSuccessful()
         ->assertJsonPath('data.total', 1)
-        ->assertJsonPath('data.data.0.id', $driverId);
+        ->assertJsonPath('data.per_page', 1)
+        ->assertJsonPath('data.data.0.id', $driverId)
+        ->assertJsonPath('data.data.0.license_type.name', 'پایه یک');
+
+    $this->getJson('/api/user/drivers?search=احمدی')
+        ->assertSuccessful()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $driverId);
 });
 
 test('it updates and deletes a driver', function () {
-    $driver = app(CompanyDataRepositoryInterface::class)->create(
+    $driver = app(DriverRepositoryInterface::class)->create(
         $this->company->id,
-        'drivers',
         $this->driverPayload,
     );
 
-    $this->patchJson("/api/user/drivers/{$driver->id}", [
+    $this->postJson("/api/user/drivers/{$driver->id}", [
         'last_name' => 'محمدی',
         'status' => StatusEnum::INACTIVE->value,
     ])
         ->assertSuccessful()
         ->assertJsonPath('data.last_name', 'محمدی')
+        ->assertJsonPath('data.full_name', 'علی محمدی')
         ->assertJsonPath('data.status', StatusEnum::INACTIVE->value);
+
+    $this->patchJson("/api/user/drivers/{$driver->id}", [
+        'last_name' => 'نادری',
+    ])->assertMethodNotAllowed();
 
     $this->deleteJson("/api/user/drivers/{$driver->id}")
         ->assertSuccessful();
@@ -105,9 +123,8 @@ test('it updates and deletes a driver', function () {
 });
 
 test('it validates driver data and company scoped national code uniqueness', function () {
-    app(CompanyDataRepositoryInterface::class)->create(
+    app(DriverRepositoryInterface::class)->create(
         $this->company->id,
-        'drivers',
         $this->driverPayload,
     );
 
@@ -125,9 +142,8 @@ test('it validates driver data and company scoped national code uniqueness', fun
 });
 
 test('a driver cannot be accessed through another company', function () {
-    $driver = app(CompanyDataRepositoryInterface::class)->create(
+    $driver = app(DriverRepositoryInterface::class)->create(
         $this->company->id,
-        'drivers',
         $this->driverPayload,
     );
 

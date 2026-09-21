@@ -4,20 +4,22 @@ namespace App\Services\Company;
 
 use App\Helpers\ServiceResult;
 use App\Interfaces\CompanyInterface;
-use App\Interfaces\UserInterface;
 use App\Models\Company;
-use Illuminate\Support\Facades\DB;
 
 class CompanyService
 {
     public function __construct(
         protected CompanyInterface $companyRepository,
-        protected UserInterface    $userRepository,
     ) {}
 
     public function index(array $params): ServiceResult
     {
         return ServiceResult::success($this->companyRepository->all($params));
+    }
+
+    public function tree(array $params): ServiceResult
+    {
+        return ServiceResult::success($this->companyRepository->tree($params));
     }
 
     public function create(array $data): ServiceResult

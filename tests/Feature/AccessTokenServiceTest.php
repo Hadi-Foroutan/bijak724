@@ -58,6 +58,23 @@ test('login creates its token through the access token service', function () {
         ->and($storedToken->abilities)->toBe(['*']);
 });
 
+test('login and check token share the same authentication response contract', function () {
+    $loginData = $this->postJson('/api/auth/login', [
+        'username' => $this->user->username,
+        'password' => 'password',
+    ])->assertSuccessful()->json('data');
+
+    app('auth')->forgetGuards();
+    $checkTokenData = $this->withToken($loginData['token'])
+        ->getJson('/api/auth/checkToken')
+        ->assertSuccessful()
+        ->json('data');
+
+    unset($loginData['token']);
+
+    expect($checkTokenData)->toBe($loginData);
+});
+
 test('it returns and revokes the current personal access token', function () {
     $tokenService = app(AccessTokenService::class);
     $newToken = $tokenService->create($this->user);

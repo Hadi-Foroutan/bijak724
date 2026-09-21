@@ -2,27 +2,35 @@
 
 namespace App\Observers;
 
+use App\Enums\CompanyParentEnum;
 use App\Models\Company;
 use App\Services\Company\CompanyTableService;
+use App\Services\Company\Insurance\DefaultInsuranceService;
+use App\Services\Company\ReferralNumber\ReferralNumberService;
+use App\Services\Company\TransportContract\DefaultTransportContractService;
 
 class CompanyObserver
 {
     public function __construct(
         protected CompanyTableService $companyTableService,
-    )
-    {
-    }
+        protected DefaultTransportContractService $defaultTransportContractService,
+        protected DefaultInsuranceService $defaultInsuranceService,
+        protected ReferralNumberService $referralNumberService,
+    ) {}
 
     /**
      * Handle the Company "created" event.
      */
     public function created(Company $company): void
     {
-        // Generate Company Tables
-        $this->companyTableService->createCompanyTables(
-             $company->id,
-             config('company_tables'),
-         );
+        $this->defaultTransportContractService->createForCompany($company);
+
+        if ($company->parent_type !== CompanyParentEnum::BRANCH->value) {
+            $this->companyTableService->sync($company->id);
+        }
+
+        $this->referralNumberService->ensureDefaultForCompany($company->id);
+        $this->defaultInsuranceService->createForCompany($company);
     }
 
     /**

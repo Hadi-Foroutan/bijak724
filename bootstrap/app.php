@@ -45,7 +45,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             // 👤 USER (auto load)
             Route::prefix('api/user')
-                ->middleware(['api', 'auth:sanctum', 'company.support.scope'])
+                ->middleware(['api', 'auth:sanctum', 'company.support.scope', 'check.permissions'])
                 ->as('user.')
                 ->group(function () {
                     loadRoutesFromFolder(base_path('routes/api/user'));
@@ -59,6 +59,10 @@ return Application::configure(basePath: dirname(__DIR__))
                     loadRoutesFromFolder(base_path('routes/api/admin'));
                 });
         }
+    )
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        ['prefix' => 'api', 'middleware' => ['api', 'auth:sanctum']],
     )
     ->withMiddleware(function (Middleware $middleware): void {
 

@@ -7,6 +7,7 @@ use App\Models\PermissionGroup;
 use App\Models\PermissionsGroup;
 use App\Models\Role;
 use App\Models\RolePermission;
+use App\Models\User;
 use App\Models\UserPermission;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
@@ -19,7 +20,7 @@ class GeneratePermissionsCommand extends Command
 {
     protected $signature = 'generate-permissions';
 
-    protected $description = 'Sync permissions with routes and assign to roles';
+    protected $description = 'Sync permissions with routes and assign them to roles and users';
 
     private array $excludedRoutes = [
         'sanctum.csrf-cookie',
@@ -36,6 +37,7 @@ class GeneratePermissionsCommand extends Command
         $this->info('Start syncing permissions...');
 
         $routeNames = $this->routeNames();
+        $existingUserPermissions = $this->existingUserPermissionNames();
 
         $this->warn('Resetting permission tables...');
         $this->resetPermissionTables();
@@ -50,6 +52,9 @@ class GeneratePermissionsCommand extends Command
 
         $this->info('Assigning permissions to roles...');
         $this->syncRolePermissions($permissions);
+
+        $this->info('Assigning role permissions directly to users...');
+        $this->syncUserPermissions($permissions, $existingUserPermissions);
 
         $this->info('All permissions synced successfully!');
 
@@ -89,6 +94,19 @@ class GeneratePermissionsCommand extends Command
         } finally {
             Schema::enableForeignKeyConstraints();
         }
+    }
+
+    /**
+     * @return Collection<int, array<int, string>>
+     */
+    private function existingUserPermissionNames(): Collection
+    {
+        return User::query()
+            ->with('permissions:id,name')
+            ->get()
+            ->mapWithKeys(fn (User $user): array => [
+                $user->id => $user->permissions->pluck('name')->all(),
+            ]);
     }
 
     /**
@@ -237,6 +255,8 @@ class GeneratePermissionsCommand extends Command
      */
     private function syncRolePermissions(Collection $permissions): void
     {
+        $defaultOnlyRoles = config('permission_groups.default_only_roles', []);
+
         foreach ($this->rolePermissionPatterns() as $roleName => $patterns) {
             $role = Role::query()->where('name', $roleName)->first();
 
@@ -246,8 +266,14 @@ class GeneratePermissionsCommand extends Command
                 continue;
             }
 
+            $rolePermissions = $permissions;
+
+            if (in_array($roleName, $defaultOnlyRoles, true)) {
+                $rolePermissions = $rolePermissions->where('is_default', true);
+            }
+
             $permissionIds = collect($patterns)
-                ->flatMap(fn (string $pattern): Collection => $this->permissionsMatchingPattern($permissions, $pattern)->pluck('id'))
+                ->flatMap(fn (string $pattern): Collection => $this->permissionsMatchingPattern($rolePermissions, $pattern)->pluck('id'))
                 ->unique()
                 ->values()
                 ->all();
@@ -255,6 +281,52 @@ class GeneratePermissionsCommand extends Command
             $role->permissions()->sync($permissionIds);
             $this->line('Synced '.count($permissionIds)." permissions to role: {$role->name}");
         }
+    }
+
+    /**
+     * @param  Collection<string, Permission>  $permissions
+     * @param  Collection<int, array<int, string>>  $existingUserPermissions
+     */
+    private function syncUserPermissions(Collection $permissions, Collection $existingUserPermissions): void
+    {
+        $defaultOnlyRoles = config('permission_groups.default_only_roles', []);
+
+        User::query()
+            ->with('roles.permissions:id,name,is_default')
+            ->get()
+            ->each(function (User $user) use ($permissions, $existingUserPermissions, $defaultOnlyRoles): void {
+                $hasDefaultOnlyRole = $user->roles->contains(
+                    fn (Role $role): bool => in_array($role->name, $defaultOnlyRoles, true)
+                );
+
+                $rolePermissionIds = $user->roles->flatMap(function (Role $role) use ($defaultOnlyRoles): Collection {
+                    $rolePermissions = $role->permissions;
+
+                    if (in_array($role->name, $defaultOnlyRoles, true)) {
+                        $rolePermissions = $rolePermissions->where('is_default', true);
+                    }
+
+                    return $rolePermissions->pluck('id');
+                });
+
+                $existingPermissions = $permissions;
+
+                if ($hasDefaultOnlyRole) {
+                    $existingPermissions = $existingPermissions->where('is_default', true);
+                }
+
+                $existingPermissionIds = $existingPermissions
+                    ->only($existingUserPermissions->get($user->id, []))
+                    ->pluck('id');
+
+                $permissionIds = $rolePermissionIds
+                    ->merge($existingPermissionIds)
+                    ->unique()
+                    ->values()
+                    ->all();
+
+                $user->permissions()->sync($permissionIds);
+            });
     }
 
     /**

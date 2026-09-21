@@ -9,6 +9,7 @@ use App\Traits\AdvancedSearch;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
@@ -19,6 +20,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'company_id',
+        'parent_id',
         'national_code',
         'full_name',
         'first_name',
@@ -39,6 +41,7 @@ class User extends Authenticatable
 
     protected array $searchableFields = [
         'company_id',
+        'parent_id',
         'national_code',
         'full_name',
         'first_name',
@@ -51,6 +54,17 @@ class User extends Authenticatable
         'min_commission_percentage',
         'max_commission_percentage',
         'status',
+    ];
+
+    protected array $globalSearchFields = [
+        'national_code',
+        'full_name',
+        'first_name',
+        'last_name',
+        'print_name',
+        'phone',
+        'email',
+        'username',
     ];
 
     protected $hidden = [
@@ -95,6 +109,16 @@ class User extends Authenticatable
         return $this->belongsTo(Company::class);
     }
 
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    public function children(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id')->with('children');
+    }
+
     public function permissions(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -132,11 +156,8 @@ class User extends Authenticatable
             return Permission::pluck('name')->toArray();
         }
 
-        // همه permission های رول‌ها
-        return $this->roles()
-            ->with('permissions')
-            ->get()
-            ->flatMap(fn ($role) => $role->permissions->pluck('name'))
+        return $this->permissions()
+            ->pluck('name')
             ->unique()
             ->values()
             ->toArray();
