@@ -6,9 +6,11 @@ use App\Enums\FleetOwnershipType;
 use App\Enums\StatusEnum;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\FleetRepositoryInterface;
+use App\Models\Company\Fleet;
 use App\Services\Company\CompanyCrudService;
 use Illuminate\Validation\ValidationException;
 
+/** @extends CompanyCrudService<Fleet, FleetRepositoryInterface> */
 class FleetService extends CompanyCrudService
 {
     protected string $resourceLabel = 'ناوگان';

@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Enums\CompanyParentEnum;
 use App\Models\Company;
 use App\Services\Company\CompanyTableService;
+use App\Services\Company\Insurance\DefaultInsuranceService;
 use App\Services\Company\ReferralNumber\ReferralNumberService;
 use App\Services\Company\TransportContract\DefaultTransportContractService;
 
@@ -13,6 +14,7 @@ class CompanyObserver
     public function __construct(
         protected CompanyTableService $companyTableService,
         protected DefaultTransportContractService $defaultTransportContractService,
+        protected DefaultInsuranceService $defaultInsuranceService,
         protected ReferralNumberService $referralNumberService,
     ) {}
 
@@ -28,6 +30,7 @@ class CompanyObserver
         }
 
         $this->referralNumberService->ensureDefaultForCompany($company->id);
+        $this->defaultInsuranceService->createForCompany($company);
     }
 
     /**

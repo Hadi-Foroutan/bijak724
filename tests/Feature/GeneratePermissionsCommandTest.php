@@ -8,8 +8,37 @@ use App\Models\User;
 use App\Models\UserPermission;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 
 uses(LazilyRefreshDatabase::class);
+
+test('every permission route belongs to a configured group', function () {
+    $excludedRoutes = [
+        'sanctum.csrf-cookie',
+        'storage.*',
+        'scramble.*',
+        'boost.*',
+        '*.login',
+        '*.logout',
+        '*.checkToken',
+    ];
+    $groupPatterns = array_keys(config('permission_groups.groups', []));
+
+    $ungroupedRoutes = collect(Route::getRoutes())
+        ->map(fn ($route) => $route->getName())
+        ->filter(fn (?string $name): bool => filled($name))
+        ->reject(fn (string $name): bool => collect($excludedRoutes)
+            ->contains(fn (string $pattern): bool => Str::is($pattern, $name)))
+        ->reject(fn (string $name): bool => collect($groupPatterns)
+            ->contains(fn (string $pattern): bool => Str::is(
+                Str::contains($pattern, '*') ? $pattern : "{$pattern}*",
+                $name,
+            )))
+        ->values();
+
+    expect($ungroupedRoutes)->toBeEmpty();
+});
 
 test('it resets and regenerates route permissions with groups and role links', function () {
     config()->set('permission_groups.non_default_permissions', [

@@ -3,10 +3,15 @@
 namespace App\Http\Requests\Waybill;
 
 use App\Http\Requests\BaseRequest;
-use App\Interfaces\Company\WaybillRepositoryInterface;
+use App\Interfaces\Company\DriverRepositoryInterface;
+use App\Interfaces\Company\FleetRepositoryInterface;
+use App\Interfaces\Company\InsuranceRepositoryInterface;
+use App\Interfaces\Company\ProductOwnerRepositoryInterface;
+use App\Interfaces\Company\ShipmentPartyAddressRepositoryInterface;
+use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
+use App\Interfaces\Company\TransportContractRepositoryInterface;
 use App\Models\Cargo;
 use App\Models\Packaging;
-use App\Models\TransportContract;
 use Illuminate\Validation\Rule;
 
 class StoreWaybillRequest extends BaseRequest
@@ -31,62 +36,79 @@ class StoreWaybillRequest extends BaseRequest
     }
 
     /** @return array<string, array<int, mixed>> */
-    public function rules(WaybillRepositoryInterface $waybillRepository): array
-    {
-        return $this->waybillRules($waybillRepository);
-    }
-
-    /** @return array<string, array<int, mixed>> */
-    protected function waybillRules(WaybillRepositoryInterface $waybillRepository): array
-    {
+    public function rules(
+        ShipmentPartyRepositoryInterface $shipmentPartyRepository,
+        ShipmentPartyAddressRepositoryInterface $shipmentPartyAddressRepository,
+        DriverRepositoryInterface $driverRepository,
+        FleetRepositoryInterface $fleetRepository,
+        InsuranceRepositoryInterface $insuranceRepository,
+        TransportContractRepositoryInterface $transportContractRepository,
+        ProductOwnerRepositoryInterface $productOwnerRepository,
+    ): array {
         $companyId = $this->companyId();
         $requiredWhenComplete = Rule::requiredIf(fn (): bool => ! $this->boolean('is_incomplete', true));
 
         return [
-            ...$this->referenceRules($waybillRepository, $companyId, $requiredWhenComplete),
-            ...$this->documentRules($waybillRepository, $companyId, $requiredWhenComplete),
-            ...$this->financialRules($companyId, $requiredWhenComplete),
-            ...$this->cargoRules($waybillRepository, $companyId, $requiredWhenComplete),
+            ...$this->referenceRules(
+                $shipmentPartyRepository,
+                $shipmentPartyAddressRepository,
+                $driverRepository,
+                $fleetRepository,
+                $companyId,
+                $requiredWhenComplete,
+            ),
+            ...$this->documentRules($insuranceRepository, $companyId, $requiredWhenComplete),
+            ...$this->financialRules($transportContractRepository, $companyId, $requiredWhenComplete),
+            ...$this->cargoRules($productOwnerRepository, $companyId, $requiredWhenComplete),
         ];
     }
 
     /** @return array<string, array<int, mixed>> */
     private function referenceRules(
-        WaybillRepositoryInterface $waybillRepository,
+        ShipmentPartyRepositoryInterface $shipmentPartyRepository,
+        ShipmentPartyAddressRepositoryInterface $shipmentPartyAddressRepository,
+        DriverRepositoryInterface $driverRepository,
+        FleetRepositoryInterface $fleetRepository,
         int $companyId,
         mixed $requiredWhenComplete,
     ): array {
         return [
-            'sender_id' => [$requiredWhenComplete, 'nullable', 'integer', $waybillRepository->senderExistsRule($companyId)],
+            'sender_id' => [
+                $requiredWhenComplete,
+                'nullable',
+                'integer',
+                $shipmentPartyRepository->existsRule($companyId)->where('is_sender', true),
+            ],
             'sender_address_id' => [
                 $requiredWhenComplete,
                 'nullable',
                 'integer',
-                $waybillRepository->shipmentPartyAddressExistsRule(
-                    $companyId,
-                    $this->integer('sender_id'),
-                ),
+                $shipmentPartyAddressRepository->existsRule($companyId)
+                    ->where('shipment_party_id', $this->integer('sender_id')),
             ],
-            'receiver_id' => [$requiredWhenComplete, 'nullable', 'integer', $waybillRepository->receiverExistsRule($companyId)],
+            'receiver_id' => [
+                $requiredWhenComplete,
+                'nullable',
+                'integer',
+                $shipmentPartyRepository->existsRule($companyId)->where('is_receiver', true),
+            ],
             'receiver_address_id' => [
                 $requiredWhenComplete,
                 'nullable',
                 'integer',
-                $waybillRepository->shipmentPartyAddressExistsRule(
-                    $companyId,
-                    $this->integer('receiver_id'),
-                ),
+                $shipmentPartyAddressRepository->existsRule($companyId)
+                    ->where('shipment_party_id', $this->integer('receiver_id')),
             ],
-            'driver1_id' => [$requiredWhenComplete, 'nullable', 'integer', $waybillRepository->driverExistsRule($companyId)],
-            'driver2_id' => ['nullable', 'integer', 'different:driver1_id', $waybillRepository->driverExistsRule($companyId)],
-            'referral_driver_id' => [$requiredWhenComplete, 'nullable', 'integer', $waybillRepository->driverExistsRule($companyId)],
-            'fleet_id' => [$requiredWhenComplete, 'nullable', 'integer', $waybillRepository->fleetExistsRule($companyId)],
+            'driver1_id' => [$requiredWhenComplete, 'nullable', 'integer', $driverRepository->existsRule($companyId)],
+            'driver2_id' => ['nullable', 'integer', 'different:driver1_id', $driverRepository->existsRule($companyId)],
+            'referral_driver_id' => [$requiredWhenComplete, 'nullable', 'integer', $driverRepository->existsRule($companyId)],
+            'fleet_id' => [$requiredWhenComplete, 'nullable', 'integer', $fleetRepository->existsRule($companyId)],
         ];
     }
 
     /** @return array<string, array<int, mixed>> */
     private function documentRules(
-        WaybillRepositoryInterface $waybillRepository,
+        InsuranceRepositoryInterface $insuranceRepository,
         int $companyId,
         mixed $requiredWhenComplete,
     ): array {
@@ -97,24 +119,32 @@ class StoreWaybillRequest extends BaseRequest
             'loading_started_at' => [$requiredWhenComplete, 'nullable', 'date'],
             'loading_ended_at' => [$requiredWhenComplete, 'nullable', 'date', 'after_or_equal:loading_started_at'],
             'referral_number' => ['nullable', 'string', 'max:255'],
-            'bijak_number' => [$requiredWhenComplete, 'nullable', 'string', 'max:255'],
+            'bijak_number' => [$requiredWhenComplete, 'nullable', 'integer'],
             'serial_number' => ['nullable', 'string', 'max:255'],
             'issued_at' => [$requiredWhenComplete, 'nullable', 'date'],
             'liability_insurance' => [
                 $requiredWhenComplete,
                 'nullable',
                 'integer',
-                $waybillRepository->insuranceExistsRule($companyId),
+                $insuranceRepository->existsRule($companyId),
             ],
             'description' => ['nullable', 'string'],
         ];
     }
 
     /** @return array<string, array<int, mixed>> */
-    private function financialRules(int $companyId, mixed $requiredWhenComplete): array
-    {
+    private function financialRules(
+        TransportContractRepositoryInterface $transportContractRepository,
+        int $companyId,
+        mixed $requiredWhenComplete,
+    ): array {
         return [
-            'transport_contract_id' => [$requiredWhenComplete, 'nullable', 'integer', Rule::exists(TransportContract::class, 'id')->where('company_id', $companyId)],
+            'transport_contract_id' => [
+                $requiredWhenComplete,
+                'nullable',
+                'integer',
+                $transportContractRepository->existsRule($companyId),
+            ],
             'base_freight_amount' => [$requiredWhenComplete, 'nullable', 'integer', 'min:0'],
             'advance_freight_amount' => ['nullable', 'integer', 'min:0'],
             'weighbridge_amount' => ['nullable', 'integer', 'min:0'],
@@ -137,15 +167,18 @@ class StoreWaybillRequest extends BaseRequest
     }
 
     /** @return array<string, array<int, mixed>> */
-    private function cargoRules(WaybillRepositoryInterface $waybillRepository, int $companyId, mixed $requiredWhenComplete): array
-    {
+    private function cargoRules(
+        ProductOwnerRepositoryInterface $productOwnerRepository,
+        int $companyId,
+        mixed $requiredWhenComplete,
+    ): array {
         $minimumCargoCount = $this->boolean('is_incomplete', true) ? 'min:0' : 'min:1';
 
         return [
             'cargos' => [$requiredWhenComplete, 'nullable', 'array', $minimumCargoCount, 'max:10'],
             'cargos.*.cargo_id' => [$requiredWhenComplete, 'nullable', 'integer', Rule::exists(Cargo::class, 'code')],
             'cargos.*.packaging_id' => [$requiredWhenComplete, 'nullable', 'integer', Rule::exists(Packaging::class, 'code')],
-            'cargos.*.product_owner_id' => ['nullable', 'integer', $waybillRepository->productOwnerExistsRule($companyId)],
+            'cargos.*.product_owner_id' => ['nullable', 'integer', $productOwnerRepository->existsRule($companyId)],
             'cargos.*.description' => ['nullable', 'string'],
             'cargos.*.title' => [$requiredWhenComplete, 'nullable', 'string', 'max:255'],
             'cargos.*.origin_weight' => [$requiredWhenComplete, 'nullable', 'numeric', 'min:0'],

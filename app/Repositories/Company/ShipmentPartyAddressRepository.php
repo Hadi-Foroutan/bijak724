@@ -11,9 +11,10 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 
+/** @extends CompanyModelRepository<ShipmentPartyAddress> */
 class ShipmentPartyAddressRepository extends CompanyModelRepository implements ShipmentPartyAddressRepositoryInterface
 {
-    protected string $tableKey = 'shipment_party_addresses';
+    protected string $modelClass = ShipmentPartyAddress::class;
 
     public function searchForParty(
         int $companyId,
@@ -25,20 +26,13 @@ class ShipmentPartyAddressRepository extends CompanyModelRepository implements S
         return $this->search($companyId, $filters);
     }
 
-    public function shipmentPartyExists(int $companyId, int $shipmentPartyId): bool
-    {
-        return $this->tableRegistry->query($companyId, 'shipment_parties')
-            ->whereKey($shipmentPartyId)
-            ->exists();
-    }
-
     public function uniquePostalCodeForPartyRule(
         int $companyId,
         int $shipmentPartyId,
         ?int $ignoreAddressId = null,
     ): Unique {
         $rule = Rule::unique(
-            $this->tableRegistry->tableName($companyId, $this->tableKey),
+            $this->tableName($companyId),
             'postal_code',
         )->where('shipment_party_id', $shipmentPartyId);
 

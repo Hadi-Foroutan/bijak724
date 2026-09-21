@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
 
-class DynamicModel extends Model
+abstract class DynamicModel extends Model
 {
     use AdvancedSearch;
 
@@ -38,14 +38,12 @@ class DynamicModel extends Model
         return $this->companyTableKey;
     }
 
-    public function forCompany(int $companyId, ?string $tableKey = null): static
+    public function forCompany(int $companyId): static
     {
         $this->companyContextId = $companyId;
-        $resolvedTableKey = $tableKey ?? $this->companyTableKey();
-
         $dataOwnerCompanyId = app(CompanyDataOwnerResolver::class)->resolveId($companyId);
 
-        return $this->setTableName("company_{$dataOwnerCompanyId}_{$resolvedTableKey}");
+        return $this->setTableName("company_{$dataOwnerCompanyId}_{$this->companyTableKey()}");
     }
 
     public function setTableName(string $table): static

@@ -6,9 +6,10 @@ use App\Enums\ReferralNumberStatus;
 use App\Interfaces\Company\ReferralNumberRepositoryInterface;
 use App\Models\Company\ReferralNumber;
 
+/** @extends CompanyModelRepository<ReferralNumber> */
 class ReferralNumberRepository extends CompanyModelRepository implements ReferralNumberRepositoryInterface
 {
-    protected string $tableKey = 'referral_numbers';
+    protected string $modelClass = ReferralNumber::class;
 
     public function active(int $companyId, ?int $ignoreId = null): ?ReferralNumber
     {

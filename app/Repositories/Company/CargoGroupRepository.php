@@ -72,21 +72,24 @@ class CargoGroupRepository implements CargoGroupRepositoryInterface
         return $this->findOrFail($companyId, $cargoGroup->id);
     }
 
-    public function resolveGroupIdsForCargos(int $companyId, array $cargoIds): array
+    public function resolveGroupIdsForCargoCodes(int $companyId, array $cargoCodes): array
     {
         $defaultGroupId = (int) CargoGroup::query()
             ->where('group_number', 1)
             ->firstOrFail()
             ->getKey();
+        $cargoIdsByCode = Cargo::query()
+            ->whereIn('code', $cargoCodes)
+            ->pluck('id', 'code');
 
         $assignedGroupIds = CargoGroupCargo::query()
             ->where('company_id', $companyId)
-            ->whereIn('cargo_id', $cargoIds)
+            ->whereIn('cargo_id', $cargoIdsByCode->values())
             ->pluck('cargo_group_id', 'cargo_id');
 
-        return collect($cargoIds)
-            ->mapWithKeys(fn (int $cargoId): array => [
-                $cargoId => (int) ($assignedGroupIds[$cargoId] ?? $defaultGroupId),
+        return collect($cargoCodes)
+            ->mapWithKeys(fn (int $cargoCode): array => [
+                $cargoCode => (int) ($assignedGroupIds[$cargoIdsByCode[$cargoCode]] ?? $defaultGroupId),
             ])
             ->all();
     }

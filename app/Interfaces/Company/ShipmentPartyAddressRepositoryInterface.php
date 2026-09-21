@@ -8,12 +8,11 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\Rules\Unique;
 
+/** @extends CompanyModelRepositoryInterface<ShipmentPartyAddress> */
 interface ShipmentPartyAddressRepositoryInterface extends CompanyModelRepositoryInterface
 {
     /** @return Collection<int, ShipmentPartyAddress>|LengthAwarePaginator */
     public function searchForParty(int $companyId, int $shipmentPartyId, array $filters): Collection|LengthAwarePaginator;
-
-    public function shipmentPartyExists(int $companyId, int $shipmentPartyId): bool;
 
     public function uniquePostalCodeForPartyRule(
         int $companyId,

@@ -3,11 +3,11 @@
 namespace App\Services\Company\Waybill;
 
 use App\Enums\TransportContractItemName;
-use App\Interfaces\Company\WaybillRepositoryInterface;
+use App\Interfaces\Company\TransportContractRepositoryInterface;
 
 class WaybillFinancialCalculator
 {
-    public function __construct(protected WaybillRepositoryInterface $waybillRepository) {}
+    public function __construct(protected TransportContractRepositoryInterface $transportContractRepository) {}
 
     /** @param array<string, mixed> $data */
     public function calculate(int $companyId, array $data): array
@@ -19,7 +19,7 @@ class WaybillFinancialCalculator
             return $data;
         }
 
-        $contract = $this->waybillRepository->findTransportContractOrFail($companyId, (int) $contractId);
+        $contract = $this->transportContractRepository->findOrFail($companyId, (int) $contractId);
         $items = $contract->items->keyBy(fn ($item): string => $item->name->value);
         $baseFreightAmount = (int) $baseFreightAmount;
 

@@ -45,29 +45,30 @@ class InsuranceService
      */
     public function inquiry(int $companyId, array $data): ServiceResult
     {
+        //        return ServiceResult::success(['fee_amount' => 200000]);
         $insuranceId = (int) $data['insurance_id'];
         $this->insuranceRepository->findOrFail($companyId, $insuranceId);
 
-        $cargoIds = array_map(
+        $cargoCodes = array_map(
             static fn (array $cargo): int => (int) $cargo['id'],
             $data['cargos'],
         );
-        $groupIds = $this->cargoGroupRepository->resolveGroupIdsForCargos($companyId, $cargoIds);
+        $groupIdsByCargoCode = $this->cargoGroupRepository->resolveGroupIdsForCargoCodes($companyId, $cargoCodes);
         $feeAmount = 0.0;
 
         foreach ($data['cargos'] as $cargo) {
-            $cargoId = (int) $cargo['id'];
+            $cargoCode = (int) $cargo['id'];
             $cargoValue = (float) $cargo['value'];
             $tariff = $this->insuranceTariffRepository->findApplicable(
                 $companyId,
                 $insuranceId,
-                $groupIds[$cargoId],
+                $groupIdsByCargoCode[$cargoCode],
                 $cargoValue,
             );
 
             if ($tariff === null) {
                 return ServiceResult::error(
-                    __('public.insurance_tariff_not_found', ['cargo_id' => $cargoId]),
+                    __('public.insurance_tariff_not_found', ['cargo_code' => $cargoCode]),
                     Response::HTTP_UNPROCESSABLE_ENTITY,
                 );
             }

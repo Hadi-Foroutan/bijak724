@@ -3,11 +3,7 @@
 namespace App\Services\Company;
 
 use App\Models\DynamicModel;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Exists;
 use LogicException;
 
 class CompanyTableRegistry
@@ -51,63 +47,15 @@ class CompanyTableRegistry
         return array_values($columns);
     }
 
-    /** @return class-string<DynamicModel> */
-    public function modelClass(string $tableKey): string
+    /**
+     * @template TModel of DynamicModel
+     *
+     * @param  TModel  $model
+     * @return TModel
+     */
+    public function configure(DynamicModel $model, int $companyId): DynamicModel
     {
-        $configuredModel = config("company_tables.{$tableKey}.model");
-        $conventionalModel = 'App\\Models\\Company\\'.Str::studly(Str::singular($tableKey));
-        $modelClass = is_string($configuredModel) ? $configuredModel : $conventionalModel;
-
-        return is_subclass_of($modelClass, DynamicModel::class)
-            ? $modelClass
-            : DynamicModel::class;
-    }
-
-    public function model(int $companyId, string $tableKey): DynamicModel
-    {
-        $model = app($this->modelClass($tableKey));
-
-        return $this->configure($model, $companyId, $tableKey);
-    }
-
-    public function query(int $companyId, string $tableKey, ?string $alias = null): Builder
-    {
-        $tableName = $this->tableName($companyId, $tableKey);
-        $query = $this->model($companyId, $tableKey)->newQuery();
-
-        if ($alias !== null) {
-            $query->from("{$tableName} as {$alias}");
-        }
-
-        if (! $this->companyDataOwnerResolver->isDataOwner($companyId)) {
-            $query->where(($alias ?? $tableName).'.owner_company_id', $companyId);
-        }
-
-        return $query;
-    }
-
-    public function sharedQuery(int $companyId, string $tableKey): Builder
-    {
-        return $this->query(
-            $this->companyDataOwnerResolver->resolveId($companyId),
-            $tableKey,
-        );
-    }
-
-    public function ownedExistsRule(int $companyId, string $tableKey, string $column = 'id'): Exists
-    {
-        $rule = Rule::exists($this->tableName($companyId, $tableKey), $column);
-
-        if (! $this->companyDataOwnerResolver->isDataOwner($companyId)) {
-            $rule->where('owner_company_id', $companyId);
-        }
-
-        return $rule;
-    }
-
-    public function configure(DynamicModel $model, int $companyId, ?string $tableKey = null): DynamicModel
-    {
-        $tableKey ??= $model->companyTableKey();
+        $tableKey = $model->companyTableKey();
         $columns = collect($this->columns($tableKey));
 
         $searchableFields = $columns
@@ -127,7 +75,7 @@ class CompanyTableRegistry
             ->values()
             ->all();
 
-        return $model->forCompany($companyId, $tableKey)
+        return $model->forCompany($companyId)
             ->setSearchableFields($searchableFields)
             ->setGlobalSearchFields($globalSearchFields);
     }

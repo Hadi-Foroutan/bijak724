@@ -128,6 +128,9 @@ test('insurance inquiry calculates and sums cargo fees using company cargo group
     $groupedCargo = Cargo::query()->create(['name' => 'محموله گروه دوم', 'code' => 4001]);
     $defaultCargo = Cargo::query()->create(['name' => 'محموله گروه پیش‌فرض', 'code' => 4002]);
 
+    expect($groupedCargo->id)->not->toBe($groupedCargo->code)
+        ->and($defaultCargo->id)->not->toBe($defaultCargo->code);
+
     CargoGroupCargo::query()->create([
         'company_id' => $this->company->id,
         'cargo_group_id' => $this->cargoGroup->id,
@@ -162,8 +165,8 @@ test('insurance inquiry calculates and sums cargo fees using company cargo group
     $this->postJson('/api/user/insurances/inquiry', [
         'insurance_id' => $insuranceId,
         'cargos' => [
-            ['id' => $groupedCargo->id, 'value' => 11000],
-            ['id' => $defaultCargo->id, 'value' => 10000],
+            ['id' => $groupedCargo->code, 'value' => 11000],
+            ['id' => $defaultCargo->code, 'value' => 10000],
         ],
     ])->assertSuccessful()->assertJsonPath('data.fee_amount', 650);
 });
@@ -192,7 +195,7 @@ test('insurance inquiry falls back to an ungrouped tariff matching the cargo val
 
     $this->postJson('/api/user/insurances/inquiry', [
         'insurance_id' => $insuranceId,
-        'cargos' => [['id' => $cargo->id, 'value' => 15000]],
+        'cargos' => [['id' => $cargo->code, 'value' => 15000]],
     ])->assertSuccessful()->assertJsonPath('data.fee_amount', 300);
 });
 
@@ -203,14 +206,19 @@ test('insurance inquiry validates ownership and reports a missing cargo tariff',
 
     $this->postJson('/api/user/insurances/inquiry', [
         'insurance_id' => $otherInsurance->id,
-        'cargos' => [['id' => $cargo->id, 'value' => 10000]],
+        'cargos' => [['id' => $cargo->code, 'value' => 10000]],
     ])->assertUnprocessable()->assertJsonValidationErrors('insurance_id');
 
     $this->postJson('/api/user/insurances/inquiry', [
         'insurance_id' => $insurance->id,
-        'cargos' => [['id' => $cargo->id, 'value' => 10000]],
+        'cargos' => [['id' => $cargo->code, 'value' => 10000]],
     ])->assertUnprocessable()
-        ->assertJsonPath('errors.error.0', "تعرفه بیمه برای محموله با شناسه {$cargo->id} یافت نشد.");
+        ->assertJsonPath('errors.error.0', "تعرفه بیمه برای محموله با کد {$cargo->code} یافت نشد.");
+
+    $this->postJson('/api/user/insurances/inquiry', [
+        'insurance_id' => $insurance->id,
+        'cargos' => [['id' => 999999999, 'value' => 10000]],
+    ])->assertUnprocessable()->assertJsonValidationErrors('cargos.0.id');
 });
 
 test('insurance validation rejects invalid dates and duplicate company contract numbers', function () {

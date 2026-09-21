@@ -1,7 +1,8 @@
 <?php
 
 use App\Http\Middleware\CheckPermission;
-use App\Interfaces\CompanyDataRepositoryInterface;
+use App\Interfaces\Company\CargoRepositoryInterface;
+use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Models\Company;
 use App\Models\DriverLicenseType;
 use App\Models\User;
@@ -60,13 +61,13 @@ test('branches share parent tables but only access records they own', function (
             ->and(Schema::hasTable("company_{$this->branchCompany->id}_{$tableKey}"))->toBeFalse();
     }
 
-    $repository = app(CompanyDataRepositoryInterface::class);
-    $parentCargo = $repository->create($this->parentCompany->id, 'cargos', [
+    $cargoRepository = app(CargoRepositoryInterface::class);
+    $parentCargo = $cargoRepository->create($this->parentCompany->id, [
         'name' => 'بار شرکت اصلی',
         'national_code' => 'PARENT-CARGO',
     ]);
 
-    expect($repository->table($this->branchCompany->id, 'cargos'))
+    expect($cargoRepository->query($this->branchCompany->id)->getModel()->getTable())
         ->toBe("company_{$this->parentCompany->id}_cargos");
 
     $this->getJson('/api/user/cargos')
@@ -98,7 +99,7 @@ test('branches share parent tables but only access records they own', function (
         'national_code' => '71000000003',
         'city_code' => 1101,
     ]);
-    $repository->create($otherBranch->id, 'cargos', [
+    $cargoRepository->create($otherBranch->id, [
         'name' => 'بار شعبه دیگر',
         'national_code' => 'OTHER-BRANCH-CARGO',
     ]);
@@ -107,7 +108,7 @@ test('branches share parent tables but only access records they own', function (
         'name' => 'پایه یک',
         'code' => 1,
     ]);
-    $parentDriver = $repository->create($this->parentCompany->id, 'drivers', [
+    $parentDriver = app(DriverRepositoryInterface::class)->create($this->parentCompany->id, [
         'national_code' => '7100000099',
         'first_name' => 'راننده',
         'last_name' => 'شرکت اصلی',
@@ -125,7 +126,7 @@ test('branches share parent tables but only access records they own', function (
         ->assertUnprocessable()
         ->assertJsonValidationErrors('driver1_id');
 
-    expect($repository->query($this->branchCompany->id, 'cargos')->pluck('id')->all())
+    expect($cargoRepository->query($this->branchCompany->id)->pluck('id')->all())
         ->toBe([$branchCargoId])
-        ->and($repository->query($this->parentCompany->id, 'cargos')->count())->toBe(3);
+        ->and($cargoRepository->query($this->parentCompany->id)->count())->toBe(3);
 });

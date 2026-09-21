@@ -5,11 +5,13 @@ namespace App\Services\Company\Driver;
 use App\Enums\StatusEnum;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\DriverRepositoryInterface;
+use App\Models\Company\Driver;
 use App\Services\Company\CompanyCrudService;
 use App\Services\Uploads\CompanyImageUploader;
 use Illuminate\Http\UploadedFile;
 use Throwable;
 
+/** @extends CompanyCrudService<Driver, DriverRepositoryInterface> */
 class DriverService extends CompanyCrudService
 {
     protected string $resourceLabel = 'راننده';

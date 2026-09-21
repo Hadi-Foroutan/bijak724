@@ -5,9 +5,11 @@ namespace App\Services\Company\ShipmentParty;
 use App\Enums\StatusEnum;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
+use App\Models\Company\ShipmentParty;
 use App\Services\Company\CompanyCrudService;
 use Illuminate\Validation\ValidationException;
 
+/** @extends CompanyCrudService<ShipmentParty, ShipmentPartyRepositoryInterface> */
 class ShipmentPartyService extends CompanyCrudService
 {
     protected string $resourceLabel = 'فرستنده/گیرنده';

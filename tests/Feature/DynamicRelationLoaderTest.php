@@ -1,6 +1,8 @@
 <?php
 
-use App\Interfaces\CompanyDataRepositoryInterface;
+use App\Interfaces\Company\DriverRepositoryInterface;
+use App\Interfaces\Company\ShipmentPartyAddressRepositoryInterface;
+use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
 use App\Models\City;
 use App\Models\Company\Driver as CompanyDriver;
 use App\Models\Company\ShipmentParty;
@@ -37,9 +39,9 @@ test('it loads configured static relations for dynamic records and paginators', 
         'code' => 1,
     ]);
 
-    $repository = app(CompanyDataRepositoryInterface::class);
-    $repository->create(42, 'drivers', ['license_type' => $licenseType->id]);
-    $drivers = $repository->search(42, 'drivers', [
+    $repository = app(DriverRepositoryInterface::class);
+    $repository->create(42, ['license_type' => $licenseType->id]);
+    $drivers = $repository->search(42, [
         'paginate' => true,
         'itemsPerPage' => 10,
     ]);
@@ -79,14 +81,14 @@ test('it loads dynamic has many relations with nested static relations', functio
         $table->timestamps();
     });
 
-    $repository = app(CompanyDataRepositoryInterface::class);
-    $party = $repository->create(42, 'shipment_parties', ['title' => 'فرستنده تست']);
-    $address = $repository->create(42, 'shipment_party_addresses', [
+    $party = app(ShipmentPartyRepositoryInterface::class)->create(42, ['title' => 'فرستنده تست']);
+    $address = app(ShipmentPartyAddressRepositoryInterface::class)->create(42, [
         'shipment_party_id' => $party->id,
         'city_code' => $city->code,
         'address' => 'تهران، خیابان تست',
     ]);
 
+    $party->unsetRelation('addresses');
     app(DynamicRelationLoader::class)->load($party);
 
     expect($party)->toBeInstanceOf(ShipmentParty::class)

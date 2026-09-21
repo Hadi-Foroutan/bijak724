@@ -3,8 +3,10 @@
 namespace App\Repositories\Company;
 
 use App\Interfaces\Company\CargoRepositoryInterface;
+use App\Models\Company\Cargo;
 
+/** @extends CompanyModelRepository<Cargo> */
 class CargoRepository extends CompanyModelRepository implements CargoRepositoryInterface
 {
-    protected string $tableKey = 'cargos';
+    protected string $modelClass = Cargo::class;
 }

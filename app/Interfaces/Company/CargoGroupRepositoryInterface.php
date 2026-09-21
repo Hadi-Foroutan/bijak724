@@ -17,8 +17,8 @@ interface CargoGroupRepositoryInterface
     public function syncCargos(int $companyId, CargoGroup $cargoGroup, array $cargoIds): CargoGroup;
 
     /**
-     * @param  list<int>  $cargoIds
+     * @param  list<int>  $cargoCodes
      * @return array<int, int>
      */
-    public function resolveGroupIdsForCargos(int $companyId, array $cargoIds): array;
+    public function resolveGroupIdsForCargoCodes(int $companyId, array $cargoCodes): array;
 }

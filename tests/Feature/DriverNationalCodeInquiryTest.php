@@ -2,7 +2,7 @@
 
 use App\Enums\StatusEnum;
 use App\Http\Middleware\CheckPermission;
-use App\Interfaces\CompanyDataRepositoryInterface;
+use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Models\Company;
 use App\Models\DriverLicenseType;
 use App\Models\User;
@@ -47,9 +47,8 @@ beforeEach(function (): void {
 });
 
 test('it returns a company driver by national code using the driver resource', function () {
-    $driver = app(CompanyDataRepositoryInterface::class)->create(
+    $driver = app(DriverRepositoryInterface::class)->create(
         $this->company->id,
-        'drivers',
         driverInquiryPayload($this->driverLicenseType->id),
     );
 
@@ -69,9 +68,8 @@ test('it validates the national code used for driver inquiry', function () {
 });
 
 test('it reports an inactive driver during inquiry', function () {
-    app(CompanyDataRepositoryInterface::class)->create(
+    app(DriverRepositoryInterface::class)->create(
         $this->company->id,
-        'drivers',
         [
             ...driverInquiryPayload($this->driverLicenseType->id),
             'status' => StatusEnum::INACTIVE->value,
@@ -98,9 +96,8 @@ test('it does not return a driver from another company', function () {
         'city_code' => '1101',
     ]);
 
-    app(CompanyDataRepositoryInterface::class)->create(
+    app(DriverRepositoryInterface::class)->create(
         $otherCompany->id,
-        'drivers',
         driverInquiryPayload($this->driverLicenseType->id),
     );
 

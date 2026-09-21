@@ -9,9 +9,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 
+/** @extends CompanyModelRepository<Fleet> */
 class FleetRepository extends CompanyModelRepository implements FleetRepositoryInterface
 {
-    protected string $tableKey = 'fleets';
+    protected string $modelClass = Fleet::class;
 
     /** @param array<string, string> $plate */
     public function findByPlate(int $companyId, array $plate): Fleet
@@ -38,7 +39,7 @@ class FleetRepository extends CompanyModelRepository implements FleetRepositoryI
     /** @param array<string, string> $plate */
     private function plateQuery(int $companyId, array $plate, bool $shared = false): Builder
     {
-        $query = $shared ? $this->tableRegistry->sharedQuery($companyId, $this->tableKey) : $this->query($companyId);
+        $query = $shared ? $this->sharedQuery($companyId) : $this->query($companyId);
 
         return $query
             ->where('plate_first_number', $plate['plate_first_number'])
@@ -49,7 +50,7 @@ class FleetRepository extends CompanyModelRepository implements FleetRepositoryI
 
     public function uniqueSmartCardNumberRule(int $companyId, ?int $ignoreFleetId = null): Unique
     {
-        $rule = Rule::unique($this->tableRegistry->tableName($companyId, $this->tableKey), 'smart_card_number');
+        $rule = Rule::unique($this->tableName($companyId), 'smart_card_number');
 
         return $ignoreFleetId === null ? $rule : $rule->ignore($ignoreFleetId);
     }

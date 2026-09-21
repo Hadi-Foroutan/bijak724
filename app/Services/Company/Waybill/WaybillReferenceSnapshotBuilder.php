@@ -2,38 +2,39 @@
 
 namespace App\Services\Company\Waybill;
 
-use App\Interfaces\Company\WaybillRepositoryInterface;
+use App\Interfaces\Company\DriverRepositoryInterface;
+use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
 use App\Models\Company\Waybill;
 use App\Models\DynamicModel;
 
 class WaybillReferenceSnapshotBuilder
 {
     private const REFERENCES = [
-        'sender_id' => ['shipment_parties', 'sender', [
+        'sender_id' => ['shipment_party', 'sender', [
             'national_identifier' => 'national_identifier',
             'first_name' => 'first_name',
             'last_name' => 'last_name',
             'mobile' => 'mobile',
         ]],
-        'receiver_id' => ['shipment_parties', 'receiver', [
+        'receiver_id' => ['shipment_party', 'receiver', [
             'national_identifier' => 'national_identifier',
             'first_name' => 'first_name',
             'last_name' => 'last_name',
             'mobile' => 'mobile',
         ]],
-        'driver1_id' => ['drivers', 'driver1', [
+        'driver1_id' => ['driver', 'driver1', [
             'national_code' => 'national_code',
             'first_name' => 'first_name',
             'last_name' => 'last_name',
             'phone' => 'phone_number_1',
         ]],
-        'driver2_id' => ['drivers', 'driver2', [
+        'driver2_id' => ['driver', 'driver2', [
             'national_code' => 'national_code',
             'first_name' => 'first_name',
             'last_name' => 'last_name',
             'phone' => 'phone_number_1',
         ]],
-        'referral_driver_id' => ['drivers', 'referral_driver', [
+        'referral_driver_id' => ['driver', 'referral_driver', [
             'national_code' => 'national_code',
             'first_name' => 'first_name',
             'last_name' => 'last_name',
@@ -41,7 +42,10 @@ class WaybillReferenceSnapshotBuilder
         ]],
     ];
 
-    public function __construct(protected WaybillRepositoryInterface $waybillRepository) {}
+    public function __construct(
+        protected ShipmentPartyRepositoryInterface $shipmentPartyRepository,
+        protected DriverRepositoryInterface $driverRepository,
+    ) {}
 
     /** @param array<string, mixed> $data */
     public function forCreate(int $companyId, array $data): array
@@ -58,14 +62,14 @@ class WaybillReferenceSnapshotBuilder
     /** @param array<string, mixed> $data */
     private function build(int $companyId, array $data, ?Waybill $currentWaybill = null): array
     {
-        foreach (self::REFERENCES as $idField => [$tableKey, $prefix, $snapshotFields]) {
+        foreach (self::REFERENCES as $idField => [$referenceType, $prefix, $snapshotFields]) {
             if (! array_key_exists($idField, $data) || $this->referenceIsUnchanged($currentWaybill, $idField, $data[$idField])) {
                 continue;
             }
 
             $record = $data[$idField] === null
                 ? null
-                : $this->findReference($companyId, $tableKey, (int) $data[$idField]);
+                : $this->findReference($companyId, $referenceType, (int) $data[$idField]);
 
             foreach ($snapshotFields as $snapshotField => $sourceField) {
                 $data["{$prefix}_{$snapshotField}"] = $record?->getAttribute($sourceField);
@@ -88,11 +92,11 @@ class WaybillReferenceSnapshotBuilder
             : (int) $currentId === (int) $newId;
     }
 
-    private function findReference(int $companyId, string $tableKey, int $id): DynamicModel
+    private function findReference(int $companyId, string $referenceType, int $id): DynamicModel
     {
-        return match ($tableKey) {
-            'shipment_parties' => $this->waybillRepository->findShipmentPartyOrFail($companyId, $id),
-            'drivers' => $this->waybillRepository->findDriverOrFail($companyId, $id),
+        return match ($referenceType) {
+            'shipment_party' => $this->shipmentPartyRepository->findOrFail($companyId, $id),
+            'driver' => $this->driverRepository->findOrFail($companyId, $id),
         };
     }
 }

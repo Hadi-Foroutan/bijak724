@@ -4,11 +4,17 @@ namespace App\Services\Company;
 
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\CompanyModelRepositoryInterface;
+use App\Models\DynamicModel;
 
+/**
+ * @template TModel of DynamicModel
+ * @template TRepository of CompanyModelRepositoryInterface<TModel>
+ */
 abstract class CompanyCrudService
 {
     protected string $resourceLabel;
 
+    /** @return TRepository */
     abstract protected function repository(): CompanyModelRepositoryInterface;
 
     /** @param array<string, mixed> $params */

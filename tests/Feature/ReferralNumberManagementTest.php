@@ -28,7 +28,7 @@ test('it creates lists shows updates and deletes referral number ranges', functi
     $response = $this->postJson('/api/user/referral-numbers', referralNumberPayload())
         ->assertCreated()
         ->assertJsonPath('data.status', ReferralNumberStatus::Active->value)
-        ->assertJsonPath('data.last_number', 100)
+        ->assertJsonPath('data.last_number', null)
         ->assertJsonMissingPath('data.active_slot');
     $id = $response->json('data.id');
 
@@ -40,7 +40,7 @@ test('it creates lists shows updates and deletes referral number ranges', functi
         ->assertJsonPath('data.serial_number', 'SER-1');
     $this->getJson('/api/user/referral-numbers/inquiry')
         ->assertSuccessful()
-        ->assertJsonPath('data.referral_number', 101)
+        ->assertJsonPath('data.referral_number', 100)
         ->assertJsonPath('data.serial_number', 'SER-1');
 
     $this->patchJson("/api/user/referral-numbers/{$id}", ['title' => 'عنوان جدید'])
@@ -61,7 +61,8 @@ test('it allows only one active referral number range per company', function () 
     $this->postJson('/api/user/referral-numbers', [
         ...referralNumberPayload(),
         'serial_number' => 'SER-2',
-    ])->assertUnprocessable()->assertJsonValidationErrors('status');
+    ])->assertUnprocessable()
+        ->assertJsonPath('errors.error.0', __('public.referral_active_exists'));
 
     $inactiveId = $this->postJson('/api/user/referral-numbers', [
         ...referralNumberPayload(),
@@ -71,7 +72,8 @@ test('it allows only one active referral number range per company', function () 
 
     $this->patchJson("/api/user/referral-numbers/{$inactiveId}", [
         'status' => ReferralNumberStatus::Active->value,
-    ])->assertUnprocessable()->assertJsonValidationErrors('status');
+    ])->assertUnprocessable()
+        ->assertJsonPath('errors.error.0', __('public.referral_active_exists'));
 
     $this->patchJson("/api/user/referral-numbers/{$activeId}", [
         'status' => ReferralNumberStatus::Inactive->value,
@@ -97,7 +99,7 @@ test('active referral numbers are isolated between companies', function () {
 
     $this->getJson('/api/user/referral-numbers/inquiry')
         ->assertSuccessful()
-        ->assertJsonPath('data.referral_number', 100001)
+        ->assertJsonPath('data.referral_number', 100000)
         ->assertJsonPath('data.serial_number', '1405');
     removeDefaultReferralNumber($this);
     $this->postJson('/api/user/referral-numbers', [
@@ -121,7 +123,8 @@ test('it validates the range and recognizes an already consumed range', function
     $this->postJson('/api/user/referral-numbers', [
         ...referralNumberPayload(),
         'last_number' => 98,
-    ])->assertUnprocessable()->assertJsonValidationErrors('to_number');
+    ])->assertUnprocessable()
+        ->assertJsonPath('errors.error.0', __('public.referral_range_invalid'));
 
     $id = $this->postJson('/api/user/referral-numbers', [
         ...referralNumberPayload(),
@@ -135,7 +138,7 @@ test('it validates the range and recognizes an already consumed range', function
         ->assertSuccessful()->assertJsonPath('data.status', ReferralNumberStatus::Completed->value);
 });
 
-test('new companies receive an active default range with 899999 available numbers', function () {
+test('new companies receive an active default range with 900000 available numbers', function () {
     $this->getJson('/api/user/referral-numbers')
         ->assertSuccessful()
         ->assertJsonCount(1, 'data')
@@ -143,15 +146,15 @@ test('new companies receive an active default range with 899999 available number
         ->assertJsonPath('data.0.serial_number', '1405')
         ->assertJsonPath('data.0.from_number', 100000)
         ->assertJsonPath('data.0.to_number', 999999)
-        ->assertJsonPath('data.0.last_number', 100000)
+        ->assertJsonPath('data.0.last_number', null)
         ->assertJsonPath('data.0.status', ReferralNumberStatus::Active->value);
 
     $this->getJson('/api/user/referral-numbers/inquiry')
         ->assertSuccessful()
-        ->assertJsonPath('data.referral_number', 100001)
+        ->assertJsonPath('data.referral_number', 100000)
         ->assertJsonPath('data.serial_number', '1405');
 
-    expect(999999 - 100000)->toBe(899999);
+    expect(999999 - 100000 + 1)->toBe(900000);
 });
 
 test('branches receive their own default range in the shared company table', function () {
@@ -175,7 +178,7 @@ test('branches receive their own default range in the shared company table', fun
     $this->withToken($branchToken)
         ->getJson('/api/user/referral-numbers/inquiry')
         ->assertSuccessful()
-        ->assertJsonPath('data.referral_number', 100001);
+        ->assertJsonPath('data.referral_number', 100000);
 });
 
 test('default creation is repeatable and does not replace an existing range', function () {
@@ -192,7 +195,33 @@ test('default creation is repeatable and does not replace an existing range', fu
         ->and($result->data->serial_number)->toBe('1405');
     $this->getJson('/api/user/referral-numbers')
         ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.last_number', 100000);
+        ->assertJsonPath('data.0.last_number', null);
+});
+
+test('a single-number range issues both its first and final number then completes', function () {
+    removeDefaultReferralNumber($this);
+
+    $id = $this->postJson('/api/user/referral-numbers', [
+        ...referralNumberPayload(),
+        'from_number' => 100,
+        'to_number' => 100,
+    ])->assertCreated()
+        ->assertJsonPath('data.last_number', null)
+        ->json('data.id');
+
+    $result = app(ReferralNumberService::class)->reserveNext($this->company->id);
+
+    expect($result)->toBeInstanceOf(ServiceResult::class)
+        ->and($result->data['referral_number'])->toBe(100);
+
+    $this->getJson("/api/user/referral-numbers/{$id}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.last_number', 100)
+        ->assertJsonPath('data.status', ReferralNumberStatus::Completed->value);
+
+    $this->getJson('/api/user/referral-numbers/inquiry')
+        ->assertNotFound()
+        ->assertJsonPath('errors.error.0', __('public.referral_not_found'));
 });
 
 /** @return array<string, mixed> */

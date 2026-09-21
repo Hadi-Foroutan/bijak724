@@ -296,7 +296,7 @@ return [
         'is_fixed' => 'ثابت بودن مبلغ',
         'cargos' => 'محموله‌ها',
         'cargos.*.cargo_id' => 'کد محموله',
-        'cargos.*.id' => 'محموله',
+        'cargos.*.id' => 'کد محموله',
         'cargos.*.packaging_id' => 'کد دسته‌بندی بسته‌بندی',
         'cargos.*.product_owner_id' => 'صاحب کالا',
         'cargos.*.description' => 'توضیحات محموله',
@@ -311,6 +311,9 @@ return [
         'cargos.*.driver_account_number' => 'شماره حساب راننده',
         'cargos.*.container_number' => 'شماره کانتینر',
         'cargos.*.container_number_2' => 'شماره کانتینر دوم',
+        'type' => 'نوع پیام',
+        'should_remove_previous' => 'حذف پیام‌های قبلی',
+        'message' => 'متن پیام',
     ],
 
 ];

@@ -11,8 +11,9 @@ use App\Services\Company\CompanyCrudService;
 use App\Services\Company\CompanyDataOwnerResolver;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\Response;
 
+/** @extends CompanyCrudService<ReferralNumber, ReferralNumberRepositoryInterface> */
 class ReferralNumberService extends CompanyCrudService
 {
     public const DEFAULT_FROM_NUMBER = 100000;
@@ -45,7 +46,7 @@ class ReferralNumberService extends CompanyCrudService
                 'serial_number' => '1405',
                 'from_number' => self::DEFAULT_FROM_NUMBER,
                 'to_number' => self::DEFAULT_TO_NUMBER,
-                'last_number' => self::DEFAULT_FROM_NUMBER,
+                'last_number' => null,
                 'status' => ReferralNumberStatus::Active->value,
                 'active_slot' => 1,
             ]);
@@ -60,7 +61,7 @@ class ReferralNumberService extends CompanyCrudService
         return DB::transaction(function () use ($companyId, $data): ServiceResult {
             $this->lockCompany($companyId);
             $data['status'] ??= ReferralNumberStatus::Active->value;
-            $data['last_number'] ??= $data['from_number'];
+            $data['last_number'] ??= null;
             $this->validateRange($data);
             $this->normalizeStatus($data);
             $this->ensureOnlyOneActive($companyId, $data);
@@ -100,8 +101,8 @@ class ReferralNumberService extends CompanyCrudService
     {
         $record = $this->referralNumberRepository->active($companyId);
 
-        if ($record === null || $record->last_number >= $record->to_number) {
-            abort(404, __('public.referral_not_found'));
+        if ($record === null || $this->isExhausted($record)) {
+            return ServiceResult::error(__('public.referral_not_found'), Response::HTTP_NOT_FOUND);
         }
 
         return ServiceResult::success($this->nextNumber($record));
@@ -115,10 +116,11 @@ class ReferralNumberService extends CompanyCrudService
         $this->lockCompany($companyId);
         $record = $this->referralNumberRepository->active($companyId);
 
-        if ($record === null || $record->last_number >= $record->to_number) {
-            throw ValidationException::withMessages([
-                'referral_number' => __('public.referral_issuance_unavailable'),
-            ]);
+        if ($record === null || $this->isExhausted($record)) {
+            return ServiceResult::error(
+                __('public.referral_issuance_unavailable'),
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
         }
 
         $next = $this->nextNumber($record);
@@ -140,10 +142,11 @@ class ReferralNumberService extends CompanyCrudService
         $to = (int) $data['to_number'];
         $last = $data['last_number'] === null ? null : (int) $data['last_number'];
 
-        if ($from >= $to || $last !== null && ($last < $from || $last > $to)) {
-            throw ValidationException::withMessages([
-                'to_number' => __('public.referral_range_invalid'),
-            ]);
+        if ($from > $to || $last !== null && ($last < $from || $last > $to)) {
+            ServiceResult::error(
+                __('public.referral_range_invalid'),
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
         }
     }
 
@@ -162,9 +165,10 @@ class ReferralNumberService extends CompanyCrudService
     {
         if ($data['status'] === ReferralNumberStatus::Active->value
             && $this->referralNumberRepository->active($companyId, $ignoreId) !== null) {
-            throw ValidationException::withMessages([
-                'status' => __('public.referral_active_exists'),
-            ]);
+            ServiceResult::error(
+                __('public.referral_active_exists'),
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
         }
     }
 
@@ -183,9 +187,15 @@ class ReferralNumberService extends CompanyCrudService
             'id' => (int) $record->id,
             'serial_number' => $record->serial_number,
             'referral_number' => $record->last_number === null
-                ? (int) $record->from_number + 1
+                ? (int) $record->from_number
                 : (int) $record->last_number + 1,
             'date' => Carbon::now()->format('Y-m-d'),
         ];
+    }
+
+    private function isExhausted(ReferralNumber $record): bool
+    {
+        return $record->last_number !== null
+            && (int) $record->last_number >= (int) $record->to_number;
     }
 }

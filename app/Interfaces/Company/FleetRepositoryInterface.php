@@ -5,6 +5,7 @@ namespace App\Interfaces\Company;
 use App\Models\Company\Fleet;
 use Illuminate\Validation\Rules\Unique;
 
+/** @extends CompanyModelRepositoryInterface<Fleet> */
 interface FleetRepositoryInterface extends CompanyModelRepositoryInterface
 {
     /** @param array<string, string> $plate */

@@ -73,6 +73,25 @@ test('it creates a company and its configured tables', function () {
     $this->assertModelExists($company);
     expect(Schema::hasTable("company_{$company->id}_waybills"))->toBeTrue();
     expect(Schema::hasTable("company_{$company->id}_drivers"))->toBeTrue();
+
+    $insurance = $company->insurances()->with(['insuranceCompany', 'tariffs'])->sole();
+    expect($insurance->insuranceCompany->org_code)->toBe(26)
+        ->and($insurance->insuranceCompany->name)->toBe('شرکت بیمه کوثر')
+        ->and($insurance->title)->toBe('بیمه کوثر')
+        ->and($insurance->contract_number)->toBe('1')
+        ->and($insurance->is_default)->toBeTrue()
+        ->and($insurance->status->value)->toBe('active')
+        ->and($insurance->start_date->toDateString())->toBe(now()->toDateString())
+        ->and($insurance->end_date->toDateString())->toBe(now()->addYear()->toDateString())
+        ->and($insurance->tariffs)->toHaveCount(2)
+        ->and($insurance->tariffs[0]->cargo_group_id)->toBeNull()
+        ->and($insurance->tariffs[0]->cargo_value_from)->toBe('1.00')
+        ->and($insurance->tariffs[0]->cargo_value_to)->toBe('10000000000.00')
+        ->and($insurance->tariffs[0]->premium_percentage)->toBe('0.0200')
+        ->and($insurance->tariffs[1]->cargo_group_id)->toBeNull()
+        ->and($insurance->tariffs[1]->cargo_value_from)->toBe('10000000000.00')
+        ->and($insurance->tariffs[1]->cargo_value_to)->toBe('99999999999.00')
+        ->and($insurance->tariffs[1]->premium_percentage)->toBe('0.0190');
 });
 
 test('it updates a company', function () {

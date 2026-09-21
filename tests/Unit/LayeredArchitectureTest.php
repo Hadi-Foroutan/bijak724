@@ -1,6 +1,5 @@
 <?php
 
-use App\Services\Company\CompanyDataService;
 use App\Services\Company\CompanyTableRegistry;
 
 arch('dynamic domain services do not access the generic dynamic table infrastructure')
@@ -12,10 +11,12 @@ arch('dynamic domain services do not access the generic dynamic table infrastruc
         'App\Services\Company\ShipmentParty',
         'App\Services\Company\Waybill',
     ])
-    ->not->toUse([
-        CompanyDataService::class,
-        CompanyTableRegistry::class,
-    ]);
+    ->not->toUse(CompanyTableRegistry::class);
+
+test('generic company data service and repository are not available', function () {
+    expect(class_exists('App\\Services\\Company\\CompanyDataService'))->toBeFalse()
+        ->and(interface_exists('App\\Interfaces\\CompanyDataRepositoryInterface'))->toBeFalse();
+});
 
 arch('dynamic domain controllers do not query models directly')
     ->expect([

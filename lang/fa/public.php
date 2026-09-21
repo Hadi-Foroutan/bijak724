@@ -66,7 +66,12 @@ return [
     'base_freight_type_forbidden' => 'برای آیتم کرایه پایه، انتخاب نوع ملکی، استیجاری، آزاد یا نامشخص مجاز نیست.',
     'insurance_end_date_invalid' => 'تاریخ پایان باید بعد از یا مساوی تاریخ شروع باشد.',
     'insurance_premium_required' => 'مبلغ ثابت یا درصد حق بیمه الزامی است.',
-    'insurance_tariff_not_found' => 'تعرفه بیمه برای محموله با شناسه :cargo_id یافت نشد.',
+    'insurance_tariff_not_found' => 'تعرفه بیمه برای محموله یافت نشد.',
+    'notification_type_success' => 'موفقیت‌آمیز',
+    'notification_type_error' => 'خطا',
+    'notification_type_warning' => 'هشدار',
+    'notification_type_info' => 'اطلاعات',
+    'notification_welcome_message' => 'به سامانه خوش آمدید.',
     'cargo_value_range_invalid' => 'حد بالای ارزش محموله نباید کمتر از حد پایین باشد.',
     'permission_name_invalid' => 'نام دسترسی باید فقط شامل حروف انگلیسی و خط تیره باشد و با دو یا سه نقطه بخش‌بندی شود.',
 ];

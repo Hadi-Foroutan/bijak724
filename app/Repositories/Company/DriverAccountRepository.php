@@ -8,9 +8,10 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
+/** @extends CompanyModelRepository<DriverAccount> */
 class DriverAccountRepository extends CompanyModelRepository implements DriverAccountRepositoryInterface
 {
-    protected string $tableKey = 'driver_accounts';
+    protected string $modelClass = DriverAccount::class;
 
     public function searchForDriver(
         int $companyId,
@@ -20,13 +21,6 @@ class DriverAccountRepository extends CompanyModelRepository implements DriverAc
         $filters['eq-driver_id'] = $driverId;
 
         return $this->search($companyId, $filters);
-    }
-
-    public function driverExists(int $companyId, int $driverId): bool
-    {
-        return $this->tableRegistry->query($companyId, 'drivers')
-            ->whereKey($driverId)
-            ->exists();
     }
 
     public function findForDriverOrFail(

@@ -3,6 +3,7 @@
 namespace App\Services\Company\Waybill;
 
 use App\Helpers\ServiceResult;
+use App\Interfaces\Company\TransportContractRepositoryInterface;
 use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Models\Company\Waybill;
 use App\Models\TransportContract;
@@ -11,8 +12,15 @@ use App\Services\Company\ReferralNumber\ReferralNumberService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
+/** @extends CompanyCrudService<Waybill, WaybillRepositoryInterface> */
 class WaybillService extends CompanyCrudService
 {
+    private const ISSUANCE_FIELDS = [
+        'bijak_number',
+        'serial_number',
+        'issued_at',
+    ];
+
     protected string $resourceLabel = 'بارنامه';
 
     public function __construct(
@@ -20,7 +28,9 @@ class WaybillService extends CompanyCrudService
         protected WaybillReferenceSnapshotBuilder $snapshotBuilder,
         protected WaybillFinancialCalculator $financialCalculator,
         protected WaybillTrackingCodeGenerator $trackingCodeGenerator,
+        protected WaybillCargoService $waybillCargoService,
         protected ReferralNumberService $referralNumberService,
+        protected TransportContractRepositoryInterface $transportContractRepository,
     ) {}
 
     protected function repository(): WaybillRepositoryInterface
@@ -30,7 +40,7 @@ class WaybillService extends CompanyCrudService
 
     public function options(int $companyId): ServiceResult
     {
-        $contracts = $this->waybillRepository->transportContractOptions($companyId);
+        $contracts = $this->transportContractRepository->options($companyId);
 
         return ServiceResult::success([
             'transport_contracts' => $contracts->map(fn (TransportContract $contract): array => [
@@ -51,18 +61,20 @@ class WaybillService extends CompanyCrudService
         return DB::transaction(function () use ($companyId, $data): ServiceResult {
             $cargos = Arr::pull($data, 'cargos', []) ?? [];
             $data = $this->snapshotBuilder->forCreate($companyId, $data);
-            $data['bijak_tracking_code'] = $this->trackingCodeGenerator->generate($companyId);
             $data = $this->financialCalculator->calculate($companyId, $data);
 
-            if (! $data['is_incomplete']) {
+            if ($data['is_incomplete']) {
+                $data = $this->clearIssuanceFields($data);
+            } else {
                 $next = $this->referralNumberService->reserveNext($companyId)->data;
                 $data['referral_number'] = (string) $next['referral_number'];
                 $data['serial_number'] = $next['serial_number'];
+                $data['bijak_tracking_code'] = $this->trackingCodeGenerator->generate($companyId);
             }
 
             /** @var Waybill $waybill */
             $waybill = $this->waybillRepository->create($companyId, $data);
-            $this->waybillRepository->syncCargos($waybill, $companyId, $cargos);
+            $this->waybillCargoService->sync($waybill, $companyId, $cargos);
 
             return ServiceResult::success($this->waybillRepository->findOrFail($companyId, $waybill->getKey()));
         });
@@ -78,10 +90,9 @@ class WaybillService extends CompanyCrudService
             $data = $this->snapshotBuilder->forUpdate($companyId, $waybill, $data);
             $data = $this->financialCalculator->calculate($companyId, $data);
 
-            if (! $waybill->is_incomplete) {
-                $data['referral_number'] = $waybill->referral_number;
-                $data['serial_number'] = $waybill->serial_number;
-            } elseif (! $data['is_incomplete']) {
+            if ($data['is_incomplete']) {
+                $data = $this->clearIssuanceFields($data);
+            } else {
                 $next = $this->referralNumberService->reserveNext($companyId)->data;
                 $data['referral_number'] = (string) $next['referral_number'];
                 $data['serial_number'] = $next['serial_number'];
@@ -90,9 +101,19 @@ class WaybillService extends CompanyCrudService
             /** @var Waybill $waybill */
             $waybill = $this->waybillRepository->update($companyId, $id, $data);
 
-            $this->waybillRepository->syncCargos($waybill, $companyId, $cargos);
+            $this->waybillCargoService->sync($waybill, $companyId, $cargos);
 
             return ServiceResult::success($this->waybillRepository->findOrFail($companyId, $id));
         });
+    }
+
+    /** @param array<string, mixed> $data */
+    private function clearIssuanceFields(array $data): array
+    {
+        foreach (self::ISSUANCE_FIELDS as $field) {
+            $data[$field] = null;
+        }
+
+        return $data;
     }
 }

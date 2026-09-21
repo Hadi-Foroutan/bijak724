@@ -7,9 +7,10 @@ use App\Models\Company\Driver;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 
+/** @extends CompanyModelRepository<Driver> */
 class DriverRepository extends CompanyModelRepository implements DriverRepositoryInterface
 {
-    protected string $tableKey = 'drivers';
+    protected string $modelClass = Driver::class;
 
     public function findByNationalCode(int $companyId, string $nationalCode): Driver
     {
@@ -24,7 +25,7 @@ class DriverRepository extends CompanyModelRepository implements DriverRepositor
 
     public function uniqueNationalCodeRule(int $companyId, ?int $ignoreDriverId = null): Unique
     {
-        $rule = Rule::unique($this->tableRegistry->tableName($companyId, $this->tableKey), 'national_code');
+        $rule = Rule::unique($this->tableName($companyId), 'national_code');
 
         return $ignoreDriverId === null ? $rule : $rule->ignore($ignoreDriverId);
     }

@@ -7,6 +7,8 @@ use App\Models\Company;
 use App\Models\TransportContract;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Exists;
 
 class TransportContractRepository implements TransportContractRepositoryInterface
 {
@@ -29,6 +31,20 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
             ->where('company_id', $companyId)
             ->with('items')
             ->findOrFail($id);
+    }
+
+    public function options(int $companyId): Collection
+    {
+        return TransportContract::query()
+            ->where('company_id', $companyId)
+            ->with('items')
+            ->orderBy('title')
+            ->get();
+    }
+
+    public function existsRule(int $companyId): Exists
+    {
+        return Rule::exists(TransportContract::class, 'id')->where('company_id', $companyId);
     }
 
     public function create(int $companyId, array $data): TransportContract

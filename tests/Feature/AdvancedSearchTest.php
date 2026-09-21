@@ -1,6 +1,6 @@
 <?php
 
-use App\Interfaces\CompanyDataRepositoryInterface;
+use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Models\City;
 use App\Models\Company;
 use App\Models\DriverLicenseType;
@@ -69,20 +69,20 @@ test('the same advanced search rules work on company dynamic tables', function (
         'city_code' => '1101',
     ]);
 
-    $repository = app(CompanyDataRepositoryInterface::class);
+    $repository = app(DriverRepositoryInterface::class);
     $licenseType = DriverLicenseType::query()->create([
         'name' => 'پایه یک',
         'code' => 1,
     ]);
 
-    $repository->create($company->id, 'drivers', dynamicDriverPayload(
+    $repository->create($company->id, dynamicDriverPayload(
         nationalCode: '1234567891',
         firstName: 'علی',
         lastName: 'احمدی',
         status: 'active',
         licenseTypeId: $licenseType->id,
     ));
-    $repository->create($company->id, 'drivers', dynamicDriverPayload(
+    $repository->create($company->id, dynamicDriverPayload(
         nationalCode: '1234567892',
         firstName: 'رضا',
         lastName: 'محمدی',
@@ -90,7 +90,7 @@ test('the same advanced search rules work on company dynamic tables', function (
         licenseTypeId: $licenseType->id,
     ));
 
-    $drivers = $repository->search($company->id, 'drivers', [
+    $drivers = $repository->search($company->id, [
         'search' => 'احمدی',
         'eq-status' => 'active',
         'notEq-national_code' => '1234567892',

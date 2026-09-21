@@ -6,12 +6,11 @@ use App\Models\Company\DriverAccount;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
+/** @extends CompanyModelRepositoryInterface<DriverAccount> */
 interface DriverAccountRepositoryInterface extends CompanyModelRepositoryInterface
 {
     /** @return Collection<int, DriverAccount>|LengthAwarePaginator */
     public function searchForDriver(int $companyId, int $driverId, array $filters): Collection|LengthAwarePaginator;
-
-    public function driverExists(int $companyId, int $driverId): bool;
 
     public function findForDriverOrFail(int $companyId, int $driverId, int $accountId): DriverAccount;
 

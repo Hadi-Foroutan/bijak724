@@ -2,7 +2,7 @@
 
 use App\Enums\StatusEnum;
 use App\Http\Middleware\CheckPermission;
-use App\Interfaces\CompanyDataRepositoryInterface;
+use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Models\Company;
 use App\Models\DriverLicenseType;
 use App\Models\User;
@@ -96,9 +96,8 @@ test('it creates shows and lists drivers in the company table', function () {
 });
 
 test('it updates and deletes a driver', function () {
-    $driver = app(CompanyDataRepositoryInterface::class)->create(
+    $driver = app(DriverRepositoryInterface::class)->create(
         $this->company->id,
-        'drivers',
         $this->driverPayload,
     );
 
@@ -124,9 +123,8 @@ test('it updates and deletes a driver', function () {
 });
 
 test('it validates driver data and company scoped national code uniqueness', function () {
-    app(CompanyDataRepositoryInterface::class)->create(
+    app(DriverRepositoryInterface::class)->create(
         $this->company->id,
-        'drivers',
         $this->driverPayload,
     );
 
@@ -144,9 +142,8 @@ test('it validates driver data and company scoped national code uniqueness', fun
 });
 
 test('a driver cannot be accessed through another company', function () {
-    $driver = app(CompanyDataRepositoryInterface::class)->create(
+    $driver = app(DriverRepositoryInterface::class)->create(
         $this->company->id,
-        'drivers',
         $this->driverPayload,
     );
 

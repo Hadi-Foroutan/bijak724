@@ -9,6 +9,7 @@ use App\Http\Controllers\User\Driver\DriverController;
 use App\Http\Controllers\User\Fleet\FleetController;
 use App\Http\Controllers\User\InsuranceController;
 use App\Http\Controllers\User\InsuranceTariffController;
+use App\Http\Controllers\User\NotificationController;
 use App\Http\Controllers\User\ProductOwner\ProductOwnerController;
 use App\Http\Controllers\User\ReferralNumberController;
 use App\Http\Controllers\User\ShipmentParty\ShipmentPartyAddressController;
@@ -18,6 +19,9 @@ use App\Http\Controllers\User\Waybill\WaybillController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+
+Route::apiResource('notifications', NotificationController::class)
+    ->only(['index', 'show']);
 
 Route::get('{user}/permissions', [CompanyUserController::class, 'permissions'])
     ->name('permissions.index');
@@ -68,7 +72,7 @@ Route::apiResource('shipment-parties', ShipmentPartyController::class)
     ->parameters(['shipment-parties' => 'shipmentParty']);
 
 Route::prefix('shipment-parties')->name('shipment-parties.')->group(function () {
-    Route::match(['get', 'post'], '/addresses/inquiry', [ShipmentPartyAddressController::class, 'inquiry'])->name('addresses.inquiry');
+    Route::match(['get', 'post'], '/addresses/inquiry', [ShipmentPartyAddressController::class, 'inquiry'])->name('addresses-inquiry');
     Route::match(['get', 'post'], '/inquiry', [ShipmentPartyController::class, 'inquiry'])->name('inquiry');
 });
 Route::apiResource('shipment-parties.addresses', ShipmentPartyAddressController::class)

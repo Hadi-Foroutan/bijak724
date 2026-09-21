@@ -15,10 +15,12 @@ use App\Interfaces\Company\ReferralNumberRepositoryInterface;
 use App\Interfaces\Company\ShipmentPartyAddressRepositoryInterface;
 use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
 use App\Interfaces\Company\TransportContractRepositoryInterface;
+use App\Interfaces\Company\WaybillCargoRepositoryInterface;
 use App\Interfaces\Company\WaybillRepositoryInterface;
-use App\Interfaces\CompanyDataRepositoryInterface;
 use App\Interfaces\CompanyInterface;
 use App\Interfaces\GeneralOptionRepositoryInterface;
+use App\Interfaces\InsuranceCompanyRepositoryInterface;
+use App\Interfaces\NotificationRepositoryInterface;
 use App\Interfaces\PermissionInterface;
 use App\Interfaces\RoleInterface;
 use App\Interfaces\UserInterface;
@@ -29,7 +31,6 @@ use App\Observers\UserObserver;
 use App\Repositories\City\CityRepository;
 use App\Repositories\Company\CargoGroupRepository;
 use App\Repositories\Company\CargoRepository;
-use App\Repositories\Company\CompanyDataRepository;
 use App\Repositories\Company\CompanyRepository;
 use App\Repositories\Company\DriverAccountRepository;
 use App\Repositories\Company\DriverRepository;
@@ -41,8 +42,11 @@ use App\Repositories\Company\ReferralNumberRepository;
 use App\Repositories\Company\ShipmentPartyAddressRepository;
 use App\Repositories\Company\ShipmentPartyRepository;
 use App\Repositories\Company\TransportContractRepository;
+use App\Repositories\Company\WaybillCargoRepository;
 use App\Repositories\Company\WaybillRepository;
 use App\Repositories\General\GeneralOptionRepository;
+use App\Repositories\InsuranceCompanyRepository;
+use App\Repositories\NotificationRepository;
 use App\Repositories\Permission\PermissionRepository;
 use App\Repositories\Permission\RoleRepository;
 use App\Repositories\User\UserRepository;
@@ -57,7 +61,6 @@ class AppServiceProvider extends ServiceProvider
     /** @var array<class-string, class-string> */
     public $bindings = [
         UserInterface::class => UserRepository::class,
-        CompanyDataRepositoryInterface::class => CompanyDataRepository::class,
         CompanyInterface::class => CompanyRepository::class,
         DriverRepositoryInterface::class => DriverRepository::class,
         DriverAccountRepositoryInterface::class => DriverAccountRepository::class,
@@ -65,6 +68,7 @@ class AppServiceProvider extends ServiceProvider
         ShipmentPartyRepositoryInterface::class => ShipmentPartyRepository::class,
         ShipmentPartyAddressRepositoryInterface::class => ShipmentPartyAddressRepository::class,
         WaybillRepositoryInterface::class => WaybillRepository::class,
+        WaybillCargoRepositoryInterface::class => WaybillCargoRepository::class,
         CargoRepositoryInterface::class => CargoRepository::class,
         CargoGroupRepositoryInterface::class => CargoGroupRepository::class,
         InsuranceRepositoryInterface::class => InsuranceRepository::class,
@@ -74,6 +78,8 @@ class AppServiceProvider extends ServiceProvider
         TransportContractRepositoryInterface::class => TransportContractRepository::class,
         CityRepositoryInterface::class => CityRepository::class,
         GeneralOptionRepositoryInterface::class => GeneralOptionRepository::class,
+        InsuranceCompanyRepositoryInterface::class => InsuranceCompanyRepository::class,
+        NotificationRepositoryInterface::class => NotificationRepository::class,
         PermissionInterface::class => PermissionRepository::class,
         RoleInterface::class => RoleRepository::class,
     ];

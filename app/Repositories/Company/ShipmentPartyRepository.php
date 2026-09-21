@@ -7,9 +7,10 @@ use App\Models\Company\ShipmentParty;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Unique;
 
+/** @extends CompanyModelRepository<ShipmentParty> */
 class ShipmentPartyRepository extends CompanyModelRepository implements ShipmentPartyRepositoryInterface
 {
-    protected string $tableKey = 'shipment_parties';
+    protected string $modelClass = ShipmentParty::class;
 
     public function findByNationalIdentifierAndType(
         int $companyId,
@@ -33,7 +34,7 @@ class ShipmentPartyRepository extends CompanyModelRepository implements Shipment
         ?int $ignoreShipmentPartyId = null,
     ): Unique {
         $rule = Rule::unique(
-            $this->tableRegistry->tableName($companyId, $this->tableKey),
+            $this->tableName($companyId),
             'national_identifier',
         );
 

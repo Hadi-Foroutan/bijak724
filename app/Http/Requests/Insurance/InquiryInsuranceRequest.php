@@ -16,7 +16,7 @@ class InquiryInsuranceRequest extends BaseRequest
                 Rule::exists('insurances', 'id')->where('company_id', $this->companyId()),
             ],
             'cargos' => ['required', 'array', 'min:1'],
-            'cargos.*.id' => ['required', 'integer', 'distinct:strict', Rule::exists('cargos', 'id')],
+            'cargos.*.id' => ['required', 'integer', 'distinct:strict', Rule::exists('cargos', 'code')],
             'cargos.*.value' => ['required', 'numeric', 'min:0'],
         ];
     }

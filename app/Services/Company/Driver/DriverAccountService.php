@@ -4,11 +4,13 @@ namespace App\Services\Company\Driver;
 
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\DriverAccountRepositoryInterface;
+use App\Interfaces\Company\DriverRepositoryInterface;
 
 class DriverAccountService
 {
     public function __construct(
         protected DriverAccountRepositoryInterface $accountRepository,
+        protected DriverRepositoryInterface $driverRepository,
     ) {}
 
     /** @param array<string, mixed> $params */
@@ -66,7 +68,7 @@ class DriverAccountService
 
     private function ensureDriverExists(int $companyId, int $driverId): void
     {
-        if (! $this->accountRepository->driverExists($companyId, $driverId)) {
+        if (! $this->driverRepository->exists($companyId, $driverId)) {
             ServiceResult::error(__('public.not_found', ['attribute' => 'راننده']), 404);
         }
     }

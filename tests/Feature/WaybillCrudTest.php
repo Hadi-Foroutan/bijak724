@@ -2,7 +2,11 @@
 
 use App\Enums\TransportContractItemName;
 use App\Http\Middleware\CheckPermission;
-use App\Interfaces\CompanyDataRepositoryInterface;
+use App\Interfaces\Company\DriverRepositoryInterface;
+use App\Interfaces\Company\FleetRepositoryInterface;
+use App\Interfaces\Company\ProductOwnerRepositoryInterface;
+use App\Interfaces\Company\ShipmentPartyAddressRepositoryInterface;
+use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
 use App\Models\Cargo;
 use App\Models\City;
 use App\Models\Company;
@@ -35,12 +39,17 @@ beforeEach(function (): void {
     $this->contract->items->firstWhere('name', TransportContractItemName::InsurancePremium)
         ->update(['primary_value' => 2]);
 
-    $repository = app(CompanyDataRepositoryInterface::class);
-    $this->productOwner = $repository->create($this->company->id, 'product_owner', [
+    $productOwnerRepository = app(ProductOwnerRepositoryInterface::class);
+    $shipmentPartyRepository = app(ShipmentPartyRepositoryInterface::class);
+    $addressRepository = app(ShipmentPartyAddressRepositoryInterface::class);
+    $driverRepository = app(DriverRepositoryInterface::class);
+    $fleetRepository = app(FleetRepositoryInterface::class);
+
+    $this->productOwner = $productOwnerRepository->create($this->company->id, [
         'name' => 'صاحب کالا',
         'phone' => '09120000003',
     ]);
-    $this->sender = $repository->create($this->company->id, 'shipment_parties', [
+    $this->sender = $shipmentPartyRepository->create($this->company->id, [
         'national_identifier' => '10101010101',
         'is_sender' => true,
         'is_receiver' => false,
@@ -49,7 +58,7 @@ beforeEach(function (): void {
         'last_name' => 'فرستنده',
         'mobile' => '09120000001',
     ]);
-    $this->receiver = $repository->create($this->company->id, 'shipment_parties', [
+    $this->receiver = $shipmentPartyRepository->create($this->company->id, [
         'national_identifier' => '20202020202',
         'is_sender' => false,
         'is_receiver' => true,
@@ -64,13 +73,13 @@ beforeEach(function (): void {
         'code' => 1101,
         'state_id' => $state->id,
     ]);
-    $this->senderAddress = $repository->create($this->company->id, 'shipment_party_addresses', [
+    $this->senderAddress = $addressRepository->create($this->company->id, [
         'shipment_party_id' => $this->sender->id,
         'postal_code' => '1111111111',
         'city_code' => $city->code,
         'address' => 'تهران، آدرس فرستنده',
     ]);
-    $this->receiverAddress = $repository->create($this->company->id, 'shipment_party_addresses', [
+    $this->receiverAddress = $addressRepository->create($this->company->id, [
         'shipment_party_id' => $this->receiver->id,
         'postal_code' => '2222222222',
         'city_code' => $city->code,
@@ -84,7 +93,7 @@ beforeEach(function (): void {
         'license_expiry_date' => '2030-01-01',
         'status' => 'active',
     ];
-    $this->firstDriver = $repository->create($this->company->id, 'drivers', [
+    $this->firstDriver = $driverRepository->create($this->company->id, [
         ...$driverData,
         'national_code' => '1234567890',
         'first_name' => 'حسین',
@@ -92,7 +101,7 @@ beforeEach(function (): void {
         'license_number' => 'LIC-1',
         'phone_number_1' => '09121111111',
     ]);
-    $this->secondDriver = $repository->create($this->company->id, 'drivers', [
+    $this->secondDriver = $driverRepository->create($this->company->id, [
         ...$driverData,
         'national_code' => '0987654321',
         'first_name' => 'محمد',
@@ -100,7 +109,7 @@ beforeEach(function (): void {
         'license_number' => 'LIC-2',
         'phone_number_1' => '09122222222',
     ]);
-    $this->thirdDriver = $repository->create($this->company->id, 'drivers', [
+    $this->thirdDriver = $driverRepository->create($this->company->id, [
         ...$driverData,
         'national_code' => '1122334455',
         'first_name' => 'عباس',
@@ -108,7 +117,7 @@ beforeEach(function (): void {
         'license_number' => 'LIC-3',
         'phone_number_1' => '09123333333',
     ]);
-    $this->fleet = $repository->create($this->company->id, 'fleets', [
+    $this->fleet = $fleetRepository->create($this->company->id, [
         'status' => 'active',
         'ownership_type' => 'owned',
         'plate_first_number' => '12',
@@ -145,7 +154,7 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertJsonPath('data.referral_driver_id', $this->thirdDriver->id)
         ->assertJsonPath('data.referral_driver_first_name', 'عباس')
         ->assertJsonPath('data.referral_driver.phone_number_1', '09123333333')
-        ->assertJsonPath('data.referral_number', '2')
+        ->assertJsonPath('data.referral_number', '1')
         ->assertJsonPath('data.description', 'توضیحات بارنامه')
         ->assertJsonPath('data.liability_insurance', $this->insurance->id)
         ->assertJsonPath('data.insurance.id', $this->insurance->id)
@@ -178,9 +187,9 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
 
     $this->getJson("/api/user/waybills/{$waybillId}")
         ->assertSuccessful()
-        ->assertJsonPath('data.bijak_number', 'BIJAK-1')
+        ->assertJsonPath('data.bijak_number', '1001')
         ->assertJsonPath('data.serial_number', 'SERIAL-1')
-        ->assertJsonPath('data.referral_number', '2')
+        ->assertJsonPath('data.referral_number', '1')
         ->assertJsonPath('data.description', 'توضیحات بارنامه')
         ->assertJsonPath('data.bijak_tracking_code', $response->json('data.bijak_tracking_code'))
         ->assertJsonPath('data.sender_first_name', 'علی')
@@ -203,7 +212,7 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertJsonPath('data.sender_first_name', 'علی')
         ->assertJsonPath('data.referral_driver_id', $this->firstDriver->id)
         ->assertJsonPath('data.referral_driver_first_name', 'راننده جدید')
-        ->assertJsonPath('data.referral_number', '2')
+        ->assertJsonPath('data.referral_number', '1')
         ->assertJsonPath('data.cargos.0.id', $cargoItemId);
 });
 
@@ -212,6 +221,38 @@ test('it stores an incomplete waybill', function () {
         ->assertCreated()
         ->assertJsonPath('data.is_incomplete', true)
         ->assertJsonCount(0, 'data.cargos');
+});
+
+test('an incomplete waybill never stores issuance fields', function () {
+    $waybillId = $this->postJson('/api/user/waybills', [
+        'is_incomplete' => true,
+        'bijak_number' => 9001,
+        'serial_number' => 'DRAFT-SERIAL',
+        'issued_at' => '2026-09-07 11:00:00',
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.bijak_number', null)
+        ->assertJsonPath('data.serial_number', null)
+        ->assertJsonPath('data.issued_at', null)
+        ->json('data.id');
+
+    $this->putJson("/api/user/waybills/{$waybillId}", [
+        'is_incomplete' => true,
+        'bijak_number' => 9002,
+        'serial_number' => 'UPDATED-DRAFT-SERIAL',
+        'issued_at' => '2026-09-08 11:00:00',
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.bijak_number', null)
+        ->assertJsonPath('data.serial_number', null)
+        ->assertJsonPath('data.issued_at', null);
+
+    $this->assertDatabaseHas("company_{$this->company->id}_waybills", [
+        'id' => $waybillId,
+        'bijak_number' => null,
+        'serial_number' => null,
+        'issued_at' => null,
+    ]);
 });
 
 test('an incomplete waybill accepts null values without requiring any other field', function () {
@@ -285,9 +326,9 @@ test('it rejects unknown cargo and packaging codes and a product owner from anot
         ->assertJsonValidationErrors(['cargos.0.cargo_id', 'cargos.0.packaging_id']);
 
     $otherCompany = Company::factory()->create();
-    $otherRepository = app(CompanyDataRepositoryInterface::class);
-    $otherRepository->create($otherCompany->id, 'product_owner', ['name' => 'صاحب کالای دیگر']);
-    $otherOwner = $otherRepository->create($otherCompany->id, 'product_owner', ['name' => 'صاحب کالای دوم']);
+    $productOwnerRepository = app(ProductOwnerRepositoryInterface::class);
+    $productOwnerRepository->create($otherCompany->id, ['name' => 'صاحب کالای دیگر']);
+    $otherOwner = $productOwnerRepository->create($otherCompany->id, ['name' => 'صاحب کالای دوم']);
     $payload = completeWaybillPayload($this);
     $payload['cargos'][0]['product_owner_id'] = $otherOwner->id;
 
@@ -303,49 +344,57 @@ test('it reserves a referral number only when a waybill is issued', function () 
 
     $this->getJson('/api/user/referral-numbers/inquiry')
         ->assertSuccessful()
-        ->assertJsonPath('data.referral_number', 2);
+        ->assertJsonPath('data.referral_number', 1);
 
     $this->putJson("/api/user/waybills/{$draftId}", completeWaybillPayload($this))
         ->assertSuccessful()
-        ->assertJsonPath('data.referral_number', '2')
+        ->assertJsonPath('data.referral_number', '1')
+        ->assertJsonPath('data.bijak_number', '1001')
         ->assertJsonPath('data.serial_number', 'SERIAL-1');
+
+    $this->assertDatabaseHas("company_{$this->company->id}_waybills", [
+        'id' => $draftId,
+        'bijak_number' => '1001',
+        'serial_number' => 'SERIAL-1',
+        'issued_at' => '2026-09-07 11:00:00',
+    ]);
 
     $this->getJson('/api/user/referral-numbers/inquiry')
         ->assertSuccessful()
-        ->assertJsonPath('data.referral_number', 3);
+        ->assertJsonPath('data.referral_number', 2);
 
     $this->putJson("/api/user/waybills/{$draftId}", [
         ...completeWaybillPayload($this),
         'referral_number' => '999',
         'serial_number' => 'WRONG',
     ])->assertSuccessful()
-        ->assertJsonPath('data.referral_number', '2')
+        ->assertJsonPath('data.referral_number', '1')
         ->assertJsonPath('data.serial_number', 'SERIAL-1');
 
     $this->getJson('/api/user/referral-numbers/inquiry')
         ->assertSuccessful()
-        ->assertJsonPath('data.referral_number', 3);
+        ->assertJsonPath('data.referral_number', 2);
 });
 
 test('it completes the referral range at the final issued waybill', function () {
     $rangeId = $this->referralNumberId;
 
-    $this->patchJson("/api/user/referral-numbers/{$rangeId}", ['to_number' => 2])
+    $this->patchJson("/api/user/referral-numbers/{$rangeId}", ['to_number' => 1])
         ->assertSuccessful();
 
     $this->postJson('/api/user/waybills', completeWaybillPayload($this))
         ->assertCreated()
-        ->assertJsonPath('data.referral_number', '2');
+        ->assertJsonPath('data.referral_number', '1');
 
     $this->getJson("/api/user/referral-numbers/{$rangeId}")
         ->assertSuccessful()
-        ->assertJsonPath('data.last_number', 2)
+        ->assertJsonPath('data.last_number', 1)
         ->assertJsonPath('data.status', 'completed');
 
     $this->getJson('/api/user/referral-numbers/inquiry')->assertNotFound();
     $this->postJson('/api/user/waybills', completeWaybillPayload($this))
         ->assertUnprocessable()
-        ->assertJsonValidationErrors('referral_number');
+        ->assertJsonPath('errors.error.0', __('public.referral_issuance_unavailable'));
 });
 
 test('the default range completes after issuing number 999999', function () {
@@ -523,7 +572,7 @@ function completeWaybillPayload(object $test): array
         'loading_started_at' => '2026-09-07 08:00:00',
         'loading_ended_at' => '2026-09-07 10:00:00',
         'referral_number' => 'REF-1',
-        'bijak_number' => 'BIJAK-1',
+        'bijak_number' => 1001,
         'serial_number' => 'SERIAL-1',
         'issued_at' => '2026-09-07 11:00:00',
         'liability_insurance' => $test->insurance->id,

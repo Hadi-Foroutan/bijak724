@@ -24,6 +24,10 @@ return [
     'admin.cities.update' => 'ویرایش اطلاعات شهر ادمین',
     'admin.cities.destroy' => 'حذف شهر از سیستم ادمین',
 
+    'admin.notifications.index' => 'مشاهده فهرست اعلان‌ها در پنل ادمین',
+    'admin.notifications.store' => 'ارسال اعلان جدید برای همه کاربران',
+    'admin.notifications.show' => 'مشاهده جزئیات اعلان در پنل ادمین',
+
     'admin.permissions.index' => 'مشاهده لیست دسترسی ها ادمین',
     'admin.permissions.store' => 'ایجاد دسترسی جدید ادمین',
     'admin.permissions.show' => 'نمایش دسترسی ادمین',
@@ -38,6 +42,9 @@ return [
 
     // User Permissions
     'user.dashboard.index' => 'کاربر داشبورد ادمین',
+
+    'user.notifications.index' => 'مشاهده فهرست اعلان‌ها',
+    'user.notifications.show' => 'مشاهده جزئیات اعلان',
 
     'user.users.index' => 'مشاهده لیست کاربران شرکت',
     'user.users.store' => 'ایجاد کاربر جدید در شرکت',

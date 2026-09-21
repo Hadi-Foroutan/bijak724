@@ -4,11 +4,13 @@ namespace App\Services\Company\ShipmentParty;
 
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\ShipmentPartyAddressRepositoryInterface;
+use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
 
 class ShipmentPartyAddressService
 {
     public function __construct(
         protected ShipmentPartyAddressRepositoryInterface $addressRepository,
+        protected ShipmentPartyRepositoryInterface $shipmentPartyRepository,
     ) {}
 
     public function findShipmentPartyByPostalCodeAndType(
@@ -35,7 +37,7 @@ class ShipmentPartyAddressService
         int $shipmentPartyId,
         array $params,
     ): ServiceResult {
-        if (! $this->addressRepository->shipmentPartyExists($companyId, $shipmentPartyId)) {
+        if (! $this->shipmentPartyRepository->exists($companyId, $shipmentPartyId)) {
             return ServiceResult::error(__('public.not_found', ['attribute' => 'دریافتی پرداختی']));
         }
 
@@ -50,7 +52,7 @@ class ShipmentPartyAddressService
         int $shipmentPartyId,
         array $data,
     ): ServiceResult {
-        if (! $this->addressRepository->shipmentPartyExists($companyId, $shipmentPartyId)) {
+        if (! $this->shipmentPartyRepository->exists($companyId, $shipmentPartyId)) {
             return ServiceResult::error(__('public.not_found', ['attribute' => 'دریافتی پرداختی']), 404);
         }
 

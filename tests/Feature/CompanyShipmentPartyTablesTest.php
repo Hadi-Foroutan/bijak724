@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Resources\CompanyCargoResource;
-use App\Interfaces\CompanyDataRepositoryInterface;
+use App\Interfaces\Company\CargoRepositoryInterface;
+use App\Interfaces\Company\ShipmentPartyAddressRepositoryInterface;
+use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
 use App\Models\City;
 use App\Models\Company;
 use App\Models\State;
@@ -66,8 +68,9 @@ test('company gets shipment parties and their address tables', function () {
 });
 
 test('shipment party accepts multiple addresses and cascades them on delete', function () {
-    $repository = app(CompanyDataRepositoryInterface::class);
-    $party = $repository->create($this->company->id, 'shipment_parties', [
+    $partyRepository = app(ShipmentPartyRepositoryInterface::class);
+    $addressRepository = app(ShipmentPartyAddressRepositoryInterface::class);
+    $party = $partyRepository->create($this->company->id, [
         'national_identifier' => '10000000001',
         'is_sender' => true,
         'is_receiver' => true,
@@ -75,7 +78,7 @@ test('shipment party accepts multiple addresses and cascades them on delete', fu
     ]);
 
     foreach (['1111111111', '2222222222'] as $postalCode) {
-        $repository->create($this->company->id, 'shipment_party_addresses', [
+        $addressRepository->create($this->company->id, [
             'shipment_party_id' => $party->id,
             'postal_code' => $postalCode,
             'city_code' => 1101,
@@ -83,11 +86,11 @@ test('shipment party accepts multiple addresses and cascades them on delete', fu
         ]);
     }
 
-    expect($repository->query($this->company->id, 'shipment_party_addresses')->count())->toBe(2);
+    expect($addressRepository->query($this->company->id)->count())->toBe(2);
 
     $party->delete();
 
-    expect($repository->query($this->company->id, 'shipment_party_addresses')->count())->toBe(0);
+    expect($addressRepository->query($this->company->id)->count())->toBe(0);
 });
 
 test('sync command creates missing tables and adds newly configured fields', function () {
@@ -105,7 +108,7 @@ test('sync command creates missing tables and adds newly configured fields', fun
     expect(Schema::hasTable($addressTable))->toBeTrue()
         ->and(Schema::hasColumn($cargoTable, 'description'))->toBeTrue();
 
-    $cargo = app(CompanyDataRepositoryInterface::class)->create($this->company->id, 'cargos', [
+    $cargo = app(CargoRepositoryInterface::class)->create($this->company->id, [
         'name' => 'محموله تست',
         'description' => 'فیلد تازه',
     ]);
