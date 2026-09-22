@@ -5,6 +5,7 @@ return [
         'admin.companies.' => 'مدیریت شرکت‌های ادمین',
         'admin.cities.' => 'مدیریت شهرهای ادمین',
         'admin.notifications.' => 'مدیریت اعلان‌های ادمین',
+        'admin.waybills.' => 'مشاهده بارنامه‌های شرکت‌ها',
         'admin.users.' => 'مدیریت کاربران ادمین',
         'admin.permissions.' => 'مدیریت پرمیشن‌های ادمین',
         'admin.roles.' => 'مدیریت نقش‌های ادمین',

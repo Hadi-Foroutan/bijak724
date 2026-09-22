@@ -5,25 +5,22 @@ namespace App\Services\Company\Waybill;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\TransportContractRepositoryInterface;
 use App\Interfaces\Company\WaybillRepositoryInterface;
+use App\Interfaces\WaybillRepositoryInterface as SharedWaybillRepositoryInterface;
 use App\Models\Company\Waybill;
 use App\Models\TransportContract;
-use App\Services\Company\CompanyCrudService;
 use App\Services\Company\ReferralNumber\ReferralNumberService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
-/** @extends CompanyCrudService<Waybill, WaybillRepositoryInterface> */
-class WaybillService extends CompanyCrudService
+class WaybillService
 {
     private const ISSUANCE_FIELDS = [
         'bijak_number',
         'serial_number',
         'issued_at',
     ];
-
-    protected string $resourceLabel = 'بارنامه';
 
     public function __construct(
         protected WaybillRepositoryInterface $waybillRepository,
@@ -33,11 +30,17 @@ class WaybillService extends CompanyCrudService
         protected WaybillCargoService $waybillCargoService,
         protected ReferralNumberService $referralNumberService,
         protected TransportContractRepositoryInterface $transportContractRepository,
+        protected SharedWaybillRepositoryInterface $sharedWaybillRepository,
     ) {}
 
-    protected function repository(): WaybillRepositoryInterface
+    public function index(int $companyId, array $params): ServiceResult
     {
-        return $this->waybillRepository;
+        return ServiceResult::success($this->waybillRepository->search($companyId, $params));
+    }
+
+    public function show(int $companyId, int $id): ServiceResult
+    {
+        return ServiceResult::success($this->waybillRepository->findOrFail($companyId, $id));
     }
 
     public function options(int $companyId): ServiceResult
@@ -79,12 +82,25 @@ class WaybillService extends CompanyCrudService
                 /** @var Waybill $waybill */
                 $waybill = $this->waybillRepository->create($companyId, $data);
                 $this->waybillCargoService->sync($waybill, $companyId, $cargos);
+                $this->sharedWaybillRepository->create($companyId, $waybill->getKey());
 
                 return ServiceResult::success($this->waybillRepository->findOrFail($companyId, $waybill->getKey()));
             });
         } catch (QueryException $exception) {
             return $this->handleNumberUniqueViolation($exception);
         }
+    }
+
+    public function delete(int $companyId, int $id): ServiceResult
+    {
+        return DB::transaction(function () use ($companyId, $id): ServiceResult {
+            $this->waybillRepository->delete($companyId, $id);
+            $this->sharedWaybillRepository->delete($companyId, $id);
+
+            return ServiceResult::success(
+                __('public.delete_success', ['attribute' => 'بارنامه']),
+            );
+        });
     }
 
     /** @param array<string, mixed> $data */

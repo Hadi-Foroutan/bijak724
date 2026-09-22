@@ -2,7 +2,6 @@
 
 namespace App\Services\Company;
 
-use App\Models\DynamicModel;
 use Illuminate\Support\Arr;
 use LogicException;
 
@@ -45,38 +44,5 @@ class CompanyTableRegistry
         }
 
         return array_values($columns);
-    }
-
-    /**
-     * @template TModel of DynamicModel
-     *
-     * @param  TModel  $model
-     * @return TModel
-     */
-    public function configure(DynamicModel $model, int $companyId): DynamicModel
-    {
-        $tableKey = $model->companyTableKey();
-        $columns = collect($this->columns($tableKey));
-
-        $searchableFields = $columns
-            ->filter(fn (array $column): bool => (bool) ($column['searchable'] ?? true))
-            ->pluck('name')
-            ->filter()
-            ->values()
-            ->all();
-        $globalSearchFields = $columns
-            ->filter(fn (array $column): bool => (bool) ($column['global_search'] ?? in_array(
-                Arr::get($column, 'type'),
-                ['string', 'text'],
-                true,
-            )))
-            ->pluck('name')
-            ->filter()
-            ->values()
-            ->all();
-
-        return $model->forCompany($companyId)
-            ->setSearchableFields($searchableFields)
-            ->setGlobalSearchFields($globalSearchFields);
     }
 }

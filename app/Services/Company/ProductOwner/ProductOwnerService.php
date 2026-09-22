@@ -2,19 +2,39 @@
 
 namespace App\Services\Company\ProductOwner;
 
+use App\Helpers\ServiceResult;
 use App\Interfaces\Company\ProductOwnerRepositoryInterface;
-use App\Models\Company\ProductOwner;
-use App\Services\Company\CompanyCrudService;
 
-/** @extends CompanyCrudService<ProductOwner, ProductOwnerRepositoryInterface> */
-class ProductOwnerService extends CompanyCrudService
+class ProductOwnerService
 {
-    protected string $resourceLabel = 'صاحب کالا';
-
     public function __construct(protected ProductOwnerRepositoryInterface $productOwnerRepository) {}
 
-    protected function repository(): ProductOwnerRepositoryInterface
+    public function index(int $companyId, array $params): ServiceResult
     {
-        return $this->productOwnerRepository;
+        return ServiceResult::success($this->productOwnerRepository->search($companyId, $params));
+    }
+
+    public function create(int $companyId, array $data): ServiceResult
+    {
+        return ServiceResult::success($this->productOwnerRepository->create($companyId, $data));
+    }
+
+    public function show(int $companyId, int $id): ServiceResult
+    {
+        return ServiceResult::success($this->productOwnerRepository->findOrFail($companyId, $id));
+    }
+
+    public function update(int $companyId, int $id, array $data): ServiceResult
+    {
+        return ServiceResult::success($this->productOwnerRepository->update($companyId, $id, $data));
+    }
+
+    public function delete(int $companyId, int $id): ServiceResult
+    {
+        $this->productOwnerRepository->delete($companyId, $id);
+
+        return ServiceResult::success(
+            __('public.delete_success', ['attribute' => 'صاحب کالا']),
+        );
     }
 }

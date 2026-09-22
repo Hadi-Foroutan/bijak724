@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cargo_group_cargos', function (Blueprint $table) {
+        Schema::create('cargo_group_cargos', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('cargo_group_id')->constrained()->cascadeOnDelete();
             $table->foreignId('cargo_id')->constrained()->restrictOnDelete();
             $table->timestamps();
 
-            $table->unique(['company_id', 'cargo_group_id', 'cargo_id']);
+            $table->unique(['company_id', 'cargo_id']);
         });
     }
 

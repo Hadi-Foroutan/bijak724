@@ -24,6 +24,7 @@ use App\Interfaces\NotificationRepositoryInterface;
 use App\Interfaces\PermissionInterface;
 use App\Interfaces\RoleInterface;
 use App\Interfaces\UserInterface;
+use App\Interfaces\WaybillRepositoryInterface as SharedWaybillRepositoryInterface;
 use App\Models\Company;
 use App\Models\User;
 use App\Observers\CompanyObserver;
@@ -50,6 +51,7 @@ use App\Repositories\NotificationRepository;
 use App\Repositories\Permission\PermissionRepository;
 use App\Repositories\Permission\RoleRepository;
 use App\Repositories\User\UserRepository;
+use App\Repositories\WaybillRepository as SharedWaybillRepository;
 use App\Services\Company\CompanyDataOwnerResolver;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
@@ -82,6 +84,7 @@ class AppServiceProvider extends ServiceProvider
         NotificationRepositoryInterface::class => NotificationRepository::class,
         PermissionInterface::class => PermissionRepository::class,
         RoleInterface::class => RoleRepository::class,
+        SharedWaybillRepositoryInterface::class => SharedWaybillRepository::class,
     ];
 
     /**

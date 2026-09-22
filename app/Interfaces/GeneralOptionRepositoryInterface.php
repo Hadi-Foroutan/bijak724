@@ -2,6 +2,7 @@
 
 namespace App\Interfaces;
 
+use App\Models\State;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
@@ -23,7 +24,7 @@ interface GeneralOptionRepositoryInterface
     public function states(array $filters): Collection|LengthAwarePaginator;
 
     /** @param array<string, mixed> $filters */
-    public function cities(array $filters): Collection|LengthAwarePaginator;
+    public function cities(array $filters, State $state): Collection|LengthAwarePaginator;
 
     /** @param array<string, mixed> $filters */
     public function insuranceCompanies(array $filters): Collection|LengthAwarePaginator;

@@ -64,6 +64,8 @@ return [
     'waybill_referral_number_used' => 'شماره حوالهٔ :number با سریال :serial قبلاً برای بارنامه دیگری استفاده شده است.',
     'waybill_bijak_number_used' => 'شماره بیجک :number با سریال :serial قبلاً برای بارنامه دیگری استفاده شده است.',
     'waybill_number_duplicate' => 'ترکیب سریال و شماره بارنامه قبلاً استفاده شده است.',
+    'waybill_status_incomplete' => 'ناتمام',
+    'waybill_status_issued' => 'صادرشده',
     'parent_user_invalid' => 'کاربر بالادستی باید یکی از اعضای فعال همان شرکت باشد.',
     'admin_company_forbidden' => 'برای کاربران ادمین و سوپر ادمین، انتخاب شرکت مجاز نیست.',
     'base_freight_type_forbidden' => 'برای آیتم کرایه پایه، انتخاب نوع ملکی، استیجاری، آزاد یا نامشخص مجاز نیست.',

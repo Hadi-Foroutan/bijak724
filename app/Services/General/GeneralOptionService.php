@@ -4,6 +4,7 @@ namespace App\Services\General;
 
 use App\Helpers\ServiceResult;
 use App\Interfaces\GeneralOptionRepositoryInterface;
+use App\Models\State;
 
 class GeneralOptionService
 {
@@ -42,9 +43,9 @@ class GeneralOptionService
     }
 
     /** @param array<string, mixed> $filters */
-    public function cities(array $filters): ServiceResult
+    public function cities(array $filters, State $state): ServiceResult
     {
-        return ServiceResult::success($this->generalOptionRepository->cities($filters));
+        return ServiceResult::success($this->generalOptionRepository->cities($filters, $state));
     }
 
     /** @param array<string, mixed> $filters */

@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\Permission\PermissionController;
 use App\Http\Controllers\Admin\Permission\RoleController;
 use App\Http\Controllers\Admin\User\UserController;
+use App\Http\Controllers\Admin\WaybillController;
 use Illuminate\Support\Facades\Route;
 
 Route::apiResource('companies', CompanyController::class);
@@ -18,6 +19,8 @@ Route::apiResource('cities', CityController::class);
 
 Route::apiResource('notifications', NotificationController::class)
     ->only(['index', 'store', 'show']);
+
+Route::apiResource('waybills', WaybillController::class)->only(['index']);
 
 Route::apiResource('users', UserController::class);
 Route::prefix('users')->name('users.')->group(function () {

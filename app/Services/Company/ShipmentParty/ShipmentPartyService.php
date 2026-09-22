@@ -5,25 +5,19 @@ namespace App\Services\Company\ShipmentParty;
 use App\Enums\StatusEnum;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
-use App\Models\Company\ShipmentParty;
-use App\Services\Company\CompanyCrudService;
 use Illuminate\Validation\ValidationException;
 
-/** @extends CompanyCrudService<ShipmentParty, ShipmentPartyRepositoryInterface> */
-class ShipmentPartyService extends CompanyCrudService
+class ShipmentPartyService
 {
-    protected string $resourceLabel = 'فرستنده/گیرنده';
-
     public function __construct(
         protected ShipmentPartyRepositoryInterface $shipmentPartyRepository,
     ) {}
 
-    protected function repository(): ShipmentPartyRepositoryInterface
+    public function index(int $companyId, array $params): ServiceResult
     {
-        return $this->shipmentPartyRepository;
+        return ServiceResult::success($this->shipmentPartyRepository->search($companyId, $params));
     }
 
-    /** @param array<string, mixed> $data */
     public function create(int $companyId, array $data): ServiceResult
     {
         $data['status'] ??= StatusEnum::ACTIVE->value;
@@ -32,10 +26,14 @@ class ShipmentPartyService extends CompanyCrudService
             (bool) ($data['is_receiver'] ?? false),
         );
 
-        return parent::create($companyId, $data);
+        return ServiceResult::success($this->shipmentPartyRepository->create($companyId, $data));
     }
 
-    /** @param array<string, mixed> $data */
+    public function show(int $companyId, int $id): ServiceResult
+    {
+        return ServiceResult::success($this->shipmentPartyRepository->findOrFail($companyId, $id));
+    }
+
     public function update(int $companyId, int $id, array $data): ServiceResult
     {
         $shipmentParty = $this->shipmentPartyRepository->findOrFail($companyId, $id);
@@ -48,7 +46,18 @@ class ShipmentPartyService extends CompanyCrudService
 
         $this->validateRoles($isSender, $isReceiver);
 
-        return parent::update($companyId, $id, $data);
+        return ServiceResult::success(
+            $this->shipmentPartyRepository->update($companyId, $id, $data),
+        );
+    }
+
+    public function delete(int $companyId, int $id): ServiceResult
+    {
+        $this->shipmentPartyRepository->delete($companyId, $id);
+
+        return ServiceResult::success(
+            __('public.delete_success', ['attribute' => 'فرستنده/گیرنده']),
+        );
     }
 
     public function findByNationalIdentifierAndType(

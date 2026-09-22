@@ -9,7 +9,6 @@ use App\Models\Company\ShipmentParty;
 use App\Models\Company\ShipmentPartyAddress;
 use App\Models\DriverLicenseType;
 use App\Models\State;
-use App\Services\Company\DynamicRelationLoader;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Schema;
@@ -45,8 +44,6 @@ test('it loads configured static relations for dynamic records and paginators', 
         'paginate' => true,
         'itemsPerPage' => 10,
     ]);
-
-    app(DynamicRelationLoader::class)->load($drivers);
 
     expect($drivers->getCollection()->first())->toBeInstanceOf(CompanyDriver::class)
         ->and($drivers->getCollection()->first()->relationLoaded('licenseType'))->toBeTrue()
@@ -88,8 +85,7 @@ test('it loads dynamic has many relations with nested static relations', functio
         'address' => 'تهران، خیابان تست',
     ]);
 
-    $party->unsetRelation('addresses');
-    app(DynamicRelationLoader::class)->load($party);
+    $party = app(ShipmentPartyRepositoryInterface::class)->findOrFail(42, $party->id);
 
     expect($party)->toBeInstanceOf(ShipmentParty::class)
         ->and($address)->toBeInstanceOf(ShipmentPartyAddress::class)
@@ -98,8 +94,6 @@ test('it loads dynamic has many relations with nested static relations', functio
         ->and($party->addresses->first()->relationLoaded('city'))->toBeTrue()
         ->and($party->addresses->first()->city->is($city))->toBeTrue()
         ->and($party->addresses()->first()->is($address))->toBeTrue();
-
-    app(DynamicRelationLoader::class)->load($address);
 
     expect($address->relationLoaded('shipmentParty'))->toBeTrue()
         ->and($address->shipmentParty->is($party))->toBeTrue()

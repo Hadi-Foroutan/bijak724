@@ -9,6 +9,6 @@ Route::prefix('general')->name('general.')->controller(GeneralOptionController::
     Route::get('fleet-types', 'fleetTypes')->name('fleet-types');
     Route::get('fleet-systems', 'fleetSystems')->name('fleet-systems');
     Route::get('states', 'states')->name('states');
-    Route::get('cities', 'cities')->name('cities');
+    Route::get('cities/{state}', 'cities')->name('cities');
     Route::get('insurance-companies', 'insuranceCompanies')->name('insurance-companies');
 });

@@ -4,15 +4,69 @@ namespace App\Repositories\Company;
 
 use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Models\Company\Waybill;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 
-/** @extends CompanyModelRepository<Waybill> */
-class WaybillRepository extends CompanyModelRepository implements WaybillRepositoryInterface
+class WaybillRepository implements WaybillRepositoryInterface
 {
-    protected string $modelClass = Waybill::class;
+    public function __construct(protected Waybill $waybill) {}
+
+    public function query(int $companyId): Builder
+    {
+        return $this->waybill->newQueryForCompany($companyId);
+    }
+
+    public function search(int $companyId, array $filters): Collection|LengthAwarePaginator
+    {
+        $filters['itemsPerPage'] ??= $filters['per_page'] ?? 15;
+        $query = $this->query($companyId)
+            ->with($this->waybill->defaultRelations())
+            ->advancedSearch($filters);
+
+        return $query->getModel()->advancedSearchResults($query, $filters);
+    }
+
+    public function create(int $companyId, array $data): Waybill
+    {
+        $waybill = $this->waybill
+            ->newInstanceForCompany($companyId)
+            ->newQuery()
+            ->create([...$data, 'owner_company_id' => $companyId]);
+
+        return $waybill->loadDefaultRelations();
+    }
+
+    public function findOrFail(int $companyId, int $id): Waybill
+    {
+        return $this->query($companyId)
+            ->with($this->waybill->defaultRelations())
+            ->findOrFail($id);
+    }
+
+    public function update(int $companyId, int $id, array $data): Waybill
+    {
+        unset($data['owner_company_id']);
+
+        $waybill = $this->findOrFail($companyId, $id);
+        $waybill->fill($data);
+
+        if ($waybill->isDirty()) {
+            $waybill->save();
+        }
+
+        return $waybill->refresh()->loadDefaultRelations();
+    }
+
+    public function delete(int $companyId, int $id): void
+    {
+        $this->findOrFail($companyId, $id)->delete();
+    }
 
     public function trackingCodeExists(int $companyId, string $trackingCode): bool
     {
-        return $this->sharedQuery($companyId)
+        return $this->waybill
+            ->newSharedQueryForCompany($companyId)
             ->where('bijak_tracking_code', $trackingCode)
             ->exists();
     }
@@ -45,24 +99,6 @@ class WaybillRepository extends CompanyModelRepository implements WaybillReposit
             $bijakNumber,
             $ignoreWaybillId,
         );
-    }
-
-    public function update(int $companyId, int $id, array $data): Waybill
-    {
-        unset($data['owner_company_id']);
-
-        /** @var Waybill $waybill */
-        $waybill = $this->findOrFail($companyId, $id);
-        $waybill->fill($data);
-
-        if ($waybill->isDirty()) {
-            $waybill->save();
-        }
-
-        /** @var Waybill $waybill */
-        $waybill = $this->loadRelations($waybill->refresh());
-
-        return $waybill;
     }
 
     private function numberExists(

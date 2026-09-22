@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('insurance_tariffs', function (Blueprint $table) {
+        Schema::create('insurance_tariffs', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('insurance_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('cargo_group_id')->constrained()->restrictOnDelete();
+            $table->foreignId('cargo_group_id')->nullable()->constrained()->restrictOnDelete();
             $table->decimal('cargo_value_from', 20, 2);
             $table->decimal('cargo_value_to', 20, 2)->nullable();
             $table->decimal('fixed_premium', 20, 2)->nullable();
@@ -23,7 +23,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->timestamps();
 
-            $table->index(['insurance_id', 'cargo_group_id']);
+            $table->unique(['insurance_id', 'cargo_group_id']);
         });
     }
 

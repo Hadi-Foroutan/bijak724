@@ -44,6 +44,7 @@ class UpdateDriverRequest extends BaseRequest
                 'max:'.config('company_uploads.image_max_size_kb', 5120),
             ],
             'remove_profile_image' => ['sometimes', 'boolean'],
+            'is_profile_delete' => ['sometimes', 'boolean'],
             'description' => ['sometimes', 'nullable', 'string'],
             'status' => ['sometimes', 'required', Rule::enum(StatusEnum::class)],
         ];
@@ -51,6 +52,6 @@ class UpdateDriverRequest extends BaseRequest
 
     protected function prepareForValidation(): void
     {
-        $this->normalizeBooleanStrings(['remove_profile_image']);
+        $this->normalizeBooleanStrings(['remove_profile_image', 'is_profile_delete']);
     }
 }

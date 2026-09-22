@@ -7,10 +7,10 @@ use App\Models\Cargo;
 use App\Models\Company\Waybill;
 use App\Models\Company\WaybillCargo;
 use App\Models\Packaging;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Arr;
 
-/** @extends CompanyModelRepository<WaybillCargo> */
-class WaybillCargoRepository extends CompanyModelRepository implements WaybillCargoRepositoryInterface
+class WaybillCargoRepository implements WaybillCargoRepositoryInterface
 {
     private const FIELDS = [
         'cargo_id',
@@ -30,32 +30,40 @@ class WaybillCargoRepository extends CompanyModelRepository implements WaybillCa
         'container_number_2',
     ];
 
-    protected string $modelClass = WaybillCargo::class;
+    public function __construct(protected WaybillCargo $waybillCargo) {}
+
+    public function query(int $companyId): Builder
+    {
+        return $this->waybillCargo->newQueryForCompany($companyId);
+    }
 
     public function syncForWaybill(Waybill $waybill, int $companyId, array $cargos): void
     {
         $cargos = $this->resolveReferenceIds($cargos);
 
-        if ($this->hasSameCargos($waybill, $cargos)) {
+        if ($this->hasSameCargos($waybill, $companyId, $cargos)) {
             return;
         }
 
-        $waybill->cargos()->delete();
+        $this->query($companyId)
+            ->where('waybill_id', $waybill->getKey())
+            ->delete();
 
         if ($cargos === []) {
             return;
         }
 
-        $waybill->cargos()->createMany(array_map(
-            fn (array $cargo): array => [...$cargo, 'owner_company_id' => $companyId],
-            $cargos,
-        ));
+        $model = $this->waybillCargo->newInstanceForCompany($companyId);
+
+        foreach ($cargos as $cargo) {
+            $model->newQuery()->create([
+                ...$cargo,
+                'waybill_id' => $waybill->getKey(),
+                'owner_company_id' => $companyId,
+            ]);
+        }
     }
 
-    /**
-     * @param  list<array<string, mixed>>  $cargos
-     * @return list<array<string, mixed>>
-     */
     private function resolveReferenceIds(array $cargos): array
     {
         if ($cargos === []) {
@@ -76,12 +84,11 @@ class WaybillCargoRepository extends CompanyModelRepository implements WaybillCa
         ], $cargos);
     }
 
-    /** @param list<array<string, mixed>> $cargos */
-    private function hasSameCargos(Waybill $waybill, array $cargos): bool
+    private function hasSameCargos(Waybill $waybill, int $companyId, array $cargos): bool
     {
-        $waybill->loadMissing('cargos');
-
-        $currentCargos = $waybill->cargos
+        $currentCargos = $this->query($companyId)
+            ->where('waybill_id', $waybill->getKey())
+            ->get()
             ->map(fn (WaybillCargo $cargo): array => $this->normalize($cargo->only(self::FIELDS)))
             ->values()
             ->all();
@@ -90,7 +97,6 @@ class WaybillCargoRepository extends CompanyModelRepository implements WaybillCa
         return $currentCargos === $newCargos;
     }
 
-    /** @param array<string, mixed> $cargo */
     private function normalize(array $cargo): array
     {
         $normalized = array_replace(

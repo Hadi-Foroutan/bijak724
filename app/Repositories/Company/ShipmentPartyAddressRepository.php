@@ -9,21 +9,50 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Exists;
 use Illuminate\Validation\Rules\Unique;
 
-/** @extends CompanyModelRepository<ShipmentPartyAddress> */
-class ShipmentPartyAddressRepository extends CompanyModelRepository implements ShipmentPartyAddressRepositoryInterface
+class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryInterface
 {
-    protected string $modelClass = ShipmentPartyAddress::class;
+    public function __construct(protected ShipmentPartyAddress $shipmentPartyAddress) {}
+
+    public function query(int $companyId): Builder
+    {
+        return $this->shipmentPartyAddress->newQueryForCompany($companyId);
+    }
+
+    public function create(int $companyId, array $data): ShipmentPartyAddress
+    {
+        $address = $this->shipmentPartyAddress
+            ->newInstanceForCompany($companyId)
+            ->newQuery()
+            ->create([...$data, 'owner_company_id' => $companyId]);
+
+        return $address->loadDefaultRelations();
+    }
+
+    public function existsRule(int $companyId, string $column = 'id'): Exists
+    {
+        $model = $this->shipmentPartyAddress->newInstanceForCompany($companyId);
+        $rule = Rule::exists($model->getTable(), $column);
+
+        return $model->companyId() === $companyId
+            ? $rule
+            : $rule->where('owner_company_id', $companyId);
+    }
 
     public function searchForParty(
         int $companyId,
         int $shipmentPartyId,
         array $filters,
     ): Collection|LengthAwarePaginator {
+        $filters['itemsPerPage'] ??= $filters['per_page'] ?? 15;
         $filters['eq-shipment_party_id'] = $shipmentPartyId;
+        $query = $this->query($companyId)
+            ->with($this->shipmentPartyAddress->defaultRelations())
+            ->advancedSearch($filters);
 
-        return $this->search($companyId, $filters);
+        return $query->getModel()->advancedSearchResults($query, $filters);
     }
 
     public function uniquePostalCodeForPartyRule(
@@ -31,10 +60,9 @@ class ShipmentPartyAddressRepository extends CompanyModelRepository implements S
         int $shipmentPartyId,
         ?int $ignoreAddressId = null,
     ): Unique {
-        $rule = Rule::unique(
-            $this->tableName($companyId),
-            'postal_code',
-        )->where('shipment_party_id', $shipmentPartyId);
+        $table = $this->shipmentPartyAddress->newInstanceForCompany($companyId)->getTable();
+        $rule = Rule::unique($table, 'postal_code')
+            ->where('shipment_party_id', $shipmentPartyId);
 
         return $ignoreAddressId === null ? $rule : $rule->ignore($ignoreAddressId);
     }
@@ -44,13 +72,10 @@ class ShipmentPartyAddressRepository extends CompanyModelRepository implements S
         int $shipmentPartyId,
         int $addressId,
     ): ShipmentPartyAddress {
-        /** @var ShipmentPartyAddress $address */
-        $address = $this->query($companyId)
+        return $this->query($companyId)
+            ->with($this->shipmentPartyAddress->defaultRelations())
             ->where('shipment_party_id', $shipmentPartyId)
             ->findOrFail($addressId);
-
-        /** @var ShipmentPartyAddress */
-        return $this->loadRelations($address);
     }
 
     public function findShipmentPartyByPostalCodeAndType(
@@ -60,8 +85,8 @@ class ShipmentPartyAddressRepository extends CompanyModelRepository implements S
     ): ?ShipmentParty {
         $roleColumn = $type === 'sender' ? 'is_sender' : 'is_receiver';
 
-        /** @var ShipmentPartyAddress|null $address */
         $address = $this->query($companyId)
+            ->with($this->shipmentPartyAddress->defaultRelations())
             ->where('postal_code', $postalCode)
             ->whereHas(
                 'shipmentParty',
@@ -69,15 +94,7 @@ class ShipmentPartyAddressRepository extends CompanyModelRepository implements S
             )
             ->first();
 
-        if ($address === null) {
-            return null;
-        }
-
-        /** @var ShipmentParty|null $shipmentParty */
-        $shipmentParty = $address->shipmentParty;
-
-        /** @var ShipmentParty|null */
-        return $shipmentParty === null ? null : $this->loadRelations($shipmentParty);
+        return $address?->shipmentParty?->loadDefaultRelations();
     }
 
     public function updateForParty(
@@ -86,11 +103,12 @@ class ShipmentPartyAddressRepository extends CompanyModelRepository implements S
         int $addressId,
         array $data,
     ): ShipmentPartyAddress {
+        unset($data['owner_company_id'], $data['shipment_party_id']);
+
         $address = $this->findForPartyOrFail($companyId, $shipmentPartyId, $addressId);
         $address->update($data);
 
-        /** @var ShipmentPartyAddress */
-        return $this->loadRelations($address->refresh());
+        return $address->refresh()->loadDefaultRelations();
     }
 
     public function deleteForParty(int $companyId, int $shipmentPartyId, int $addressId): void

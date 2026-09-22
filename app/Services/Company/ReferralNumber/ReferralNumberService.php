@@ -8,20 +8,16 @@ use App\Interfaces\Company\ReferralNumberRepositoryInterface;
 use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Models\Company;
 use App\Models\Company\ReferralNumber;
-use App\Services\Company\CompanyCrudService;
 use App\Services\Company\CompanyDataOwnerResolver;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
-/** @extends CompanyCrudService<ReferralNumber, ReferralNumberRepositoryInterface> */
-class ReferralNumberService extends CompanyCrudService
+class ReferralNumberService
 {
     public const DEFAULT_FROM_NUMBER = 100000;
 
     public const DEFAULT_TO_NUMBER = 999999;
-
-    protected string $resourceLabel = 'شماره حواله';
 
     public function __construct(
         protected ReferralNumberRepositoryInterface $referralNumberRepository,
@@ -29,9 +25,18 @@ class ReferralNumberService extends CompanyCrudService
         protected WaybillRepositoryInterface $waybillRepository,
     ) {}
 
-    protected function repository(): ReferralNumberRepositoryInterface
+    public function index(int $companyId, array $params): ServiceResult
     {
-        return $this->referralNumberRepository;
+        return ServiceResult::success(
+            $this->referralNumberRepository->search($companyId, $params),
+        );
+    }
+
+    public function show(int $companyId, int $id): ServiceResult
+    {
+        return ServiceResult::success(
+            $this->referralNumberRepository->findOrFail($companyId, $id),
+        );
     }
 
     public function ensureDefaultForCompany(int $companyId): ServiceResult
@@ -68,7 +73,9 @@ class ReferralNumberService extends CompanyCrudService
             $this->normalizeStatus($data);
             $this->ensureOnlyOneActive($companyId, $data);
 
-            return parent::create($companyId, $data);
+            return ServiceResult::success(
+                $this->referralNumberRepository->create($companyId, $data),
+            );
         });
     }
 
@@ -86,7 +93,9 @@ class ReferralNumberService extends CompanyCrudService
             $this->normalizeStatus($data);
             $this->ensureOnlyOneActive($companyId, $data, $id);
 
-            return parent::update($companyId, $id, $data);
+            return ServiceResult::success(
+                $this->referralNumberRepository->update($companyId, $id, $data),
+            );
         });
     }
 
@@ -95,7 +104,11 @@ class ReferralNumberService extends CompanyCrudService
         return DB::transaction(function () use ($companyId, $id): ServiceResult {
             $this->lockCompany($companyId);
 
-            return parent::delete($companyId, $id);
+            $this->referralNumberRepository->delete($companyId, $id);
+
+            return ServiceResult::success(
+                __('public.delete_success', ['attribute' => 'شماره حواله']),
+            );
         });
     }
 

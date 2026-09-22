@@ -6,25 +6,22 @@ use App\Enums\FleetOwnershipType;
 use App\Enums\StatusEnum;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\FleetRepositoryInterface;
-use App\Models\Company\Fleet;
-use App\Services\Company\CompanyCrudService;
 use Illuminate\Validation\ValidationException;
 
-/** @extends CompanyCrudService<Fleet, FleetRepositoryInterface> */
-class FleetService extends CompanyCrudService
+class FleetService
 {
-    protected string $resourceLabel = 'ناوگان';
+    public function __construct(protected FleetRepositoryInterface $fleetRepository) {}
 
-    public function __construct(
-        protected FleetRepositoryInterface $fleetRepository,
-    ) {}
-
-    protected function repository(): FleetRepositoryInterface
+    public function index(int $companyId, array $params): ServiceResult
     {
-        return $this->fleetRepository;
+        return ServiceResult::success($this->fleetRepository->search($companyId, $params));
     }
 
-    /** @param array<string, string> $plate */
+    public function show(int $companyId, int $id): ServiceResult
+    {
+        return ServiceResult::success($this->fleetRepository->findOrFail($companyId, $id));
+    }
+
     public function findByPlate(int $companyId, array $plate): ServiceResult
     {
         return ServiceResult::success(
@@ -32,7 +29,6 @@ class FleetService extends CompanyCrudService
         );
     }
 
-    /** @param array<string, mixed> $data */
     public function create(int $companyId, array $data): ServiceResult
     {
         $this->validateUniquePlate($companyId, $data);
@@ -44,10 +40,9 @@ class FleetService extends CompanyCrudService
             $this->nullableInteger($data['tip_code'] ?? null),
         );
 
-        return parent::create($companyId, $data);
+        return ServiceResult::success($this->fleetRepository->create($companyId, $data));
     }
 
-    /** @param array<string, mixed> $data */
     public function update(int $companyId, int $id, array $data): ServiceResult
     {
         foreach (['status', 'ownership_type', 'has_violation'] as $defaultedField) {
@@ -72,10 +67,18 @@ class FleetService extends CompanyCrudService
 
         $this->validateSystemAndTip($systemId, $tipCode);
 
-        return parent::update($companyId, $id, $data);
+        return ServiceResult::success($this->fleetRepository->update($companyId, $id, $data));
     }
 
-    /** @param array<string, mixed> $data */
+    public function delete(int $companyId, int $id): ServiceResult
+    {
+        $this->fleetRepository->delete($companyId, $id);
+
+        return ServiceResult::success(
+            __('public.delete_success', ['attribute' => 'ناوگان']),
+        );
+    }
+
     private function validateUniquePlate(int $companyId, array $data, ?int $ignoreFleetId = null): void
     {
         if ($this->fleetRepository->plateExists($companyId, $data, $ignoreFleetId)) {

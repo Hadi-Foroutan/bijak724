@@ -185,12 +185,12 @@ class StoreWaybillRequest extends BaseRequest
             'cargos.*.value' => [$requiredWhenComplete, 'nullable', 'integer', 'min:0'],
             'cargos.*.quantity' => [$requiredWhenComplete, 'nullable', 'integer', 'min:1'],
             'cargos.*.is_traffic' => ['nullable', 'boolean'],
-//            'cargos.*.is_returned' => [$requiredWhenComplete, 'nullable', 'boolean'],
-//            'cargos.*.cottage_number' => ['nullable', 'string', 'max:255'],
-//            'cargos.*.cottage_number_2' => ['nullable', 'string', 'max:255'],
-//            'cargos.*.driver_account_number' => ['nullable', 'string', 'max:255'],
-//            'cargos.*.container_number' => ['nullable', 'string', 'max:255'],
-//            'cargos.*.container_number_2' => ['nullable', 'string', 'max:255'],
+            'cargos.*.is_returned' => [$requiredWhenComplete, 'nullable', 'boolean'],
+            //            'cargos.*.cottage_number' => ['nullable', 'string', 'max:255'],
+            //            'cargos.*.cottage_number_2' => ['nullable', 'string', 'max:255'],
+            //            'cargos.*.driver_account_number' => ['nullable', 'string', 'max:255'],
+            //            'cargos.*.container_number' => ['nullable', 'string', 'max:255'],
+            //            'cargos.*.container_number_2' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

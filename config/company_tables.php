@@ -7,6 +7,7 @@ use App\Enums\UserStatusEnum;
 
 return [
     'waybills' => [
+        ['name' => 'created_by', 'type' => 'unsignedBigInteger', 'nullable' => true, 'api' => false, 'index' => true, 'foreign' => ['table' => 'users', 'column' => 'id', 'on_delete' => 'null']],
         ['name' => 'sender_id', 'type' => 'unsignedBigInteger', 'index' => true],
         [
             'name' => 'sender_address_id',

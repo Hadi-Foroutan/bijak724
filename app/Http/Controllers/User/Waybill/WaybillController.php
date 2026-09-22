@@ -34,7 +34,13 @@ class WaybillController extends Controller
 
     public function store(StoreWaybillRequest $request): JsonResponse
     {
-        $result = $this->waybillService->create($this->companyId($request), $request->validated());
+        $result = $this->waybillService->create(
+            $this->companyId($request),
+            [
+                ...$request->validated(),
+                'created_by' => (int) $request->user()->getKey(),
+            ],
+        );
 
         return ResponseHandler::success(
             WaybillResource::make($result->data)->resolve($request),

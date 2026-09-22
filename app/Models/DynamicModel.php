@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Arr;
 use LogicException;
 
 abstract class DynamicModel extends Model
@@ -42,8 +43,60 @@ abstract class DynamicModel extends Model
     {
         $this->companyContextId = $companyId;
         $dataOwnerCompanyId = app(CompanyDataOwnerResolver::class)->resolveId($companyId);
+        $columns = collect($this->companyTableColumns());
 
-        return $this->setTableName("company_{$dataOwnerCompanyId}_{$this->companyTableKey()}");
+        return $this
+            ->setTableName("company_{$dataOwnerCompanyId}_{$this->companyTableKey()}")
+            ->setSearchableFields(
+                $columns
+                    ->filter(fn (array $column): bool => (bool) ($column['searchable'] ?? true))
+                    ->pluck('name')
+                    ->filter()
+                    ->values()
+                    ->all(),
+            )
+            ->setGlobalSearchFields(
+                $columns
+                    ->filter(fn (array $column): bool => (bool) ($column['global_search'] ?? in_array(
+                        Arr::get($column, 'type'),
+                        ['string', 'text'],
+                        true,
+                    )))
+                    ->pluck('name')
+                    ->filter()
+                    ->values()
+                    ->all(),
+            );
+    }
+
+    public function newInstanceForCompany(int $companyId): static
+    {
+        $model = $this->newInstance();
+        $model->setConnection($this->getConnectionName());
+
+        return $model->forCompany($companyId);
+    }
+
+    /** @return Builder<static> */
+    public function newQueryForCompany(int $companyId): Builder
+    {
+        $model = $this->newInstanceForCompany($companyId);
+        $query = $model->newQuery();
+
+        if (! app(CompanyDataOwnerResolver::class)->isDataOwner($companyId)) {
+            $query->where($model->qualifyColumn('owner_company_id'), $companyId);
+        }
+
+        return $query;
+    }
+
+    /** @return Builder<static> */
+    public function newSharedQueryForCompany(int $companyId): Builder
+    {
+        $dataOwnerCompanyId = app(CompanyDataOwnerResolver::class)->resolveId($companyId);
+        $model = $this->newInstanceForCompany($dataOwnerCompanyId);
+
+        return $model->newQuery();
     }
 
     public function setTableName(string $table): static
@@ -73,6 +126,15 @@ abstract class DynamicModel extends Model
     public function defaultRelations(): array
     {
         return $this->defaultRelations;
+    }
+
+    public function loadDefaultRelations(): static
+    {
+        if ($this->defaultRelations !== []) {
+            $this->loadMissing($this->defaultRelations);
+        }
+
+        return $this;
     }
 
     public function companyId(): int
@@ -152,5 +214,23 @@ abstract class DynamicModel extends Model
         }
 
         return $query;
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function companyTableColumns(): array
+    {
+        $definition = config("company_tables.{$this->companyTableKey()}", []);
+
+        if (! is_array($definition)) {
+            throw new LogicException("Columns for company table [{$this->companyTableKey()}] must be an array.");
+        }
+
+        $columns = Arr::isList($definition) ? $definition : ($definition['columns'] ?? []);
+
+        if (! is_array($columns)) {
+            throw new LogicException("Columns for company table [{$this->companyTableKey()}] must be an array.");
+        }
+
+        return array_values($columns);
     }
 }

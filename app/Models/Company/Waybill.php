@@ -5,6 +5,7 @@ namespace App\Models\Company;
 use App\Models\DynamicModel;
 use App\Models\Insurance;
 use App\Models\TransportContract;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -18,6 +19,11 @@ class Waybill extends DynamicModel
         'transportContract', 'insurance.insuranceCompany',
         'cargos.cargo', 'cargos.packaging', 'cargos.productOwner',
     ];
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by')->withTrashed();
+    }
 
     /** @return array<string, string> */
     protected function casts(): array

@@ -4,11 +4,14 @@ namespace App\Interfaces\Company;
 
 use App\Models\Company\DriverAccount;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
-/** @extends CompanyModelRepositoryInterface<DriverAccount> */
-interface DriverAccountRepositoryInterface extends CompanyModelRepositoryInterface
+interface DriverAccountRepositoryInterface
 {
+    /** @return Builder<DriverAccount> */
+    public function query(int $companyId): Builder;
+
     /** @return Collection<int, DriverAccount>|LengthAwarePaginator */
     public function searchForDriver(int $companyId, int $driverId, array $filters): Collection|LengthAwarePaginator;
 

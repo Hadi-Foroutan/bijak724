@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
+use App\Models\State;
 use App\Services\General\GeneralOptionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -49,9 +50,9 @@ class GeneralOptionController extends Controller
         return ResponseHandler::success($result->data);
     }
 
-    public function cities(Request $request): JsonResponse
+    public function cities(Request $request, State $state): JsonResponse
     {
-        $result = $this->generalOptionService->cities($request->all());
+        $result = $this->generalOptionService->cities($request->all(), $state);
 
         return ResponseHandler::success($result->data);
     }

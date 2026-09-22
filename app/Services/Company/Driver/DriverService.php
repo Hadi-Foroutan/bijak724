@@ -5,41 +5,36 @@ namespace App\Services\Company\Driver;
 use App\Enums\StatusEnum;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\DriverRepositoryInterface;
-use App\Models\Company\Driver;
-use App\Services\Company\CompanyCrudService;
 use App\Services\Uploads\CompanyImageUploader;
 use Illuminate\Http\UploadedFile;
 use Throwable;
 
-/** @extends CompanyCrudService<Driver, DriverRepositoryInterface> */
-class DriverService extends CompanyCrudService
+class DriverService
 {
-    protected string $resourceLabel = 'راننده';
-
     public function __construct(
         protected DriverRepositoryInterface $driverRepository,
         protected CompanyImageUploader $imageUploader,
     ) {}
 
-    protected function repository(): DriverRepositoryInterface
+    public function index(int $companyId, array $params): ServiceResult
     {
-        return $this->driverRepository;
+        return ServiceResult::success($this->driverRepository->search($companyId, $params));
     }
 
-    /** @param array<string, mixed> $data */
     public function create(int $companyId, array $data): ServiceResult
     {
         $image = $this->pullProfileImage($data);
+        $data['status'] ??= StatusEnum::ACTIVE->value;
 
         if ($image === null) {
-            return parent::create($companyId, $data);
+            return ServiceResult::success($this->driverRepository->create($companyId, $data));
         }
 
         $path = $this->imageUploader->upload($image, $companyId, 'drivers');
         $data['profile_image_path'] = $path;
 
         try {
-            return parent::create($companyId, $data);
+            return ServiceResult::success($this->driverRepository->create($companyId, $data));
         } catch (Throwable $throwable) {
             $this->imageUploader->delete($path);
 
@@ -47,14 +42,18 @@ class DriverService extends CompanyCrudService
         }
     }
 
-    /** @param array<string, mixed> $data */
+    public function show(int $companyId, int $id): ServiceResult
+    {
+        return ServiceResult::success($this->driverRepository->findOrFail($companyId, $id));
+    }
+
     public function update(int $companyId, int $id, array $data): ServiceResult
     {
         $driver = $this->driverRepository->findOrFail($companyId, $id);
         $currentPath = $driver->profile_image_path;
         $image = $this->pullProfileImage($data);
-        $removeProfileImage = $data['remove_profile_image'] ?? false;
-        unset($data['remove_profile_image']);
+        $removeProfileImage = $data['remove_profile_image'] ?? $data['is_profile_delete'] ?? false;
+        unset($data['remove_profile_image'], $data['is_profile_delete']);
 
         $newPath = null;
 
@@ -66,8 +65,10 @@ class DriverService extends CompanyCrudService
         }
 
         try {
-            $result = parent::update($companyId, $id, $data);
-        } catch (Throwable $throwable) {
+            $result = ServiceResult::success(
+                $this->driverRepository->update($companyId, $id, $data),
+            );
+        } catch (Throwable) {
             $this->imageUploader->delete($newPath);
 
             return ServiceResult::error(__('public.internal_error', ['attribute' => 'خطایی هنگام آپلود']));
@@ -84,11 +85,12 @@ class DriverService extends CompanyCrudService
     {
         $driver = $this->driverRepository->findOrFail($companyId, $id);
         $profileImagePath = $driver->profile_image_path;
-        $result = parent::delete($companyId, $id);
-
+        $this->driverRepository->delete($companyId, $id);
         $this->imageUploader->delete($profileImagePath);
 
-        return $result;
+        return ServiceResult::success(
+            __('public.delete_success', ['attribute' => 'راننده']),
+        );
     }
 
     public function findByNationalCode(int $companyId, string $nationalCode): ServiceResult
@@ -98,16 +100,6 @@ class DriverService extends CompanyCrudService
         );
     }
 
-    protected function prepareCreateData(array $data): array
-    {
-        $data['status'] ??= StatusEnum::ACTIVE->value;
-
-        return $data;
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     */
     private function pullProfileImage(array &$data): ?UploadedFile
     {
         $image = $data['profile_image'] ?? null;

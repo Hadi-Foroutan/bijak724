@@ -48,9 +48,9 @@ class GeneralOptionRepository implements GeneralOptionRepositoryInterface
         );
     }
 
-    public function cities(array $filters): Collection|LengthAwarePaginator
+    public function cities(array $filters, State $state): Collection|LengthAwarePaginator
     {
-        return City::searchRecords($filters);
+        return City::searchRecords($filters, fn (Builder $query): Builder => $query->where('state_id', $state->id));
     }
 
     public function insuranceCompanies(array $filters): Collection|LengthAwarePaginator
