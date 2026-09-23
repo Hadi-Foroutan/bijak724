@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Interfaces\CityRepositoryInterface;
 use App\Interfaces\Company\CargoGroupRepositoryInterface;
 use App\Interfaces\Company\CargoRepositoryInterface;
+use App\Interfaces\Company\DashboardRepositoryInterface;
 use App\Interfaces\Company\DriverAccountRepositoryInterface;
 use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Interfaces\Company\FleetRepositoryInterface;
@@ -33,6 +34,7 @@ use App\Repositories\City\CityRepository;
 use App\Repositories\Company\CargoGroupRepository;
 use App\Repositories\Company\CargoRepository;
 use App\Repositories\Company\CompanyRepository;
+use App\Repositories\Company\DashboardRepository;
 use App\Repositories\Company\DriverAccountRepository;
 use App\Repositories\Company\DriverRepository;
 use App\Repositories\Company\FleetRepository;
@@ -72,6 +74,7 @@ class AppServiceProvider extends ServiceProvider
         WaybillRepositoryInterface::class => WaybillRepository::class,
         WaybillCargoRepositoryInterface::class => WaybillCargoRepository::class,
         CargoRepositoryInterface::class => CargoRepository::class,
+        DashboardRepositoryInterface::class => DashboardRepository::class,
         CargoGroupRepositoryInterface::class => CargoGroupRepository::class,
         InsuranceRepositoryInterface::class => InsuranceRepository::class,
         InsuranceTariffRepositoryInterface::class => InsuranceTariffRepository::class,

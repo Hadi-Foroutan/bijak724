@@ -41,6 +41,6 @@ return [
 
     'non_default_permissions' => [
         'user.users.*',
-        //        'user.fleets.*'
+//        'user.fleets.*'
     ],
 ];

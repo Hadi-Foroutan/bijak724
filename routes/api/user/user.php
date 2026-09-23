@@ -18,7 +18,13 @@ use App\Http\Controllers\User\TransportContractController;
 use App\Http\Controllers\User\Waybill\WaybillController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+Route::prefix('dashboard')->name('dashboard.')->controller(DashboardController::class)->group(function () {
+    Route::get('/', 'index')->name('index');
+    Route::get('waybills/daily', 'dailyWaybills')->name('waybills.daily');
+    Route::get('waybills/monthly', 'monthlyWaybills')->name('waybills.monthly');
+    Route::get('cargos/top', 'topCargos')->name('cargos.top');
+    Route::get('drivers/top', 'topDrivers')->name('drivers.top');
+});
 
 Route::apiResource('notifications', NotificationController::class)
     ->only(['index', 'show']);

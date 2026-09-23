@@ -41,7 +41,11 @@ return [
     'admin.roles.destroy' => 'حذف نقش از سیستم ادمین',
 
     // User Permissions
-    'user.dashboard.index' => 'کاربر داشبورد ادمین',
+    'user.dashboard.index' => 'مشاهده خلاصه داشبورد کاربر',
+    'user.dashboard.waybills.daily' => 'مشاهده آمار روزانه بارنامه‌های صادرشده',
+    'user.dashboard.waybills.monthly' => 'مشاهده آمار ماهانه بارنامه‌های صادرشده',
+    'user.dashboard.cargos.top' => 'مشاهده محموله‌های پرتکرار در بارنامه‌ها',
+    'user.dashboard.drivers.top' => 'مشاهده رانندگان دارای بیشترین بارنامه',
 
     'user.notifications.index' => 'مشاهده فهرست اعلان‌ها',
     'user.notifications.show' => 'مشاهده جزئیات اعلان',

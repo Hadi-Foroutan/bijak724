@@ -194,7 +194,13 @@ test('it resets and regenerates route permissions with groups and role links', f
         ->firstOrFail();
 
     expect($dashboardGroup->permissions()->pluck('name')->all())
-        ->toBe(['user.dashboard.index']);
+        ->toBe([
+            'user.dashboard.cargos.top',
+            'user.dashboard.drivers.top',
+            'user.dashboard.index',
+            'user.dashboard.waybills.daily',
+            'user.dashboard.waybills.monthly',
+        ]);
     expect($driverGroup->permissions()->count())->toBe(6)
         ->and($driverGroup->permissions()->where('name', 'user.drivers.inquiry')->exists())->toBeTrue();
     expect($fleetGroup->permissions()->count())->toBe(6)

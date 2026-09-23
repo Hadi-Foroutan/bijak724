@@ -33,6 +33,7 @@ class CompanyTableService
             $this->syncColumns($tableName, $columns, $companyId);
             $this->ensureFleetPlateUniqueIndex($tableName, $tableKey);
             $this->ensureWaybillNumberUniqueIndexes($tableName, $tableKey);
+            $this->ensureWaybillDashboardIndexes($tableName, $tableKey);
 
             if ($tableKey === 'referral_numbers') {
                 $this->ensureReferralNumberActiveIndex($tableName);
@@ -48,6 +49,8 @@ class CompanyTableService
             foreach ($columns as $column) {
                 $this->addColumn($table, $column, $companyId);
             }
+
+            $table->timestamps();
 
             if ($tableKey === 'fleets') {
                 $table->unique($this->fleetPlateColumns(), "{$tableName}_plate_unique");
@@ -66,9 +69,9 @@ class CompanyTableService
                     ['owner_company_id', 'serial_number', 'bijak_number'],
                     "{$tableName}_serial_bijak_unique",
                 );
+                $table->index('issued_at', "{$tableName}_dashboard_issued_index");
+                $table->index('created_at', "{$tableName}_dashboard_created_index");
             }
-
-            $table->timestamps();
         });
     }
 
@@ -112,6 +115,28 @@ class CompanyTableService
 
             Schema::table($tableName, function (Blueprint $table) use ($columns, $indexName): void {
                 $table->unique($columns, $indexName);
+            });
+        }
+    }
+
+    private function ensureWaybillDashboardIndexes(string $tableName, string $tableKey): void
+    {
+        if ($tableKey !== 'waybills') {
+            return;
+        }
+
+        $indexes = [
+            "{$tableName}_dashboard_issued_index" => 'issued_at',
+            "{$tableName}_dashboard_created_index" => 'created_at',
+        ];
+
+        foreach ($indexes as $indexName => $column) {
+            if (Schema::hasIndex($tableName, $indexName)) {
+                continue;
+            }
+
+            Schema::table($tableName, function (Blueprint $table) use ($column, $indexName): void {
+                $table->index($column, $indexName);
             });
         }
     }
