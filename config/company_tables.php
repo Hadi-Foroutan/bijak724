@@ -4,6 +4,7 @@ use App\Enums\FleetOwnershipType;
 use App\Enums\ReferralNumberStatus;
 use App\Enums\StatusEnum;
 use App\Enums\UserStatusEnum;
+use App\Enums\WaybillStatus;
 
 return [
     'waybills' => [
@@ -55,7 +56,7 @@ return [
         ['name' => 'liability_insurance', 'type' => 'unsignedBigInteger', 'change' => true, 'index' => true, 'foreign' => ['table' => 'insurances', 'column' => 'id']],
         ['name' => 'bijak_tracking_code', 'type' => 'string', 'length' => 8, 'unique' => true],
         ['name' => 'description', 'type' => 'text'],
-        ['name' => 'is_incomplete', 'type' => 'boolean', 'default' => true, 'nullable' => false],
+        ['name' => 'status', 'type' => 'enum', 'values' => WaybillStatus::values(), 'default' => WaybillStatus::Incomplete->value, 'nullable' => false, 'index' => true],
         ['name' => 'transport_contract_id', 'type' => 'unsignedBigInteger', 'index' => true, 'foreign' => ['table' => 'transport_contracts', 'column' => 'id']],
         ['name' => 'base_freight_amount', 'type' => 'unsignedBigInteger'],
         ['name' => 'advance_freight_amount', 'type' => 'unsignedBigInteger'],

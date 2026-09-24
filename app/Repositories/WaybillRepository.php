@@ -70,11 +70,7 @@ class WaybillRepository implements WaybillRepositoryInterface
 
         if (isset($filters['status'])) {
             $status = WaybillStatus::tryFrom((string) $filters['status']);
-            $dynamicFilters['eq-is_incomplete'] = match ($status) {
-                WaybillStatus::Incomplete => true,
-                WaybillStatus::Issued => false,
-                default => '__invalid_status__',
-            };
+            $dynamicFilters['eq-status'] = $status?->value ?? '__invalid_status__';
         }
 
         unset($sharedFilters['status']);

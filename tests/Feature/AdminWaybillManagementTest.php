@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\WaybillStatus;
 use App\Http\Middleware\CheckPermission;
 use App\Models\Company;
 use App\Models\User;
@@ -77,7 +78,7 @@ test('admin filters shared waybills by company status date and dynamic document 
     DB::table("company_{$this->firstCompany->id}_waybills")
         ->where('id', $firstWaybillId)
         ->update([
-            'is_incomplete' => false,
+            'status' => WaybillStatus::Completed->value,
             'serial_number' => 'SERIAL-1405-A',
             'referral_number' => '100001',
             'bijak_tracking_code' => '12345678',
@@ -85,7 +86,7 @@ test('admin filters shared waybills by company status date and dynamic document 
     DB::table("company_{$this->secondCompany->id}_waybills")
         ->where('id', $secondWaybillId)
         ->update([
-            'is_incomplete' => true,
+            'status' => WaybillStatus::Incomplete->value,
             'serial_number' => 'SERIAL-1405-B',
             'referral_number' => '200001',
             'bijak_tracking_code' => '87654321',
@@ -102,7 +103,7 @@ test('admin filters shared waybills by company status date and dynamic document 
     $this->withToken($this->admin->createToken('admin-waybill-filters')->plainTextToken)
         ->getJson('/api/admin/waybills?'.http_build_query([
             'company_id' => $this->firstCompany->id,
-            'status' => 'issued',
+            'status' => WaybillStatus::Completed->value,
             'created_at_from' => '2026-09-01',
             'created_at_to' => '2026-09-15',
             'serial_number' => '1405-A',
@@ -117,8 +118,8 @@ test('admin filters shared waybills by company status date and dynamic document 
         ->assertJsonPath('data.data.0.serial_number', 'SERIAL-1405-A')
         ->assertJsonPath('data.data.0.referral_number', '100001')
         ->assertJsonPath('data.data.0.bijak_tracking_code', '12345678')
-        ->assertJsonPath('data.data.0.status', 'issued')
-        ->assertJsonPath('data.data.0.status_label', 'صادرشده')
+        ->assertJsonPath('data.data.0.status', WaybillStatus::Completed->value)
+        ->assertJsonPath('data.data.0.status_label', 'تمام‌شده')
         ->assertJsonPath('data.data.0.username', 'first-waybill-user');
 });
 
@@ -135,7 +136,7 @@ function createDraftWaybill(object $test, Company $company, User $user): int
     Auth::forgetGuards();
 
     return $test->withToken(companyWaybillToken($user, $company))
-        ->postJson('/api/user/waybills', ['is_incomplete' => true])
+        ->postJson('/api/user/waybills', ['status' => WaybillStatus::Incomplete->value])
         ->assertCreated()
         ->json('data.id');
 }

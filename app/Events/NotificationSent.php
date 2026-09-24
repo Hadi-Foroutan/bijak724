@@ -40,9 +40,9 @@ class NotificationSent implements ShouldBroadcastNow
                 'type' => $this->notification->type->value,
                 'should_remove_previous' => $this->notification->should_remove_previous,
                 'message' => $this->notification->message,
-                'sender' => [
+                /*'sender' => [
                     'full_name' => $this->notification->sender->full_name,
-                ],
+                ],*/
                 'created_at' => $this->notification->created_at,
             ],
         ];

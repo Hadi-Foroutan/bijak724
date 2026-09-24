@@ -2,6 +2,7 @@
 
 namespace App\Services\Company\Waybill;
 
+use App\Enums\WaybillStatus;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\TransportContractRepositoryInterface;
 use App\Interfaces\Company\WaybillRepositoryInterface;
@@ -9,7 +10,7 @@ use App\Interfaces\WaybillRepositoryInterface as SharedWaybillRepositoryInterfac
 use App\Models\Company\Waybill;
 use App\Models\TransportContract;
 use App\Services\Company\ReferralNumber\ReferralNumberService;
-use Illuminate\Database\QueryException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
@@ -48,6 +49,10 @@ class WaybillService
         $contracts = $this->transportContractRepository->options($companyId);
 
         return ServiceResult::success([
+            'statuses' => collect(WaybillStatus::cases())->map(fn (WaybillStatus $status): array => [
+                'value' => $status->value,
+                'label' => $status->label(),
+            ])->values(),
             'transport_contracts' => $contracts->map(fn (TransportContract $contract): array => [
                 'id' => $contract->id,
                 'title' => $contract->title,
@@ -68,15 +73,12 @@ class WaybillService
                 $cargos = Arr::pull($data, 'cargos', []) ?? [];
                 $data = $this->snapshotBuilder->forCreate($companyId, $data);
                 $data = $this->financialCalculator->calculate($companyId, $data);
+                $status = $this->normalizeStatus($data);
 
-                if ($data['is_incomplete']) {
+                if (in_array($status, [WaybillStatus::Incomplete, WaybillStatus::Canceled], true)) {
                     $data = $this->clearIssuanceFields($data);
                 } else {
-                    $next = $this->referralNumberService->reserveNext($companyId)->data;
-                    $data['referral_number'] = (string) $next['referral_number'];
-                    $data['serial_number'] = $next['serial_number'];
-                    $data['bijak_tracking_code'] = $this->trackingCodeGenerator->generate($companyId);
-                    $this->ensureBijakNumberIsAvailable($companyId, $data);
+                    $data = $this->prepareIssuance($companyId, $data);
                 }
 
                 /** @var Waybill $waybill */
@@ -86,7 +88,7 @@ class WaybillService
 
                 return ServiceResult::success($this->waybillRepository->findOrFail($companyId, $waybill->getKey()));
             });
-        } catch (QueryException $exception) {
+        } catch (UniqueConstraintViolationException $exception) {
             return $this->handleNumberUniqueViolation($exception);
         }
     }
@@ -110,31 +112,30 @@ class WaybillService
             return DB::transaction(function () use ($companyId, $id, $data): ServiceResult {
                 /** @var Waybill $waybill */
                 $waybill = $this->waybillRepository->findOrFail($companyId, $id);
+                $cargosWereProvided = array_key_exists('cargos', $data);
                 $cargos = Arr::pull($data, 'cargos', []) ?? [];
                 $data = $this->snapshotBuilder->forUpdate($companyId, $waybill, $data);
                 $data = $this->financialCalculator->calculate($companyId, $data);
+                $status = $this->normalizeStatus($data);
 
-                if ($data['is_incomplete']) {
+                if ($status === WaybillStatus::Incomplete) {
                     $data = $this->clearIssuanceFields($data);
-                } elseif (! $waybill->is_incomplete) {
-                    $data['referral_number'] = $waybill->referral_number;
-                    $data['serial_number'] = $waybill->serial_number;
-                    $this->ensureBijakNumberIsAvailable($companyId, $data, $waybill->getKey());
+                } elseif ($status === WaybillStatus::Canceled) {
+                    $data = $this->preserveIssuanceFields($data, $waybill);
                 } else {
-                    $next = $this->referralNumberService->reserveNext($companyId)->data;
-                    $data['referral_number'] = (string) $next['referral_number'];
-                    $data['serial_number'] = $next['serial_number'];
-                    $this->ensureBijakNumberIsAvailable($companyId, $data, $waybill->getKey());
+                    $data = $this->prepareIssuance($companyId, $data, $waybill);
                 }
 
                 /** @var Waybill $waybill */
                 $waybill = $this->waybillRepository->update($companyId, $id, $data);
 
-                $this->waybillCargoService->sync($waybill, $companyId, $cargos);
+                if ($cargosWereProvided) {
+                    $this->waybillCargoService->sync($waybill, $companyId, $cargos);
+                }
 
                 return ServiceResult::success($this->waybillRepository->findOrFail($companyId, $id));
             });
-        } catch (QueryException $exception) {
+        } catch (UniqueConstraintViolationException $exception) {
             return $this->handleNumberUniqueViolation($exception);
         }
     }
@@ -150,15 +151,54 @@ class WaybillService
     }
 
     /** @param array<string, mixed> $data */
+    private function normalizeStatus(array &$data): WaybillStatus
+    {
+        $status = WaybillStatus::from((string) $data['status']);
+        $data['status'] = $status->value;
+
+        return $status;
+    }
+
+    /** @param array<string, mixed> $data */
+    private function prepareIssuance(int $companyId, array $data, ?Waybill $waybill = null): array
+    {
+        if ($waybill?->referral_number !== null && $waybill->serial_number !== null) {
+            $data['referral_number'] = $waybill->referral_number;
+            $data['serial_number'] = $waybill->serial_number;
+            $data['bijak_tracking_code'] = $waybill->bijak_tracking_code
+                ?? $this->trackingCodeGenerator->generate($companyId);
+        } else {
+            $next = $this->referralNumberService->reserveNext($companyId)->data;
+            $data['referral_number'] = (string) $next['referral_number'];
+            $data['serial_number'] = $next['serial_number'];
+            $data['bijak_tracking_code'] = $this->trackingCodeGenerator->generate($companyId);
+        }
+
+        $this->ensureBijakNumberIsAvailable($companyId, $data, $waybill?->getKey());
+
+        return $data;
+    }
+
+    /** @param array<string, mixed> $data */
+    private function preserveIssuanceFields(array $data, Waybill $waybill): array
+    {
+        foreach ([...self::ISSUANCE_FIELDS, 'referral_number', 'bijak_tracking_code'] as $field) {
+            $data[$field] = $waybill->getAttribute($field);
+        }
+
+        return $data;
+    }
+
+    /** @param array<string, mixed> $data */
     private function ensureBijakNumberIsAvailable(
         int $companyId,
         array $data,
         ?int $ignoreWaybillId = null,
     ): void {
-        $serialNumber = (string) $data['serial_number'];
-        $bijakNumber = (string) $data['bijak_number'];
+        $serialNumber = trim((string) ($data['serial_number'] ?? ''));
+        $bijakNumber = trim((string) ($data['bijak_number'] ?? ''));
 
-        if (! $this->waybillRepository->bijakNumberExists(
+        if ($serialNumber === '' || $bijakNumber === '' || ! $this->waybillRepository->bijakNumberExists(
             $companyId,
             $serialNumber,
             $bijakNumber,
@@ -176,21 +216,28 @@ class WaybillService
         );
     }
 
-    private function handleNumberUniqueViolation(QueryException $exception): ServiceResult
+    private function handleNumberUniqueViolation(UniqueConstraintViolationException $exception): ServiceResult
     {
-        $message = strtolower($exception->getMessage());
-        $isWaybillNumberViolation = str_contains($message, 'serial_referral_unique')
-            || str_contains($message, 'serial_bijak_unique')
-            || (str_contains($message, 'serial_number')
-                && (str_contains($message, 'referral_number') || str_contains($message, 'bijak_number')));
+        $message = strtolower((string) ($exception->errorInfo[2] ?? $exception->getMessage()));
+        $isReferralNumberViolation = str_contains($message, 'serial_referral_unique')
+            || (str_contains($message, 'serial_number') && str_contains($message, 'referral_number'));
+        $isBijakNumberViolation = str_contains($message, 'serial_bijak_unique')
+            || (str_contains($message, 'serial_number') && str_contains($message, 'bijak_number'));
 
-        if (! $isWaybillNumberViolation) {
-            throw $exception;
+        if ($isReferralNumberViolation) {
+            return ServiceResult::error(
+                __('public.waybill_referral_number_duplicate'),
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
         }
 
-        return ServiceResult::error(
-            __('public.waybill_number_duplicate'),
-            Response::HTTP_UNPROCESSABLE_ENTITY,
-        );
+        if ($isBijakNumberViolation) {
+            return ServiceResult::error(
+                __('public.waybill_number_duplicate'),
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
+        }
+
+        throw $exception;
     }
 }

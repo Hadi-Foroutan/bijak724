@@ -2,6 +2,7 @@
 
 namespace App\Models\Company;
 
+use App\Enums\WaybillStatus;
 use App\Models\DynamicModel;
 use App\Models\Insurance;
 use App\Models\TransportContract;
@@ -33,7 +34,7 @@ class Waybill extends DynamicModel
             'loading_started_at' => 'datetime',
             'loading_ended_at' => 'datetime',
             'issued_at' => 'datetime',
-            'is_incomplete' => 'boolean',
+            'status' => WaybillStatus::class,
             'freight_at_origin' => 'boolean',
             'is_fixed' => 'boolean',
         ];

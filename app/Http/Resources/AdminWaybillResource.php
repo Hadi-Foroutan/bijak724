@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources;
 
-use App\Enums\WaybillStatus;
 use App\Models\Company\Waybill as CompanyWaybill;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -20,9 +19,7 @@ class AdminWaybillResource extends JsonResource
         $companyWaybill = $this->relationLoaded('companyWaybill')
             ? $this->getRelation('companyWaybill')
             : null;
-        $status = $companyWaybill === null
-            ? null
-            : WaybillStatus::fromIncomplete((bool) $companyWaybill->is_incomplete);
+        $status = $companyWaybill?->status;
 
         return [
             'id' => $this->id,
@@ -33,6 +30,7 @@ class AdminWaybillResource extends JsonResource
             'referral_number' => $companyWaybill?->referral_number,
             'bijak_tracking_code' => $companyWaybill?->bijak_tracking_code,
             'status' => $status?->value,
+            'status_label' => $status?->label(),
             'created_by' => $companyWaybill?->created_by,
             'username' => $companyWaybill?->creator?->username,
             'created_at' => $companyWaybill?->created_at ?? $this->created_at,

@@ -2,6 +2,7 @@
 
 use App\Enums\FleetOwnershipType;
 use App\Enums\StatusEnum;
+use App\Enums\WaybillStatus;
 use App\Http\Middleware\CheckPermission;
 use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Models\Cargo;
@@ -83,11 +84,11 @@ test('it scopes dashboard data and cache to a branch company', function () {
     ]);
 
     insertDashboardWaybill($this->company, [
-        'is_incomplete' => false,
+        'status' => WaybillStatus::Completed->value,
         'issued_at' => '2026-09-23 08:00:00',
     ]);
     insertDashboardWaybill($branch, [
-        'is_incomplete' => false,
+        'status' => WaybillStatus::Completed->value,
         'issued_at' => '2026-09-23 09:00:00',
     ]);
 
@@ -109,23 +110,23 @@ test('it scopes dashboard data and cache to a branch company', function () {
 
 test('it returns and independently caches the issued waybill daily series', function () {
     insertDashboardWaybill($this->company, [
-        'is_incomplete' => false,
+        'status' => WaybillStatus::Completed->value,
         'issued_at' => '2026-09-23 08:00:00',
     ]);
     insertDashboardWaybill($this->company, [
-        'is_incomplete' => false,
+        'status' => WaybillStatus::Completed->value,
         'issued_at' => '2026-09-23 09:00:00',
     ]);
     insertDashboardWaybill($this->company, [
-        'is_incomplete' => false,
+        'status' => WaybillStatus::Completed->value,
         'issued_at' => '2026-09-22 09:00:00',
     ]);
     insertDashboardWaybill($this->company, [
-        'is_incomplete' => true,
+        'status' => WaybillStatus::Incomplete->value,
         'issued_at' => '2026-09-23 10:00:00',
     ]);
     insertDashboardWaybill($this->company, [
-        'is_incomplete' => false,
+        'status' => WaybillStatus::Completed->value,
         'issued_at' => '2026-08-24 10:00:00',
     ]);
 
@@ -142,7 +143,7 @@ test('it returns and independently caches the issued waybill daily series', func
         ->and($items->get('2026-09-23')['count'])->toBe(2);
 
     insertDashboardWaybill($this->company, [
-        'is_incomplete' => false,
+        'status' => WaybillStatus::Completed->value,
         'issued_at' => '2026-09-23 11:00:00',
     ]);
 
@@ -158,17 +159,17 @@ test('it returns and independently caches the issued waybill daily series', func
 test('it returns issued waybill totals for the current and previous five months', function () {
     foreach (['2026-04-01 08:00:00', '2026-04-30 23:59:59', '2026-09-23 08:00:00'] as $issuedAt) {
         insertDashboardWaybill($this->company, [
-            'is_incomplete' => false,
+            'status' => WaybillStatus::Completed->value,
             'issued_at' => $issuedAt,
         ]);
     }
 
     insertDashboardWaybill($this->company, [
-        'is_incomplete' => true,
+        'status' => WaybillStatus::Incomplete->value,
         'issued_at' => '2026-09-23 09:00:00',
     ]);
     insertDashboardWaybill($this->company, [
-        'is_incomplete' => false,
+        'status' => WaybillStatus::Completed->value,
         'issued_at' => '2026-03-31 23:59:59',
     ]);
 
@@ -201,7 +202,7 @@ test('it returns the five cargos used in the most issued waybills', function () 
     foreach ($cargos as $index => $cargo) {
         foreach (range(1, 6 - $index) as $occurrence) {
             $waybillId = insertDashboardWaybill($this->company, [
-                'is_incomplete' => false,
+                'status' => WaybillStatus::Completed->value,
                 'issued_at' => "2026-09-{$occurrence} 08:00:00",
             ]);
 
@@ -232,7 +233,7 @@ test('it returns the ten primary drivers with the most issued waybills', functio
     foreach ($drivers as $driver) {
         insertDashboardWaybill($this->company, [
             'driver1_id' => $driver->id,
-            'is_incomplete' => false,
+            'status' => WaybillStatus::Completed->value,
             'issued_at' => '2026-09-01 08:00:00',
         ]);
     }
@@ -240,7 +241,7 @@ test('it returns the ten primary drivers with the most issued waybills', functio
     foreach (range(1, 2) as $occurrence) {
         insertDashboardWaybill($this->company, [
             'driver1_id' => $drivers[10]->id,
-            'is_incomplete' => false,
+            'status' => WaybillStatus::Completed->value,
             'issued_at' => "2026-09-0{$occurrence} 09:00:00",
         ]);
     }
@@ -259,16 +260,17 @@ test('it returns the ten primary drivers with the most issued waybills', functio
 function insertDashboardWaybill(Company $company, array $attributes = []): int
 {
     $dataOwnerCompanyId = app(CompanyDataOwnerResolver::class)->resolveId($company->id);
-
-    return DB::table("company_{$dataOwnerCompanyId}_waybills")->insertGetId([
+    $data = [
         'owner_company_id' => $company->id,
-        'is_incomplete' => true,
+        'status' => WaybillStatus::Incomplete->value,
         'freight_at_origin' => false,
         'is_fixed' => false,
         'created_at' => '2026-09-23 12:00:00',
         'updated_at' => '2026-09-23 12:00:00',
         ...$attributes,
-    ]);
+    ];
+
+    return DB::table("company_{$dataOwnerCompanyId}_waybills")->insertGetId($data);
 }
 
 function insertDashboardWaybillCargo(Company $company, int $waybillId, int $cargoId): void

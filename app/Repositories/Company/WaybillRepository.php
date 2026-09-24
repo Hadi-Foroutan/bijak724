@@ -108,7 +108,9 @@ class WaybillRepository implements WaybillRepositoryInterface
         string $number,
         ?int $ignoreWaybillId,
     ): bool {
-        return $this->query($companyId)
+        return $this->waybill
+            ->newSharedQueryForCompany($companyId)
+            ->where('owner_company_id', $companyId)
             ->where('serial_number', $serialNumber)
             ->where($numberColumn, $number)
             ->when($ignoreWaybillId !== null, fn ($query) => $query->whereKeyNot($ignoreWaybillId))

@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\StatusEnum;
+use App\Enums\WaybillStatus;
 use App\Http\Middleware\CheckPermission;
 use App\Models\City;
 use App\Models\Company;
@@ -189,11 +190,11 @@ test('shipment party must be a sender or receiver and can be both', function () 
 
 test('waybills have complete crud and preserve paginated and unpaginated responses', function () {
     $waybillId = $this->postJson('/api/user/waybills', [
-        'is_incomplete' => true,
+        'status' => WaybillStatus::Incomplete->value,
         'bijak_tracking_code' => 'WB-1001',
     ])
         ->assertCreated()
-        ->assertJsonPath('data.is_incomplete', true)
+        ->assertJsonPath('data.status', WaybillStatus::Incomplete->value)
         ->assertJsonPath('data.bijak_tracking_code', 'WB-1001')
         ->json('data.id');
 

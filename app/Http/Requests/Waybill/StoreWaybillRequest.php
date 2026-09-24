@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Waybill;
 
+use App\Enums\WaybillStatus;
 use App\Http\Requests\BaseRequest;
 use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Interfaces\Company\FleetRepositoryInterface;
@@ -18,9 +19,10 @@ class StoreWaybillRequest extends BaseRequest
 {
     protected function prepareForValidation(): void
     {
-        $this->normalizeBooleanStrings(['is_incomplete', 'freight_at_origin', 'is_fixed']);
+        $this->normalizeBooleanStrings(['freight_at_origin', 'is_fixed']);
+        $waybillStatus = WaybillStatus::tryFrom((string) $this->input('status'));
 
-        if (! $this->boolean('is_incomplete', true)) {
+        if ($waybillStatus === WaybillStatus::Completed) {
             return;
         }
 
@@ -46,7 +48,12 @@ class StoreWaybillRequest extends BaseRequest
         ProductOwnerRepositoryInterface $productOwnerRepository,
     ): array {
         $companyId = $this->companyId();
-        $requiredWhenComplete = Rule::requiredIf(fn (): bool => ! $this->boolean('is_incomplete', true));
+        $requiredWhenCompleted = Rule::requiredIf(
+            fn (): bool => $this->hasStatus(WaybillStatus::Completed),
+        );
+        $requiredWhenReferral = Rule::requiredIf(
+            fn (): bool => $this->hasStatus(WaybillStatus::Referral),
+        );
 
         return [
             ...$this->referenceRules(
@@ -55,11 +62,16 @@ class StoreWaybillRequest extends BaseRequest
                 $driverRepository,
                 $fleetRepository,
                 $companyId,
-                $requiredWhenComplete,
+                $requiredWhenCompleted,
             ),
-            ...$this->documentRules($insuranceRepository, $companyId, $requiredWhenComplete),
-            ...$this->financialRules($transportContractRepository, $companyId, $requiredWhenComplete),
-            ...$this->cargoRules($productOwnerRepository, $companyId, $requiredWhenComplete),
+            ...$this->documentRules(
+                $insuranceRepository,
+                $companyId,
+                $requiredWhenCompleted,
+                $requiredWhenReferral,
+            ),
+            ...$this->financialRules($transportContractRepository, $companyId, $requiredWhenCompleted),
+            ...$this->cargoRules($productOwnerRepository, $companyId, $requiredWhenCompleted),
         ];
     }
 
@@ -110,20 +122,21 @@ class StoreWaybillRequest extends BaseRequest
     private function documentRules(
         InsuranceRepositoryInterface $insuranceRepository,
         int $companyId,
-        mixed $requiredWhenComplete,
+        mixed $requiredWhenCompleted,
+        mixed $requiredWhenReferral,
     ): array {
         return [
-            'is_incomplete' => ['required', 'boolean'],
-            'referral_weight' => [$requiredWhenComplete, 'nullable', 'numeric', 'min:0'],
-            'quantity' => [$requiredWhenComplete, 'nullable', 'integer', 'min:1'],
-            'loading_started_at' => [$requiredWhenComplete, 'nullable', 'date'],
-            'loading_ended_at' => [$requiredWhenComplete, 'nullable', 'date', 'after_or_equal:loading_started_at'],
-            'referral_number' => ['nullable', 'string', 'max:255'],
-            'bijak_number' => [$requiredWhenComplete, 'nullable', 'integer'],
-            'serial_number' => ['nullable', 'string', 'max:255'],
-            'issued_at' => [$requiredWhenComplete, 'nullable', 'date'],
+            'status' => ['required', Rule::enum(WaybillStatus::class)],
+            'referral_weight' => [$requiredWhenReferral, 'nullable', 'numeric', 'min:0'],
+            'quantity' => [$requiredWhenReferral, 'nullable', 'integer', 'min:1'],
+            'loading_started_at' => [$requiredWhenReferral, 'nullable', 'date'],
+            'loading_ended_at' => [$requiredWhenReferral, 'nullable', 'date', 'after_or_equal:loading_started_at'],
+            'referral_number' => [$requiredWhenReferral, 'nullable', 'string', 'max:255'],
+            'bijak_number' => [$requiredWhenCompleted, 'nullable', 'integer'],
+            'serial_number' => [$requiredWhenCompleted, 'nullable', 'string', 'max:255'],
+            'issued_at' => [$requiredWhenCompleted, 'nullable', 'date'],
             'liability_insurance' => [
-                $requiredWhenComplete,
+                $requiredWhenCompleted,
                 'nullable',
                 'integer',
                 $insuranceRepository->existsRule($companyId),
@@ -156,7 +169,7 @@ class StoreWaybillRequest extends BaseRequest
             'detention_amount' => ['nullable', 'integer', 'min:0'],
             'driver_receivable_amount' => ['nullable', 'integer', 'min:0'],
             'payable_amount' => [
-                Rule::requiredIf(fn (): bool => ! $this->boolean('is_incomplete', true) && $this->boolean('is_fixed')),
+                Rule::requiredIf(fn (): bool => $this->hasStatus(WaybillStatus::Completed) && $this->boolean('is_fixed')),
                 'nullable',
                 'integer',
                 'min:0',
@@ -172,7 +185,7 @@ class StoreWaybillRequest extends BaseRequest
         int $companyId,
         mixed $requiredWhenComplete,
     ): array {
-        $minimumCargoCount = $this->boolean('is_incomplete', true) ? 'min:0' : 'min:1';
+        $minimumCargoCount = $this->hasStatus(WaybillStatus::Completed) ? 'min:1' : 'min:0';
 
         return [
             'cargos' => [$requiredWhenComplete, 'nullable', 'array', $minimumCargoCount, 'max:10'],
@@ -185,12 +198,16 @@ class StoreWaybillRequest extends BaseRequest
             'cargos.*.value' => [$requiredWhenComplete, 'nullable', 'integer', 'min:0'],
             'cargos.*.quantity' => [$requiredWhenComplete, 'nullable', 'integer', 'min:1'],
             'cargos.*.is_traffic' => ['nullable', 'boolean'],
-            'cargos.*.is_returned' => [$requiredWhenComplete, 'nullable', 'boolean'],
             //            'cargos.*.cottage_number' => ['nullable', 'string', 'max:255'],
             //            'cargos.*.cottage_number_2' => ['nullable', 'string', 'max:255'],
             //            'cargos.*.driver_account_number' => ['nullable', 'string', 'max:255'],
             //            'cargos.*.container_number' => ['nullable', 'string', 'max:255'],
             //            'cargos.*.container_number_2' => ['nullable', 'string', 'max:255'],
         ];
+    }
+
+    private function hasStatus(WaybillStatus $status): bool
+    {
+        return $this->string('status')->toString() === $status->value;
     }
 }

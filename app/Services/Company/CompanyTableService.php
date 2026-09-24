@@ -2,6 +2,7 @@
 
 namespace App\Services\Company;
 
+use App\Enums\WaybillStatus;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -31,6 +32,7 @@ class CompanyTableService
         if (Schema::hasTable($tableName)) {
             $this->ensureOwnerCompanyColumn($tableName, $companyId);
             $this->syncColumns($tableName, $columns, $companyId);
+            $this->migrateLegacyWaybillStatus($tableName, $tableKey);
             $this->ensureFleetPlateUniqueIndex($tableName, $tableKey);
             $this->ensureWaybillNumberUniqueIndexes($tableName, $tableKey);
             $this->ensureWaybillDashboardIndexes($tableName, $tableKey);
@@ -139,6 +141,26 @@ class CompanyTableService
                 $table->index($column, $indexName);
             });
         }
+    }
+
+    private function migrateLegacyWaybillStatus(string $tableName, string $tableKey): void
+    {
+        if (
+            $tableKey !== 'waybills'
+            || ! Schema::hasColumn($tableName, 'status')
+            || ! Schema::hasColumn($tableName, 'is_incomplete')
+        ) {
+            return;
+        }
+
+        DB::table($tableName)
+            ->where('is_incomplete', false)
+            ->where('status', WaybillStatus::Incomplete->value)
+            ->update(['status' => WaybillStatus::Completed->value]);
+
+        Schema::table($tableName, function (Blueprint $table): void {
+            $table->dropColumn('is_incomplete');
+        });
     }
 
     /** @return list<string> */

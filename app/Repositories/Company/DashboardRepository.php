@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Company;
 
+use App\Enums\WaybillStatus;
 use App\Interfaces\Company\DashboardRepositoryInterface;
 use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Interfaces\Company\FleetRepositoryInterface;
@@ -92,7 +93,7 @@ class DashboardRepository implements DashboardRepositoryInterface
                 '=',
                 "{$cargoTable}.cargo_id",
             )
-            ->where("{$waybillTable}.is_incomplete", false)
+            ->where("{$waybillTable}.status", WaybillStatus::Completed->value)
             ->whereNotNull("{$waybillTable}.issued_at")
             ->whereNotNull("{$cargoTable}.cargo_id")
             ->when(
@@ -142,7 +143,7 @@ class DashboardRepository implements DashboardRepositoryInterface
                 '=',
                 "{$waybillTable}.driver1_id",
             )
-            ->where("{$waybillTable}.is_incomplete", false)
+            ->where("{$waybillTable}.status", WaybillStatus::Completed->value)
             ->whereNotNull("{$waybillTable}.issued_at")
             ->whereNotNull("{$waybillTable}.driver1_id")
             ->when(
@@ -185,7 +186,7 @@ class DashboardRepository implements DashboardRepositoryInterface
         string $periodExpression,
     ): Collection {
         return $query
-            ->where('is_incomplete', false)
+            ->where('status', WaybillStatus::Completed->value)
             ->whereNotNull('issued_at')
             ->whereBetween('issued_at', [$from, $to])
             ->selectRaw("{$periodExpression} as period, COUNT(*) as aggregate")

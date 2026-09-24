@@ -62,7 +62,9 @@ class ReferralNumberRepository implements ReferralNumberRepositoryInterface
 
     public function active(int $companyId, ?int $ignoreId = null): ?ReferralNumber
     {
-        return $this->query($companyId)
+        return $this->referralNumber
+            ->newSharedQueryForCompany($companyId)
+            ->where('owner_company_id', $companyId)
             ->where('status', ReferralNumberStatus::Active->value)
             ->when($ignoreId !== null, fn ($query) => $query->whereKeyNot($ignoreId))
             ->lockForUpdate()

@@ -1,12 +1,14 @@
 <?php
 
 use App\Enums\TransportContractItemName;
+use App\Enums\WaybillStatus;
 use App\Http\Middleware\CheckPermission;
 use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Interfaces\Company\FleetRepositoryInterface;
 use App\Interfaces\Company\ProductOwnerRepositoryInterface;
 use App\Interfaces\Company\ShipmentPartyAddressRepositoryInterface;
 use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
+use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Models\Cargo;
 use App\Models\City;
 use App\Models\Company;
@@ -15,6 +17,7 @@ use App\Models\Insurance;
 use App\Models\Packaging;
 use App\Models\State;
 use App\Models\User;
+use App\Services\Company\Waybill\WaybillService;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -219,15 +222,110 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
 });
 
 test('it stores an incomplete waybill', function () {
-    $this->postJson('/api/user/waybills', ['is_incomplete' => true])
+    $this->postJson('/api/user/waybills', ['status' => WaybillStatus::Incomplete->value])
         ->assertCreated()
-        ->assertJsonPath('data.is_incomplete', true)
+        ->assertJsonPath('data.status', WaybillStatus::Incomplete->value)
         ->assertJsonCount(0, 'data.cargos');
+});
+
+test('waybill status is required', function () {
+    $this->postJson('/api/user/waybills')
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('status');
+});
+
+test('it validates and stores a referral waybill with only referral fields required', function () {
+    $this->postJson('/api/user/waybills', ['status' => WaybillStatus::Referral->value])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors([
+            'referral_weight',
+            'quantity',
+            'loading_started_at',
+            'loading_ended_at',
+            'referral_number',
+        ]);
+
+    $this->postJson('/api/user/waybills', [
+        'status' => WaybillStatus::Referral->value,
+        'referral_weight' => 1250.5,
+        'quantity' => 10,
+        'loading_started_at' => '2026-09-07 08:00:00',
+        'loading_ended_at' => '2026-09-07 10:00:00',
+        'referral_number' => 'REF-1',
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.status', WaybillStatus::Referral->value)
+        ->assertJsonPath('data.referral_number', '1')
+        ->assertJsonPath('data.serial_number', 'SERIAL-1')
+        ->assertJsonPath('data.bijak_number', null)
+        ->assertJsonPath('data.issued_at', null);
+});
+
+test('a completed waybill does not require referral-only fields', function () {
+    $payload = completeWaybillPayload($this);
+    unset(
+        $payload['referral_weight'],
+        $payload['quantity'],
+        $payload['loading_started_at'],
+        $payload['loading_ended_at'],
+        $payload['referral_number'],
+    );
+
+    $this->postJson('/api/user/waybills', $payload)
+        ->assertCreated()
+        ->assertJsonPath('data.status', WaybillStatus::Completed->value)
+        ->assertJsonPath('data.referral_number', '1');
+});
+
+test('a completed waybill requires its document fields', function () {
+    $payload = completeWaybillPayload($this);
+    unset(
+        $payload['bijak_number'],
+        $payload['serial_number'],
+        $payload['issued_at'],
+        $payload['liability_insurance'],
+    );
+
+    $this->postJson('/api/user/waybills', $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors([
+            'bijak_number',
+            'serial_number',
+            'issued_at',
+            'liability_insurance',
+        ]);
+});
+
+test('it stores a canceled waybill without requiring business fields', function () {
+    $this->postJson('/api/user/waybills', ['status' => WaybillStatus::Canceled->value])
+        ->assertCreated()
+        ->assertJsonPath('data.status', WaybillStatus::Canceled->value)
+        ->assertJsonPath('data.bijak_number', null)
+        ->assertJsonCount(0, 'data.cargos');
+});
+
+test('canceling a completed waybill preserves its issued data and cargos', function () {
+    $created = $this->postJson('/api/user/waybills', completeWaybillPayload($this))
+        ->assertCreated();
+
+    $waybillId = $created->json('data.id');
+    $trackingCode = $created->json('data.bijak_tracking_code');
+
+    $this->putJson("/api/user/waybills/{$waybillId}", [
+        'status' => WaybillStatus::Canceled->value,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.status', WaybillStatus::Canceled->value)
+        ->assertJsonPath('data.bijak_number', '1001')
+        ->assertJsonPath('data.serial_number', 'SERIAL-1')
+        ->assertJsonPath('data.referral_number', '1')
+        ->assertJsonPath('data.bijak_tracking_code', $trackingCode)
+        ->assertJsonCount(1, 'data.cargos');
 });
 
 test('an incomplete waybill never stores issuance fields', function () {
     $waybillId = $this->postJson('/api/user/waybills', [
-        'is_incomplete' => true,
+        'status' => WaybillStatus::Incomplete->value,
         'bijak_number' => 9001,
         'serial_number' => 'DRAFT-SERIAL',
         'issued_at' => '2026-09-07 11:00:00',
@@ -239,7 +337,7 @@ test('an incomplete waybill never stores issuance fields', function () {
         ->json('data.id');
 
     $this->putJson("/api/user/waybills/{$waybillId}", [
-        'is_incomplete' => true,
+        'status' => WaybillStatus::Incomplete->value,
         'bijak_number' => 9002,
         'serial_number' => 'UPDATED-DRAFT-SERIAL',
         'issued_at' => '2026-09-08 11:00:00',
@@ -259,7 +357,7 @@ test('an incomplete waybill never stores issuance fields', function () {
 
 test('an incomplete waybill accepts null values without requiring any other field', function () {
     $this->postJson('/api/user/waybills', [
-        'is_incomplete' => true,
+        'status' => WaybillStatus::Incomplete->value,
         'sender_id' => null,
         'sender_address_id' => null,
         'receiver_id' => null,
@@ -270,39 +368,50 @@ test('an incomplete waybill accepts null values without requiring any other fiel
         'fleet_id' => null,
         'transport_contract_id' => null,
         'base_freight_amount' => null,
+        'bijak_number' => null,
         'payable_amount' => null,
         'freight_at_origin' => null,
         'is_fixed' => null,
         'cargos' => null,
     ])
         ->assertCreated()
-        ->assertJsonPath('data.is_incomplete', true)
+        ->assertJsonPath('data.status', WaybillStatus::Incomplete->value)
+        ->assertJsonPath('data.bijak_number', null)
         ->assertJsonPath('data.freight_at_origin', false)
         ->assertJsonPath('data.is_fixed', false)
         ->assertJsonCount(0, 'data.cargos');
 });
 
+test('a complete waybill requires a non empty bijak number', function () {
+    $payload = completeWaybillPayload($this);
+    $payload['bijak_number'] = null;
+
+    $this->postJson('/api/user/waybills', $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('bijak_number');
+});
+
 test('an incomplete fixed waybill does not require a payable amount', function () {
     $this->postJson('/api/user/waybills', [
-        'is_incomplete' => true,
+        'status' => WaybillStatus::Incomplete->value,
         'is_fixed' => true,
     ])
         ->assertCreated()
-        ->assertJsonPath('data.is_incomplete', true)
+        ->assertJsonPath('data.status', WaybillStatus::Incomplete->value)
         ->assertJsonPath('data.is_fixed', true)
         ->assertJsonPath('data.payable_amount', null);
 });
 
 test('an incomplete waybill can store a partially filled cargo row', function () {
     $this->postJson('/api/user/waybills', [
-        'is_incomplete' => true,
+        'status' => WaybillStatus::Incomplete->value,
         'cargos' => [[
             'title' => 'محموله نیمه‌کاره',
             'description' => 'ادامه اطلاعات بعداً ثبت می‌شود',
         ]],
     ])
         ->assertCreated()
-        ->assertJsonPath('data.is_incomplete', true)
+        ->assertJsonPath('data.status', WaybillStatus::Incomplete->value)
         ->assertJsonPath('data.cargos.0.title', 'محموله نیمه‌کاره')
         ->assertJsonPath('data.cargos.0.cargo_id', null)
         ->assertJsonPath('data.cargos.0.packaging_id', null);
@@ -340,7 +449,7 @@ test('it rejects unknown cargo and packaging codes and a product owner from anot
 });
 
 test('it reserves a referral number only when a waybill is issued', function () {
-    $draftId = $this->postJson('/api/user/waybills', ['is_incomplete' => true])
+    $draftId = $this->postJson('/api/user/waybills', ['status' => WaybillStatus::Incomplete->value])
         ->assertCreated()
         ->json('data.id');
 
@@ -382,7 +491,41 @@ test('waybill serial and document numbers have company scoped unique indexes', f
     $tableName = "company_{$this->company->id}_waybills";
 
     expect(Schema::hasIndex($tableName, "{$tableName}_serial_referral_unique"))->toBeTrue()
-        ->and(Schema::hasIndex($tableName, "{$tableName}_serial_bijak_unique"))->toBeTrue();
+        ->and(Schema::hasIndex($tableName, "{$tableName}_serial_bijak_unique"))->toBeTrue()
+        ->and(Schema::hasColumn($tableName, 'status'))->toBeTrue()
+        ->and(Schema::hasColumn($tableName, 'is_incomplete'))->toBeFalse();
+});
+
+test('waybill number checks are scoped to the exact company owner', function () {
+    $branch = Company::factory()->create([
+        'parent_id' => $this->company->id,
+        'parent_type' => 'branch',
+    ]);
+    $tableName = "company_{$this->company->id}_waybills";
+
+    DB::table($tableName)->insert([
+        'owner_company_id' => $branch->id,
+        'serial_number' => 'SHARED-SERIAL',
+        'referral_number' => '5001',
+        'bijak_number' => '6001',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $repository = app(WaybillRepositoryInterface::class);
+
+    expect($repository->referralNumberExists($this->company->id, 'SHARED-SERIAL', '5001'))->toBeFalse()
+        ->and($repository->bijakNumberExists($this->company->id, 'SHARED-SERIAL', '6001'))->toBeFalse()
+        ->and($repository->referralNumberExists($branch->id, 'SHARED-SERIAL', '5001'))->toBeTrue()
+        ->and($repository->bijakNumberExists($branch->id, 'SHARED-SERIAL', '6001'))->toBeTrue();
+});
+
+test('non unique database errors are not reported as duplicate waybill numbers', function () {
+    $payload = completeWaybillPayload($this);
+    $payload['created_by'] = 999999999;
+
+    expect(fn () => app(WaybillService::class)->create($this->company->id, $payload))
+        ->toThrow(QueryException::class);
 });
 
 test('database rejects duplicate referral and bijak numbers in the same serial', function () {
@@ -533,7 +676,7 @@ test('the referral driver can be the first or second driver', function () {
 });
 
 test('it validates all required complete waybill data and company references', function () {
-    $this->postJson('/api/user/waybills', ['is_incomplete' => false])
+    $this->postJson('/api/user/waybills', ['status' => WaybillStatus::Completed->value])
         ->assertUnprocessable()
         ->assertJsonValidationErrors([
             'sender_id', 'sender_address_id', 'receiver_id', 'receiver_address_id',
@@ -581,7 +724,7 @@ test('it validates all required complete waybill data and company references', f
 
 test('it uses Persian attribute names in waybill validation messages', function () {
     $response = $this->postJson('/api/user/waybills', [
-        'is_incomplete' => false,
+        'status' => WaybillStatus::Completed->value,
         'cargos' => [[
             'cargo_id' => null,
             'packaging_id' => null,
@@ -626,7 +769,7 @@ test('it requires the same complete body when updating a complete waybill', func
         ->json('data.id');
 
     $this->patchJson("/api/user/waybills/{$waybillId}", [
-        'is_incomplete' => false,
+        'status' => WaybillStatus::Completed->value,
         'quantity' => 20,
     ])
         ->assertUnprocessable()
@@ -641,7 +784,7 @@ test('it requires the same complete body when updating a complete waybill', func
 function completeWaybillPayload(object $test): array
 {
     return [
-        'is_incomplete' => false,
+        'status' => WaybillStatus::Completed->value,
         'sender_id' => $test->sender->id,
         'sender_address_id' => $test->senderAddress->id,
         'receiver_id' => $test->receiver->id,
