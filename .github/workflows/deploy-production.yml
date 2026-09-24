@@ -64,6 +64,7 @@ jobs:
             --exclude='.idea/' \
             --exclude='.well-known/' \
             --exclude='AGENTS.md' \
+            --exclude='cgi-bin/' \
             --exclude='node_modules/' \
             --exclude='public/hot' \
             --exclude='storage/' \
@@ -82,4 +83,4 @@ jobs:
             -p "${SERVER_PORT}" \
             -o IdentitiesOnly=yes \
             "${SERVER_USER}@${SERVER_HOST}" \
-            "cd '${SERVER_PATH}' && set -e; trap 'php artisan up || true' EXIT; php artisan down --retry=60 || true; php artisan migrate --force; php artisan optimize; php artisan queue:restart; php artisan up; trap - EXIT"
+            "set -e; cd '${SERVER_PATH}'; trap 'php artisan up || true' EXIT; php artisan down --retry=60 || true; php artisan migrate --force; php artisan storage:link || true; php artisan optimize; php artisan queue:restart; php artisan up; trap - EXIT"

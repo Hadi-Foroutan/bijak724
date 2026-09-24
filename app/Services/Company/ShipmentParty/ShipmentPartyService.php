@@ -11,7 +11,9 @@ class ShipmentPartyService
 {
     public function __construct(
         protected ShipmentPartyRepositoryInterface $shipmentPartyRepository,
-    ) {}
+    )
+    {
+    }
 
     public function index(int $companyId, array $params): ServiceResult
     {
@@ -22,8 +24,8 @@ class ShipmentPartyService
     {
         $data['status'] ??= StatusEnum::ACTIVE->value;
         $this->validateRoles(
-            (bool) ($data['is_sender'] ?? false),
-            (bool) ($data['is_receiver'] ?? false),
+            (bool)($data['is_sender'] ?? false),
+            (bool)($data['is_receiver'] ?? false),
         );
 
         return ServiceResult::success($this->shipmentPartyRepository->create($companyId, $data));
@@ -38,11 +40,11 @@ class ShipmentPartyService
     {
         $shipmentParty = $this->shipmentPartyRepository->findOrFail($companyId, $id);
         $isSender = array_key_exists('is_sender', $data)
-            ? (bool) $data['is_sender']
-            : (bool) $shipmentParty->getAttribute('is_sender');
+            ? (bool)$data['is_sender']
+            : (bool)$shipmentParty->getAttribute('is_sender');
         $isReceiver = array_key_exists('is_receiver', $data)
-            ? (bool) $data['is_receiver']
-            : (bool) $shipmentParty->getAttribute('is_receiver');
+            ? (bool)$data['is_receiver']
+            : (bool)$shipmentParty->getAttribute('is_receiver');
 
         $this->validateRoles($isSender, $isReceiver);
 
@@ -61,17 +63,27 @@ class ShipmentPartyService
     }
 
     public function findByNationalIdentifierAndType(
-        int $companyId,
+        int    $companyId,
         string $nationalIdentifier,
         string $type,
-    ): ServiceResult {
-        return ServiceResult::success(
-            $this->shipmentPartyRepository->findByNationalIdentifierAndType(
-                $companyId,
-                $nationalIdentifier,
-                $type,
-            ),
+    ): ServiceResult
+    {
+
+        $shipmentParty = $this->shipmentPartyRepository->findByNationalIdentifierAndType(
+            $companyId,
+            $nationalIdentifier,
+            $type,
         );
+
+        if ($shipmentParty->status !== StatusEnum::ACTIVE->value) {
+            $message = $type === 'sender'
+                ? __('public.sender_inactive')
+                : __('public.receiver_inactive');
+
+            return ServiceResult::error($message);
+        }
+
+        return ServiceResult::success($shipmentParty);
     }
 
     private function validateRoles(bool $isSender, bool $isReceiver): void

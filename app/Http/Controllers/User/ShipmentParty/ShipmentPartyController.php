@@ -56,14 +56,6 @@ class ShipmentPartyController extends Controller
             $request->validated('type'),
         );
 
-        if ($result->data->status !== StatusEnum::ACTIVE->value) {
-            $message = $request->validated('type') === 'sender'
-                ? __('public.sender_inactive')
-                : __('public.receiver_inactive');
-
-            return ResponseHandler::error(['status' => [$message]], $message);
-        }
-
         return ResponseHandler::success(
             ShipmentPartyResource::make($result->data)->resolve($request),
         );
