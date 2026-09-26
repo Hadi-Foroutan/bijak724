@@ -79,6 +79,27 @@ test('admin assigns an optional parent only from the selected company', function
         ->assertJsonMissing(['id' => $otherCompanyUser->id]);
 });
 
+test('admin creates and updates a user without a phone number', function () {
+    Sanctum::actingAs($this->actor, ['*']);
+
+    $payload = hierarchyAdminUserPayload($this->company->id, $this->userRole->id, '6');
+    unset($payload['phone']);
+
+    $response = $this->postJson('/api/admin/users', $payload)
+        ->assertSuccessful()
+        ->assertJsonPath('data.phone', null);
+
+    $userId = $response->json('data.id');
+
+    $this->putJson("/api/admin/users/{$userId}", [
+        ...$payload,
+        'first_name' => 'ویرایش‌شده',
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.first_name', 'ویرایش‌شده')
+        ->assertJsonPath('data.phone', null);
+});
+
 test('company assigns parents only from its own members and clears children when parent is deleted', function () {
     $parent = hierarchyUser($this->company, 'company-parent', '7000000010', '09127000010');
     $otherCompanyUser = hierarchyUser($this->otherCompany, 'foreign-parent', '7000000011', '09127000011');

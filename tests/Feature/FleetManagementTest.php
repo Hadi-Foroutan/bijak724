@@ -112,7 +112,7 @@ test('it updates and deletes a fleet', function () {
     $this->patchJson("/api/user/fleets/{$fleetId}", [
         'status' => StatusEnum::INACTIVE->value,
         'has_violation' => true,
-        'system_id' => $otherBrand->id,
+        'system_id' => $otherBrand->brand_code,
         'tip_code' => $otherFleetType->tip_code,
     ])
         ->assertSuccessful()
@@ -273,7 +273,7 @@ test('it rejects a fleet type that does not belong to the selected system', func
     $this->postJson('/api/user/fleets', [
         ...fleetPayload($this),
         'tip_code' => $otherFleetType->tip_code,
-        'system_id' => $this->fleetBrand->id,
+        'system_id' => $this->fleetBrand->brand_code,
     ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors('tip_code');
@@ -299,6 +299,16 @@ test('it rejects an invalid fleet tip code', function () {
     ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors('tip_code');
+});
+
+test('it rejects an invalid fleet system code', function () {
+    $this->postJson('/api/user/fleets', [
+        ...fleetPayload($this),
+        'system_id' => 999999,
+        'tip_code' => null,
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('system_id');
 });
 
 test('it stores an optional fleet description', function () {
@@ -343,7 +353,7 @@ test('it creates a fleet with only a plate and nullable system fields', function
         ->assertJsonPath('data.tip_code', null);
 });
 
-test('it requires a system when a fleet type is selected', function () {
+test('it allows a fleet type without a system', function () {
     $this->postJson('/api/user/fleets', [
         'plate_first_number' => '12',
         'plate_second_letter' => 'ب',
@@ -351,8 +361,9 @@ test('it requires a system when a fleet type is selected', function () {
         'plate_fourth_number' => '67',
         'tip_code' => $this->fleetType->tip_code,
     ])
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors('system_id');
+        ->assertCreated()
+        ->assertJsonPath('data.system_id', null)
+        ->assertJsonPath('data.tip_code', $this->fleetType->tip_code);
 });
 
 test('it preserves the system and fleet type relation during updates', function () {
@@ -365,7 +376,7 @@ test('it preserves the system and fleet type relation during updates', function 
     ]);
 
     $this->patchJson("/api/user/fleets/{$fleetId}", [
-        'system_id' => $otherBrand->id,
+        'system_id' => $otherBrand->brand_code,
     ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors('tip_code');
@@ -373,8 +384,9 @@ test('it preserves the system and fleet type relation during updates', function 
     $this->patchJson("/api/user/fleets/{$fleetId}", [
         'system_id' => null,
     ])
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors('system_id');
+        ->assertSuccessful()
+        ->assertJsonPath('data.system_id', null)
+        ->assertJsonPath('data.tip_code', $this->fleetType->tip_code);
 
     $this->patchJson("/api/user/fleets/{$fleetId}", [
         'system_id' => null,
@@ -403,7 +415,7 @@ function fleetPayload(object $test): array
         'chassis_number' => 'CHASSIS-1001',
         'engine_number' => 'ENGINE-1001',
         'vin' => 'IR123456789012345',
-        'system_id' => $test->fleetBrand->id,
+        'system_id' => $test->fleetBrand->brand_code,
         'tip_code' => $test->fleetType->tip_code,
         'document_date' => '2026-01-01',
         'document_number' => 'DOC-1001',

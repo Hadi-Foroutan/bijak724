@@ -7,8 +7,6 @@ use App\Enums\StatusEnum;
 use App\Http\Requests\BaseRequest;
 use App\Interfaces\Company\FleetRepositoryInterface;
 use App\Models\DriverLicenseType;
-use App\Models\FleetBrand;
-use App\Models\FleetType;
 use App\Models\LoadingType;
 use Illuminate\Validation\Rule;
 
@@ -49,8 +47,8 @@ class UpdateFleetRequest extends BaseRequest
             'chassis_number' => ['sometimes', 'nullable', 'string', 'max:255'],
             'engine_number' => ['sometimes', 'nullable', 'string', 'max:255'],
             'vin' => ['sometimes', 'nullable', 'string', 'max:50'],
-            'system_id' => ['sometimes', 'nullable', 'integer', Rule::exists(FleetBrand::class, 'id')],
-            'tip_code' => ['sometimes', 'nullable', 'integer', Rule::exists(FleetType::class, 'tip_code')],
+            'system_id' => ['sometimes', 'nullable', 'integer'],
+            'tip_code' => ['sometimes', 'nullable', 'integer'],
             'document_date' => ['sometimes', 'nullable', Rule::date()->format('Y-m-d')],
             'document_number' => ['sometimes', 'nullable', 'string', 'max:255'],
             'insurance_date' => ['sometimes', 'nullable', Rule::date()->format('Y-m-d')],

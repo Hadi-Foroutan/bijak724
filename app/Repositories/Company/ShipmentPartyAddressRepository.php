@@ -41,6 +41,13 @@ class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryIn
             : $rule->where('owner_company_id', $companyId);
     }
 
+    public function findOrFail(int $companyId, int $addressId): ShipmentPartyAddress
+    {
+        return $this->query($companyId)
+            ->with($this->shipmentPartyAddress->defaultRelations())
+            ->findOrFail($addressId);
+    }
+
     public function searchForParty(
         int $companyId,
         int $shipmentPartyId,

@@ -7,6 +7,7 @@ use App\Interfaces\Company\CargoGroupRepositoryInterface;
 use App\Interfaces\Company\InsuranceRepositoryInterface;
 use App\Interfaces\Company\InsuranceTariffRepositoryInterface;
 use App\Models\InsuranceTariff;
+use App\Services\Company\Waybill\IssuedWaybillDeletionGuard;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -16,6 +17,7 @@ class InsuranceService
         protected InsuranceRepositoryInterface $insuranceRepository,
         protected InsuranceTariffRepositoryInterface $insuranceTariffRepository,
         protected CargoGroupRepositoryInterface $cargoGroupRepository,
+        protected IssuedWaybillDeletionGuard $issuedWaybillDeletionGuard,
     ) {}
 
     public function index(int $companyId, array $filters): ServiceResult
@@ -112,6 +114,12 @@ class InsuranceService
 
     public function destroy(int $companyId, int $id): ServiceResult
     {
+        $this->issuedWaybillDeletionGuard->ensureReferenceCanBeDeleted(
+            $companyId,
+            ['liability_insurance'],
+            $id,
+            'بیمه',
+        );
         $insurance = $this->insuranceRepository->findOrFail($companyId, $id);
         $this->insuranceRepository->delete($insurance);
 

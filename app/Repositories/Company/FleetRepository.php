@@ -4,6 +4,7 @@ namespace App\Repositories\Company;
 
 use App\Interfaces\Company\FleetRepositoryInterface;
 use App\Models\Company\Fleet;
+use App\Models\FleetBrand;
 use App\Models\FleetType;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -97,6 +98,22 @@ class FleetRepository implements FleetRepositoryInterface
         $rule = Rule::unique($table, 'smart_card_number');
 
         return $ignoreFleetId === null ? $rule : $rule->ignore($ignoreFleetId);
+    }
+
+    public function systemIdByCode(int $systemCode): ?int
+    {
+        $systemId = FleetBrand::query()
+            ->where('brand_code', $systemCode)
+            ->value('id');
+
+        return $systemId === null ? null : (int) $systemId;
+    }
+
+    public function tipExists(int $tipCode): bool
+    {
+        return FleetType::query()
+            ->where('tip_code', $tipCode)
+            ->exists();
     }
 
     public function tipBelongsToSystem(int $tipCode, int $systemId): bool

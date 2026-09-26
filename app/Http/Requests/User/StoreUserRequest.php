@@ -49,7 +49,7 @@ class StoreUserRequest extends BaseRequest
             ],
 
             'phone' => [
-                'required',
+                'nullable',
                 'string',
                 Rule::unique('users', 'phone')->ignore($user),
             ],

@@ -32,6 +32,7 @@ class CompanyTableService
         if (Schema::hasTable($tableName)) {
             $this->ensureOwnerCompanyColumn($tableName, $companyId);
             $this->syncColumns($tableName, $columns, $companyId);
+            $this->syncForeignKeys($tableName, $columns, $companyId);
             $this->migrateLegacyWaybillStatus($tableName, $tableKey);
             $this->ensureFleetPlateUniqueIndex($tableName, $tableKey);
             $this->ensureWaybillNumberUniqueIndexes($tableName, $tableKey);
@@ -243,19 +244,99 @@ class CompanyTableService
         }
 
         if (isset($column['foreign'])) {
-            $foreignTable = isset($column['foreign']['company_table'])
-                ? $this->tableRegistry->tableName($companyId, $column['foreign']['company_table'])
-                : $column['foreign']['table'];
-
-            $foreignKey = $table->foreign($column['name'])
-                ->references($column['foreign']['column'])
-                ->on($foreignTable);
-
-            match ($column['foreign']['on_delete'] ?? 'restrict') {
-                'cascade' => $foreignKey->cascadeOnDelete(),
-                'null' => $foreignKey->nullOnDelete(),
-                default => $foreignKey->restrictOnDelete(),
-            };
+            $this->addForeignKey($table, $column, $companyId);
         }
+    }
+
+    /** @param list<array<string, mixed>> $columns */
+    private function syncForeignKeys(string $tableName, array $columns, int $companyId): void
+    {
+        $foreignKeysByColumn = collect(Schema::getForeignKeys($tableName))
+            ->mapWithKeys(function (array $foreignKey): array {
+                $column = $foreignKey['columns'][0] ?? null;
+
+                return is_string($column) ? [$column => $foreignKey] : [];
+            });
+
+        foreach ($columns as $column) {
+            if (! isset($column['foreign'])) {
+                continue;
+            }
+
+            $existingForeignKey = $foreignKeysByColumn->get($column['name']);
+
+            if ($existingForeignKey !== null && $this->foreignKeyDeleteActionMatches($existingForeignKey, $column)) {
+                continue;
+            }
+
+            $this->clearOrphanedNullableForeignKeyValues($tableName, $column, $companyId);
+
+            if ($existingForeignKey !== null) {
+                Schema::table($tableName, function (Blueprint $table) use ($existingForeignKey): void {
+                    $table->dropForeign($existingForeignKey['name']);
+                });
+            }
+
+            Schema::table($tableName, function (Blueprint $table) use ($column, $companyId): void {
+                $this->addForeignKey($table, $column, $companyId);
+            });
+        }
+    }
+
+    private function clearOrphanedNullableForeignKeyValues(
+        string $tableName,
+        array $column,
+        int $companyId,
+    ): void {
+        if (($column['foreign']['on_delete'] ?? 'restrict') !== 'null') {
+            return;
+        }
+
+        $foreignTable = isset($column['foreign']['company_table'])
+            ? $this->tableRegistry->tableName($companyId, $column['foreign']['company_table'])
+            : $column['foreign']['table'];
+        $columnName = $column['name'];
+        $foreignColumn = $column['foreign']['column'];
+
+        DB::table($tableName)
+            ->whereNotNull($columnName)
+            ->whereNotExists(function ($query) use ($tableName, $columnName, $foreignTable, $foreignColumn): void {
+                $query->selectRaw('1')
+                    ->from($foreignTable)
+                    ->whereColumn("{$foreignTable}.{$foreignColumn}", "{$tableName}.{$columnName}");
+            })
+            ->update([$columnName => null]);
+    }
+
+    /** @param array<string, mixed> $foreignKey */
+    private function foreignKeyDeleteActionMatches(array $foreignKey, array $column): bool
+    {
+        $configuredAction = match ($column['foreign']['on_delete'] ?? 'restrict') {
+            'cascade' => 'cascade',
+            'null' => 'set null',
+            default => 'restrict',
+        };
+        $currentAction = strtolower(str_replace('_', ' ', (string) ($foreignKey['on_delete'] ?? 'restrict')));
+
+        return $currentAction === $configuredAction
+            || ($configuredAction === 'restrict' && $currentAction === 'no action');
+    }
+
+    /** @param array<string, mixed> $column */
+    private function addForeignKey(Blueprint $table, array $column, int $companyId): void
+    {
+        $foreignTable = isset($column['foreign']['company_table'])
+            ? $this->tableRegistry->tableName($companyId, $column['foreign']['company_table'])
+            : $column['foreign']['table'];
+
+        $foreignKey = $table->foreign($column['name'])
+            ->references($column['foreign']['column'])
+            ->on($foreignTable);
+
+        match ($column['foreign']['on_delete'] ?? 'restrict') {
+            'cascade' => $foreignKey->cascadeOnDelete(),
+            'null' => $foreignKey->nullOnDelete(),
+            default => $foreignKey->restrictOnDelete(),
+        };
     }
 }

@@ -73,6 +73,11 @@ test('it creates a company and its configured tables', function () {
     $this->assertModelExists($company);
     expect(Schema::hasTable("company_{$company->id}_waybills"))->toBeTrue();
     expect(Schema::hasTable("company_{$company->id}_drivers"))->toBeTrue();
+    expect(Schema::hasTable("company_{$company->id}_product_owner"))->toBeTrue();
+    expect(collect(Schema::getForeignKeys("company_{$company->id}_waybill_cargos")))
+        ->contains(fn (array $foreignKey): bool => $foreignKey['columns'] === ['product_owner_id']
+            && $foreignKey['foreign_table'] === "company_{$company->id}_product_owner")
+        ->toBeTrue();
 
     $insurance = $company->insurances()->with(['insuranceCompany', 'tariffs'])->sole();
     expect($insurance->insuranceCompany->org_code)->toBe(26)

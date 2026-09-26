@@ -5,12 +5,14 @@ namespace App\Services\Company\ShipmentParty;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\ShipmentPartyAddressRepositoryInterface;
 use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
+use App\Services\Company\Waybill\IssuedWaybillDeletionGuard;
 
 class ShipmentPartyAddressService
 {
     public function __construct(
         protected ShipmentPartyAddressRepositoryInterface $addressRepository,
         protected ShipmentPartyRepositoryInterface $shipmentPartyRepository,
+        protected IssuedWaybillDeletionGuard $issuedWaybillDeletionGuard,
     ) {}
 
     public function findShipmentPartyByPostalCodeAndType(
@@ -89,6 +91,12 @@ class ShipmentPartyAddressService
 
     public function delete(int $companyId, int $shipmentPartyId, int $addressId): ServiceResult
     {
+        $this->issuedWaybillDeletionGuard->ensureReferenceCanBeDeleted(
+            $companyId,
+            ['sender_address_id', 'receiver_address_id'],
+            $addressId,
+            'آدرس',
+        );
         $this->addressRepository->deleteForParty($companyId, $shipmentPartyId, $addressId);
 
         return ServiceResult::success(

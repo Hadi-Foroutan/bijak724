@@ -43,7 +43,7 @@ class CompanyUserService
 
         if (! $role) {
             return ServiceResult::error(
-                __('public.not_found', ['attribute' => 'نقش پیش‌فرض کاربر']),
+                __('public.not_found', ['attribute' => 'نقش کاربران حمل نقل']),
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
         }

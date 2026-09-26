@@ -5,6 +5,7 @@ namespace App\Services\Company\Driver;
 use App\Enums\StatusEnum;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\DriverRepositoryInterface;
+use App\Services\Company\Waybill\IssuedWaybillDeletionGuard;
 use App\Services\Uploads\CompanyImageUploader;
 use Illuminate\Http\UploadedFile;
 use Throwable;
@@ -14,6 +15,7 @@ class DriverService
     public function __construct(
         protected DriverRepositoryInterface $driverRepository,
         protected CompanyImageUploader $imageUploader,
+        protected IssuedWaybillDeletionGuard $issuedWaybillDeletionGuard,
     ) {}
 
     public function index(int $companyId, array $params): ServiceResult
@@ -83,6 +85,12 @@ class DriverService
 
     public function delete(int $companyId, int $id): ServiceResult
     {
+        $this->issuedWaybillDeletionGuard->ensureReferenceCanBeDeleted(
+            $companyId,
+            ['driver1_id', 'driver2_id', 'referral_driver_id'],
+            $id,
+            'راننده',
+        );
         $driver = $this->driverRepository->findOrFail($companyId, $id);
         $profileImagePath = $driver->profile_image_path;
         $this->driverRepository->delete($companyId, $id);

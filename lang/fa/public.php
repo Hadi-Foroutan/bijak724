@@ -69,6 +69,7 @@ return [
     'waybill_status_completed' => 'تمام‌شده',
     'waybill_status_referral' => 'صدور حواله',
     'waybill_status_canceled' => 'باطل‌شده',
+    'issued_waybill_reference_delete_forbidden' => ':attribute به یک بارنامه صادرشده یا باطل‌شده متصل است و قابل حذف نیست.',
     'parent_user_invalid' => 'کاربر بالادستی باید یکی از اعضای فعال همان شرکت باشد.',
     'admin_company_forbidden' => 'برای کاربران ادمین و سوپر ادمین، انتخاب شرکت مجاز نیست.',
     'base_freight_type_forbidden' => 'برای آیتم کرایه پایه، انتخاب نوع ملکی، استیجاری، آزاد یا نامشخص مجاز نیست.',

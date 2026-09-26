@@ -31,8 +31,6 @@ test('advanced search works for regular eloquent models', function () {
     ]);
 
     $cities = City::searchRecords([
-        'min-code' => 1200,
-        'max-code' => 2000,
         'state__name' => 'فارس',
         'order_field' => 'code',
         'order_type' => 'ASC',

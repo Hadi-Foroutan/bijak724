@@ -7,6 +7,9 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use ReflectionMethod;
+use ReflectionNamedType;
 
 trait AdvancedSearch
 {
@@ -90,13 +93,11 @@ trait AdvancedSearch
     /** @param array<string, mixed> $filters */
     private function applySearchFilters(Builder $query, array $filters, Model $model): void
     {
-        $searchableFields = $this->searchableFields($model);
-
         foreach ($filters as $filterKey => $value) {
             $key = $filterKey;
             $type = $this->getFilterType($key);
 
-            if (! in_array($key, $searchableFields, true)) {
+            if (! $this->isSearchableField($model, $key)) {
                 continue;
             }
 
@@ -232,9 +233,68 @@ trait AdvancedSearch
      */
     private function searchableFields(Model $model): array
     {
-        return property_exists($model, 'searchableFields')
-            ? array_values($model->searchableFields)
+        return is_callable([$model, 'getSearchableFields'])
+            ? $model->getSearchableFields()
             : [];
+    }
+
+    /** @return list<string> */
+    public function getSearchableFields(): array
+    {
+        return property_exists($this, 'searchableFields')
+            ? array_values($this->searchableFields)
+            : [];
+    }
+
+    private function isSearchableField(Model $model, string $field): bool
+    {
+        if (in_array($field, $this->searchableFields($model), true)) {
+            return true;
+        }
+
+        if (! str_contains($field, '__')) {
+            return false;
+        }
+
+        $segments = explode('__', $field);
+        $column = array_pop($segments);
+
+        if ($column === '' || $segments === []) {
+            return false;
+        }
+
+        foreach ($segments as $relationName) {
+            $model = $this->relatedModel($model, $relationName);
+
+            if ($model === null) {
+                return false;
+            }
+        }
+
+        return in_array($column, $this->searchableFields($model), true);
+    }
+
+    private function relatedModel(Model $model, string $relationName): ?Model
+    {
+        if ($relationName === '' || ! method_exists($model, $relationName)) {
+            return null;
+        }
+
+        $method = new ReflectionMethod($model, $relationName);
+        $returnType = $method->getReturnType();
+
+        if (
+            ! $method->isPublic()
+            || $method->getNumberOfRequiredParameters() > 0
+            || ! $returnType instanceof ReflectionNamedType
+            || ! is_subclass_of($returnType->getName(), Relation::class)
+        ) {
+            return null;
+        }
+
+        $relation = $model->{$relationName}();
+
+        return $relation instanceof Relation ? $relation->getRelated() : null;
     }
 
     /**

@@ -5,6 +5,7 @@ namespace App\Services\Company\TransportContract;
 use App\Enums\TransportContractItemType;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\TransportContractRepositoryInterface;
+use App\Services\Company\Waybill\IssuedWaybillDeletionGuard;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
@@ -12,6 +13,7 @@ class TransportContractService
 {
     public function __construct(
         protected TransportContractRepositoryInterface $transportContractRepository,
+        protected IssuedWaybillDeletionGuard $issuedWaybillDeletionGuard,
     ) {}
 
     public function index(int $companyId, array $filters): ServiceResult
@@ -54,6 +56,12 @@ class TransportContractService
 
     public function destroy(int $companyId, int $id): ServiceResult
     {
+        $this->issuedWaybillDeletionGuard->ensureReferenceCanBeDeleted(
+            $companyId,
+            ['transport_contract_id'],
+            $id,
+            'قرارداد حمل',
+        );
         $transportContract = $this->transportContractRepository->findOrFail($companyId, $id);
         $this->transportContractRepository->delete($transportContract);
 

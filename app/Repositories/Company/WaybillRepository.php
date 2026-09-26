@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Company;
 
+use App\Enums\WaybillStatus;
 use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Models\Company\Waybill;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -63,6 +64,25 @@ class WaybillRepository implements WaybillRepositoryInterface
         $this->findOrFail($companyId, $id)->delete();
     }
 
+    /** @param list<string> $columns */
+    public function hasIssuedReference(int $companyId, array $columns, int $referenceId): bool
+    {
+        return $this->issuedQuery($companyId)
+            ->where(function (Builder $query) use ($columns, $referenceId): void {
+                foreach ($columns as $column) {
+                    $query->orWhere($column, $referenceId);
+                }
+            })
+            ->exists();
+    }
+
+    public function hasIssuedCargoReference(int $companyId, string $column, int $referenceId): bool
+    {
+        return $this->issuedQuery($companyId)
+            ->whereHas('cargos', fn (Builder $query): Builder => $query->where($column, $referenceId))
+            ->exists();
+    }
+
     public function trackingCodeExists(int $companyId, string $trackingCode): bool
     {
         return $this->waybill
@@ -115,5 +135,14 @@ class WaybillRepository implements WaybillRepositoryInterface
             ->where($numberColumn, $number)
             ->when($ignoreWaybillId !== null, fn ($query) => $query->whereKeyNot($ignoreWaybillId))
             ->exists();
+    }
+
+    /** @return Builder<Waybill> */
+    private function issuedQuery(int $companyId): Builder
+    {
+        return $this->query($companyId)->whereIn('status', [
+            WaybillStatus::Completed->value,
+            WaybillStatus::Canceled->value,
+        ]);
     }
 }

@@ -20,6 +20,8 @@ interface ShipmentPartyAddressRepositoryInterface
 
     public function existsRule(int $companyId, string $column = 'id'): Exists;
 
+    public function findOrFail(int $companyId, int $addressId): ShipmentPartyAddress;
+
     /** @return Collection<int, ShipmentPartyAddress>|LengthAwarePaginator */
     public function searchForParty(int $companyId, int $shipmentPartyId, array $filters): Collection|LengthAwarePaginator;
 

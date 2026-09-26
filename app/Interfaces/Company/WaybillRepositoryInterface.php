@@ -25,6 +25,11 @@ interface WaybillRepositoryInterface
 
     public function delete(int $companyId, int $id): void;
 
+    /** @param list<string> $columns */
+    public function hasIssuedReference(int $companyId, array $columns, int $referenceId): bool;
+
+    public function hasIssuedCargoReference(int $companyId, string $column, int $referenceId): bool;
+
     public function trackingCodeExists(int $companyId, string $trackingCode): bool;
 
     public function referralNumberExists(

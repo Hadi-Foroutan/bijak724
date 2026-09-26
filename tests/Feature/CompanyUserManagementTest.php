@@ -68,6 +68,30 @@ test('company manager creates a default user only for current company', function
         ->and($user->permissions()->where('name', 'user.users.destroy')->exists())->toBeFalse();
 });
 
+test('company manager creates and updates a user without a phone number', function () {
+    $payload = companyUserPayload();
+    unset($payload['phone']);
+
+    $response = $this->postJson('/api/user/users', $payload)
+        ->assertSuccessful()
+        ->assertJsonPath('data.phone', null);
+
+    $userId = $response->json('data.id');
+
+    $this->postJson("/api/user/users/{$userId}", [
+        'first_name' => 'بدون تلفن',
+        'phone' => null,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.first_name', 'بدون تلفن')
+        ->assertJsonPath('data.phone', null);
+
+    $this->assertDatabaseHas('users', [
+        'id' => $userId,
+        'phone' => null,
+    ]);
+});
+
 test('company user management is scoped to current company', function () {
     $companyUser = companyPanelUser($this->company, 'company-user', '1234567891', '09120000001');
     $otherUser = companyPanelUser($this->otherCompany, 'other-user', '1234567892', '09120000002');

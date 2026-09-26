@@ -150,8 +150,14 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertCreated()
         ->assertJsonPath('data.sender_address_id', $this->senderAddress->id)
         ->assertJsonPath('data.sender_address.postal_code', '1111111111')
+        ->assertJsonPath('data.sender_address_postal_code', '1111111111')
+        ->assertJsonPath('data.sender_address_city_code', 1101)
+        ->assertJsonPath('data.sender_address_address', 'تهران، آدرس فرستنده')
         ->assertJsonPath('data.receiver_address_id', $this->receiverAddress->id)
         ->assertJsonPath('data.receiver_address.postal_code', '2222222222')
+        ->assertJsonPath('data.receiver_address_postal_code', '2222222222')
+        ->assertJsonPath('data.receiver_address_city_code', 1101)
+        ->assertJsonPath('data.receiver_address_address', 'تهران، آدرس گیرنده')
         ->assertJsonPath('data.sender_first_name', 'علی')
         ->assertJsonPath('data.receiver_last_name', 'گیرنده')
         ->assertJsonPath('data.driver1_national_code', '1234567890')
@@ -189,6 +195,10 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
     $cargoItemId = $response->json('data.cargos.0.id');
     $this->sender->update(['first_name' => 'نام جدید']);
     $this->firstDriver->update(['first_name' => 'راننده جدید']);
+    $this->senderAddress->update([
+        'postal_code' => '3333333333',
+        'address' => 'تهران، آدرس ویرایش‌شده فرستنده',
+    ]);
 
     $this->getJson("/api/user/waybills/{$waybillId}")
         ->assertSuccessful()
@@ -199,8 +209,12 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertJsonPath('data.bijak_tracking_code', $response->json('data.bijak_tracking_code'))
         ->assertJsonPath('data.sender_first_name', 'علی')
         ->assertJsonPath('data.driver1_first_name', 'حسین')
+        ->assertJsonPath('data.sender_address_postal_code', '1111111111')
+        ->assertJsonPath('data.sender_address_address', 'تهران، آدرس فرستنده')
         ->assertJsonPath('data.sender.first_name', 'نام جدید')
         ->assertJsonPath('data.first_driver.first_name', 'راننده جدید')
+        ->assertJsonPath('data.sender_address.postal_code', '3333333333')
+        ->assertJsonPath('data.sender_address.address', 'تهران، آدرس ویرایش‌شده فرستنده')
         ->assertJsonPath('data.receiver.last_name', 'گیرنده')
         ->assertJsonPath('data.referral_driver.last_name', 'راننده حواله')
         ->assertJsonCount(1, 'data.cargos');
@@ -219,6 +233,112 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertJsonPath('data.referral_driver_first_name', 'راننده جدید')
         ->assertJsonPath('data.referral_number', '1')
         ->assertJsonPath('data.cargos.0.id', $cargoItemId);
+});
+
+test('completed and canceled waybills prevent deleting their references', function () {
+    $waybillId = $this->postJson('/api/user/waybills', completeWaybillPayload($this))
+        ->assertCreated()
+        ->json('data.id');
+
+    $this->deleteJson("/api/user/shipment-parties/{$this->sender->id}")
+        ->assertUnprocessable();
+
+    $this->putJson("/api/user/waybills/{$waybillId}", [
+        'status' => WaybillStatus::Canceled->value,
+    ])->assertSuccessful();
+
+    $protectedUrls = [
+        "/api/user/shipment-parties/{$this->sender->id}",
+        "/api/user/shipment-parties/{$this->sender->id}/addresses/{$this->senderAddress->id}",
+        "/api/user/drivers/{$this->firstDriver->id}",
+        "/api/user/fleets/{$this->fleet->id}",
+        "/api/user/product-owners/{$this->productOwner->id}",
+        "/api/user/insurances/{$this->insurance->id}",
+        "/api/user/transport-contracts/{$this->contract->id}",
+    ];
+
+    foreach ($protectedUrls as $url) {
+        $this->deleteJson($url)->assertUnprocessable();
+    }
+});
+
+test('an incomplete waybill does not prevent deleting its references', function () {
+    $payload = completeWaybillPayload($this);
+    $payload['status'] = WaybillStatus::Incomplete->value;
+
+    $waybillId = $this->postJson('/api/user/waybills', $payload)
+        ->assertCreated()
+        ->json('data.id');
+
+    $deletableUrls = [
+        "/api/user/shipment-parties/{$this->sender->id}/addresses/{$this->senderAddress->id}",
+        "/api/user/shipment-parties/{$this->sender->id}",
+        "/api/user/drivers/{$this->firstDriver->id}",
+        "/api/user/fleets/{$this->fleet->id}",
+        "/api/user/product-owners/{$this->productOwner->id}",
+        "/api/user/insurances/{$this->insurance->id}",
+        "/api/user/transport-contracts/{$this->contract->id}",
+    ];
+
+    foreach ($deletableUrls as $url) {
+        $this->deleteJson($url)->assertSuccessful();
+    }
+
+    $this->getJson("/api/user/waybills/{$waybillId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.liability_insurance', null)
+        ->assertJsonPath('data.transport_contract_id', null);
+});
+
+test('issuing a draft refreshes its address snapshot', function () {
+    $payload = completeWaybillPayload($this);
+    $payload['status'] = WaybillStatus::Incomplete->value;
+
+    $waybillId = $this->postJson('/api/user/waybills', $payload)
+        ->assertCreated()
+        ->assertJsonPath('data.sender_address_postal_code', '1111111111')
+        ->json('data.id');
+
+    $this->senderAddress->update([
+        'postal_code' => '4444444444',
+        'address' => 'آدرس نهایی زمان صدور',
+    ]);
+
+    $payload['status'] = WaybillStatus::Completed->value;
+
+    $this->putJson("/api/user/waybills/{$waybillId}", $payload)
+        ->assertSuccessful()
+        ->assertJsonPath('data.sender_address_postal_code', '4444444444')
+        ->assertJsonPath('data.sender_address_address', 'آدرس نهایی زمان صدور');
+});
+
+test('it filters waybills by searchable fields on related models', function () {
+    $waybillId = $this->postJson('/api/user/waybills', completeWaybillPayload($this))
+        ->assertCreated()
+        ->json('data.id');
+
+    $this->getJson('/api/user/waybills?fleet__plate_first_number=12')
+        ->assertSuccessful()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $waybillId)
+        ->assertJsonPath('data.0.fleet.plate.first_number', '12');
+
+    $this->getJson('/api/user/waybills?fleet__plate_first_number=99')
+        ->assertSuccessful()
+        ->assertJsonCount(0, 'data');
+
+    $this->getJson('/api/user/waybills?'.http_build_query([
+        'senderAddress__city__name' => 'تهران',
+    ]))
+        ->assertSuccessful()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $waybillId);
+
+    $this->getJson('/api/user/waybills?'.http_build_query([
+        'senderAddress__city__name' => 'شیراز',
+    ]))
+        ->assertSuccessful()
+        ->assertJsonCount(0, 'data');
 });
 
 test('it stores an incomplete waybill', function () {

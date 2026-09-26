@@ -48,12 +48,15 @@ abstract class DynamicModel extends Model
         return $this
             ->setTableName("company_{$dataOwnerCompanyId}_{$this->companyTableKey()}")
             ->setSearchableFields(
-                $columns
-                    ->filter(fn (array $column): bool => (bool) ($column['searchable'] ?? true))
-                    ->pluck('name')
-                    ->filter()
-                    ->values()
-                    ->all(),
+                array_values(array_unique([
+                    ...$this->getSearchableFields(),
+                    ...$columns
+                        ->filter(fn (array $column): bool => (bool) ($column['searchable'] ?? true))
+                        ->pluck('name')
+                        ->filter()
+                        ->values()
+                        ->all(),
+                ])),
             )
             ->setGlobalSearchFields(
                 $columns

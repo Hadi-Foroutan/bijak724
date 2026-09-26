@@ -37,5 +37,9 @@ interface FleetRepositoryInterface
 
     public function uniqueSmartCardNumberRule(int $companyId, ?int $ignoreFleetId = null): Unique;
 
+    public function systemIdByCode(int $systemCode): ?int;
+
+    public function tipExists(int $tipCode): bool;
+
     public function tipBelongsToSystem(int $tipCode, int $systemId): bool;
 }

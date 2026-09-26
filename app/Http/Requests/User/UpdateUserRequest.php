@@ -14,16 +14,16 @@ class UpdateUserRequest extends BaseRequest
             'last_name' => ['required', 'string'],
             'role_id' => ['required', 'exists:roles,id'],
             'print_name' => ['required', 'string'],
-            'phone' => ['required', 'string', 'unique:users,phone'],
+            'phone' => ['nullable', 'string', 'unique:users,phone'],
             'email' => ['nullable', 'email', 'unique:users,email'],
             'username' => ['required', 'string', 'unique:users,username'],
             'password' => ['required', 'string', 'min:8'],
             'min_commission_percentage' => ['required', 'numeric', 'min:0'],
             'max_commission_percentage' => ['required', 'numeric', 'min:0'],
             'address' => ['nullable', 'string'],
-            'signature' => ['nullable', 'image','mimes:jpeg,jpg,png'],
+            'signature' => ['nullable', 'image', 'mimes:jpeg,jpg,png'],
             'description' => ['nullable', 'string'],
-            'status' => ['required', 'string', 'in:' . implode(',', UserStatusEnum::values())],
+            'status' => ['required', 'string', 'in:'.implode(',', UserStatusEnum::values())],
         ];
     }
 }

@@ -6,11 +6,15 @@ use App\Enums\FleetOwnershipType;
 use App\Enums\StatusEnum;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\FleetRepositoryInterface;
+use App\Services\Company\Waybill\IssuedWaybillDeletionGuard;
 use Illuminate\Validation\ValidationException;
 
 class FleetService
 {
-    public function __construct(protected FleetRepositoryInterface $fleetRepository) {}
+    public function __construct(
+        protected FleetRepositoryInterface $fleetRepository,
+        protected IssuedWaybillDeletionGuard $issuedWaybillDeletionGuard,
+    ) {}
 
     public function index(int $companyId, array $params): ServiceResult
     {
@@ -35,10 +39,10 @@ class FleetService
         $data['status'] ??= StatusEnum::ACTIVE->value;
         $data['ownership_type'] ??= FleetOwnershipType::Unknown->value;
         $data['has_violation'] ??= false;
-        $this->validateSystemAndTip(
+        $data['system_id'] = $this->resolveSystemId(
             $this->nullableInteger($data['system_id'] ?? null),
-            $this->nullableInteger($data['tip_code'] ?? null),
         );
+        $this->validateSystemAndTip($data['system_id'], $this->nullableInteger($data['tip_code'] ?? null));
 
         return ServiceResult::success($this->fleetRepository->create($companyId, $data));
     }
@@ -58,6 +62,10 @@ class FleetService
             'plate_third_number',
             'plate_fourth_number',
         ]), $data), $id);
+        if (array_key_exists('system_id', $data)) {
+            $data['system_id'] = $this->resolveSystemId($this->nullableInteger($data['system_id']));
+        }
+
         $systemId = array_key_exists('system_id', $data)
             ? $this->nullableInteger($data['system_id'])
             : $this->nullableInteger($fleet->getAttribute('system_id'));
@@ -72,6 +80,12 @@ class FleetService
 
     public function delete(int $companyId, int $id): ServiceResult
     {
+        $this->issuedWaybillDeletionGuard->ensureReferenceCanBeDeleted(
+            $companyId,
+            ['fleet_id'],
+            $id,
+            'ناوگان',
+        );
         $this->fleetRepository->delete($companyId, $id);
 
         return ServiceResult::success(
@@ -90,14 +104,14 @@ class FleetService
 
     private function validateSystemAndTip(?int $systemId, ?int $tipCode): void
     {
-        if ($tipCode === null) {
-            return;
+        if ($tipCode !== null && ! $this->fleetRepository->tipExists($tipCode)) {
+            throw ValidationException::withMessages([
+                'tip_code' => __('validation.exists', ['attribute' => 'تیپ ناوگان']),
+            ]);
         }
 
-        if ($systemId === null) {
-            throw ValidationException::withMessages([
-                'system_id' => __('public.fleet_system_required'),
-            ]);
+        if ($systemId === null || $tipCode === null) {
+            return;
         }
 
         if (! $this->fleetRepository->tipBelongsToSystem($tipCode, $systemId)) {
@@ -105,6 +119,23 @@ class FleetService
                 'tip_code' => __('public.fleet_tip_system_mismatch'),
             ]);
         }
+    }
+
+    private function resolveSystemId(?int $systemCode): ?int
+    {
+        if ($systemCode === null) {
+            return null;
+        }
+
+        $systemId = $this->fleetRepository->systemIdByCode($systemCode);
+
+        if ($systemId === null) {
+            throw ValidationException::withMessages([
+                'system_id' => __('validation.exists', ['attribute' => 'سیستم ناوگان']),
+            ]);
+        }
+
+        return $systemId;
     }
 
     private function nullableInteger(mixed $value): ?int
