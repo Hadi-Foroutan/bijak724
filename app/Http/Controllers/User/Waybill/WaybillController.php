@@ -44,7 +44,7 @@ class WaybillController extends Controller
 
         return ResponseHandler::success(
             WaybillResource::make($result->data)->resolve($request),
-            __('public.created_success', ['attribute' => 'بارنامه']),
+            __('public.created_success', ['attribute' => 'بیجک']),
             Response::HTTP_CREATED,
         );
     }
@@ -66,7 +66,7 @@ class WaybillController extends Controller
 
         return ResponseHandler::success(
             WaybillResource::make($result->data)->resolve($request),
-            __('public.update_success', ['attribute' => 'بارنامه']),
+            __('public.update_success', ['attribute' => 'بیجک']),
         );
     }
 

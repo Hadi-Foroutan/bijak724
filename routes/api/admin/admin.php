@@ -24,10 +24,11 @@ Route::apiResource('waybills', WaybillController::class)->only(['index']);
 
 Route::apiResource('users', UserController::class);
 Route::prefix('users')->name('users.')->group(function () {
+    Route::get('{user}/permissions', [UserController::class, 'permissions'])->name('permissions');
     Route::post('permissions/{user}', [UserController::class, 'syncPermissions'])->name('syncPermissions');
 });
 
-Route::apiResource('permissions', PermissionController::class);
+Route::apiResource('permissions', PermissionController::class)->except(['show']);
 Route::apiResource('roles', RoleController::class);
 
 Route::prefix('permissions')->name('permissions.')->group(function () {

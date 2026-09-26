@@ -7,11 +7,8 @@ use App\Enums\UserStatusEnum;
 use App\Helpers\ServiceResult;
 use App\Interfaces\RoleInterface;
 use App\Interfaces\UserInterface;
-use App\Models\Permission;
-use App\Models\PermissionGroup;
 use App\Models\Role;
-use App\Models\User;
-use Illuminate\Support\Collection;
+use App\Services\Permission\PermissionService;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -21,6 +18,7 @@ class CompanyUserService
         protected UserService $userService,
         protected UserInterface $userRepository,
         protected RoleInterface $roleRepository,
+        protected PermissionService $permissionService,
     ) {}
 
     public function all(int $companyId, array $params): ServiceResult
@@ -74,9 +72,7 @@ class CompanyUserService
     {
         $user = $this->userRepository->findVisibleForCompany($companyId, $userId);
 
-        return ServiceResult::success(
-            $this->permissionData($user, $this->companyManagerRole()),
-        );
+        return $this->permissionService->forUser($user, $this->companyManagerRole());
     }
 
     /**
@@ -89,7 +85,7 @@ class CompanyUserService
 
         $user->permissions()->sync($permissions);
 
-        return ServiceResult::success($this->permissionData($user, $managerRole));
+        return $this->permissionService->forUser($user, $managerRole);
     }
 
     public function destroy(int $companyId, int $userId, int $actorId): ServiceResult
@@ -118,83 +114,5 @@ class CompanyUserService
         }
 
         return $role;
-    }
-
-    /**
-     * @return array{user_id: int, permission_ids: array<int, int>, permission_groups: array<int, array<string, mixed>>}
-     */
-    private function permissionData(User $user, Role $managerRole): array
-    {
-        /** @var Collection<int, Permission> $availablePermissions */
-        $availablePermissions = $managerRole->permissions()
-            ->with('groups:id,name')
-            ->orderBy('permissions.id')
-            ->get();
-        $selectedPermissionIds = $user->permissions()
-            ->whereIn('permissions.id', $availablePermissions->modelKeys())
-            ->pluck('permissions.id')
-            ->map(fn (int $permissionId): int => $permissionId)
-            ->values();
-        $selectedPermissionLookup = $selectedPermissionIds->flip();
-        $groups = $availablePermissions
-            ->flatMap(fn (Permission $permission): Collection => $permission->groups)
-            ->unique('id')
-            ->sortBy('id')
-            ->values()
-            ->map(function (PermissionGroup $group) use ($availablePermissions, $selectedPermissionLookup): array {
-                $permissions = $availablePermissions
-                    ->filter(fn (Permission $permission): bool => $permission->groups->contains('id', $group->id))
-                    ->map(fn (Permission $permission): array => $this->permissionItem(
-                        $permission,
-                        $selectedPermissionLookup->has($permission->id),
-                    ))
-                    ->values()
-                    ->all();
-
-                return [
-                    'id' => $group->id,
-                    'name' => $group->name,
-                    'permissions' => $permissions,
-                ];
-            });
-        $groupedPermissionIds = $groups
-            ->flatMap(fn (array $group): array => array_column($group['permissions'], 'id'));
-
-        $ungroupedPermissions = $availablePermissions
-            ->whereNotIn('id', $groupedPermissionIds)
-            ->map(fn (Permission $permission): array => $this->permissionItem(
-                $permission,
-                $selectedPermissionLookup->has($permission->id),
-            ))
-            ->values()
-            ->all();
-
-        if ($ungroupedPermissions !== []) {
-            $groups->push([
-                'id' => null,
-                'name' => 'سایر دسترسی‌ها',
-                'permissions' => $ungroupedPermissions,
-            ]);
-        }
-
-        return [
-            'user_id' => $user->id,
-            'permission_ids' => $selectedPermissionIds->all(),
-            'permission_groups' => $groups->all(),
-        ];
-    }
-
-    /**
-     * @return array{id: int, name: string, display_name: string, description: ?string, is_default: bool, is_selected: bool}
-     */
-    private function permissionItem(Permission $permission, bool $isSelected): array
-    {
-        return [
-            'id' => $permission->id,
-            'name' => $permission->name,
-            'display_name' => $permission->display_name,
-            'description' => $permission->description,
-            'is_selected' => $isSelected,
-        ];
     }
 }

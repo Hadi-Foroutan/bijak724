@@ -11,6 +11,7 @@ use App\Http\Resources\Users\TreeUsersResource;
 use App\Models\User;
 use App\Services\Permission\PermissionService;
 use App\Services\User\UserService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
@@ -61,6 +62,13 @@ class UserController extends Controller
         $res = $this->permissionService->syncWithUser($user, $request->validated()['permissions']);
 
         return ResponseHandler::success([], $res->data);
+    }
+
+    public function permissions(User $user): JsonResponse
+    {
+        $result = $this->permissionService->forUser($user);
+
+        return ResponseHandler::success($result->data);
     }
 
     public function destroy(User $user)
