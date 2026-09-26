@@ -83,4 +83,4 @@ jobs:
             -p "${SERVER_PORT}" \
             -o IdentitiesOnly=yes \
             "${SERVER_USER}@${SERVER_HOST}" \
-            "set -e; cd '${SERVER_PATH}'; trap 'php artisan up || true' EXIT; php artisan down --retry=60 || true; php artisan migrate --force; php artisan storage:link || true; php artisan optimize; php artisan queue:restart; php artisan up; trap - EXIT"
+            "set -e; cd '${SERVER_PATH}'; test -f .env; grep -Eq '^APP_KEY=base64:.+' .env; mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache; chmod -R ug+rwX storage bootstrap/cache; trap 'php artisan up || true' EXIT; php artisan down --retry=60 || true; php artisan migrate --force; php artisan storage:link || true; php artisan optimize; php artisan queue:restart; php artisan up; trap - EXIT"
