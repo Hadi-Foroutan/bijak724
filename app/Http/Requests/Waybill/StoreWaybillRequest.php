@@ -134,7 +134,7 @@ class StoreWaybillRequest extends BaseRequest
             'referral_number' => [$requiredWhenReferral, 'nullable', 'string', 'max:255'],
             'bijak_number' => [$requiredWhenCompleted, 'nullable', 'integer'],
             'serial_number' => [$requiredWhenCompleted, 'nullable', 'string', 'max:255'],
-            'issued_at' => [$requiredWhenCompleted, 'nullable', 'date'],
+            'issued_at' => ['nullable', 'date'],
             'liability_insurance' => [
                 $requiredWhenCompleted,
                 'nullable',

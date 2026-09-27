@@ -450,7 +450,6 @@ test('a completed waybill requires its document fields', function () {
     unset(
         $payload['bijak_number'],
         $payload['serial_number'],
-        $payload['issued_at'],
         $payload['liability_insurance'],
     );
 
@@ -459,9 +458,33 @@ test('a completed waybill requires its document fields', function () {
         ->assertJsonValidationErrors([
             'bijak_number',
             'serial_number',
-            'issued_at',
             'liability_insurance',
         ]);
+});
+
+test('a completed waybill records the server date and time once', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-09-27 14:35:42', 'Asia/Tehran'));
+    $payload = completeWaybillPayload($this);
+    unset($payload['issued_at']);
+
+    $waybillId = $this->postJson('/api/user/waybills', $payload)
+        ->assertCreated()
+        ->assertJsonPath('data.issued_at', '2026-09-27 14:35:42')
+        ->json('data.id');
+
+    $this->travelTo(CarbonImmutable::parse('2026-09-28 09:10:11', 'Asia/Tehran'));
+
+    $this->putJson("/api/user/waybills/{$waybillId}", [
+        ...completeWaybillPayload($this),
+        'issued_at' => '2026-09-28',
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.issued_at', '2026-09-27 14:35:42');
+
+    $this->assertDatabaseHas("company_{$this->company->id}_waybills", [
+        'id' => $waybillId,
+        'issued_at' => '2026-09-27 14:35:42',
+    ]);
 });
 
 test('it stores a canceled waybill without requiring business fields', function () {
@@ -617,6 +640,8 @@ test('it rejects unknown cargo and packaging codes and a product owner from anot
 });
 
 test('it reserves a referral number only when a waybill is issued', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-09-27 16:20:30', 'Asia/Tehran'));
+
     $draftId = $this->postJson('/api/user/waybills', ['status' => WaybillStatus::Incomplete->value])
         ->assertCreated()
         ->json('data.id');
@@ -635,7 +660,7 @@ test('it reserves a referral number only when a waybill is issued', function () 
         'id' => $draftId,
         'bijak_number' => '1001',
         'serial_number' => 'SERIAL-1',
-        'issued_at' => '2026-09-07 11:00:00',
+        'issued_at' => '2026-09-27 16:20:30',
     ]);
 
     $this->getJson('/api/user/referral-numbers/inquiry')

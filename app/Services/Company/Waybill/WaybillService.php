@@ -10,6 +10,7 @@ use App\Interfaces\WaybillRepositoryInterface as SharedWaybillRepositoryInterfac
 use App\Models\Company\Waybill;
 use App\Models\TransportContract;
 use App\Services\Company\ReferralNumber\ReferralNumberService;
+use Carbon\CarbonInterface;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -171,6 +172,7 @@ class WaybillService
             $data['serial_number'] = $next['serial_number'];
         }
 
+        $data['issued_at'] = $this->issuedAt($data, $waybill);
         $data['bijak_tracking_code'] = $this->trackingCode($companyId, $data, $waybill);
         $this->ensureBijakNumberIsAvailable($companyId, $data, $waybill?->getKey());
 
@@ -191,6 +193,16 @@ class WaybillService
         }
 
         return $this->trackingCodeGenerator->generate($companyId, $bijakNumber);
+    }
+
+    /** @param array<string, mixed> $data */
+    private function issuedAt(array $data, ?Waybill $waybill): ?CarbonInterface
+    {
+        if ($waybill?->issued_at !== null) {
+            return $waybill->issued_at;
+        }
+
+        return ($data['status'] ?? null) === WaybillStatus::Completed->value ? now() : null;
     }
 
     /** @param array<string, mixed> $data */
