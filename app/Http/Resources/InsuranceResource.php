@@ -31,6 +31,7 @@ class InsuranceResource extends JsonResource
             'description' => $this->description,
             'representative_first_name' => $this->representative_first_name,
             'representative_last_name' => $this->representative_last_name,
+            'representative_full_name' => $this->representativeFullName(),
             'representative_mobile' => $this->representative_mobile,
             'representative_phone' => $this->representative_phone,
             'representative_fax' => $this->representative_fax,
@@ -38,5 +39,15 @@ class InsuranceResource extends JsonResource
             'representative_address' => $this->representative_address,
             'tariffs' => InsuranceTariffResource::collection($this->whenLoaded('tariffs')),
         ];
+    }
+
+    private function representativeFullName(): ?string
+    {
+        $fullName = trim(implode(' ', array_filter(
+            [$this->representative_first_name, $this->representative_last_name],
+            fn (?string $name): bool => filled($name),
+        )));
+
+        return $fullName === '' ? null : $fullName;
     }
 }

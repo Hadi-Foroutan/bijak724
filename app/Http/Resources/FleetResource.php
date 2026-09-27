@@ -58,7 +58,7 @@ class FleetResource extends JsonResource
                     'code' => $this->loadingType->code,
                 ],
             ),
-            'fleet_brand' => $this->whenLoaded(
+            'brand' => $this->whenLoaded(
                 'fleetBrand',
                 fn (): ?array => $this->fleetBrand === null ? null : [
                     'id' => $this->fleetBrand->id,
@@ -66,7 +66,7 @@ class FleetResource extends JsonResource
                     'brand_code' => $this->fleetBrand->brand_code,
                 ],
             ),
-            'fleet_type' => $this->whenLoaded(
+            'type' => $this->whenLoaded(
                 'fleetType',
                 fn (): ?array => $this->fleetType === null ? null : [
                     'tip_code' => $this->fleetType->tip_code,

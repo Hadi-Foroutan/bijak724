@@ -126,6 +126,11 @@ class Company extends Model
         return $this->hasMany(Insurance::class);
     }
 
+    public function waybills(): HasMany
+    {
+        return $this->hasMany(Waybill::class);
+    }
+
     public function cargoGroupAssignments(): HasMany
     {
         return $this->hasMany(CargoGroupCargo::class);

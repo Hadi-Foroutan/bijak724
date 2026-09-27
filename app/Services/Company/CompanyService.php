@@ -17,6 +17,11 @@ class CompanyService
         return ServiceResult::success($this->companyRepository->all($params));
     }
 
+    public function aggregateReport(array $params): ServiceResult
+    {
+        return ServiceResult::success($this->companyRepository->aggregateReport($params));
+    }
+
     public function tree(array $params): ServiceResult
     {
         return ServiceResult::success($this->companyRepository->tree($params));

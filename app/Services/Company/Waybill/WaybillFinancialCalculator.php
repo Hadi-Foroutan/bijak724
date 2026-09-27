@@ -36,9 +36,9 @@ class WaybillFinancialCalculator
         $data['commission_amount'] = $percentageAmount(TransportContractItemName::Commission);
         $data['insurance_amount'] = $percentageAmount(TransportContractItemName::InsurancePremium);
         $data['insurance_tax_amount'] = $percentageAmount(TransportContractItemName::InsuranceVat);
-        $data['driver_receivable_amount'] = $this->driverReceivableAmount($data);
+        //        $data['driver_receivable_amount'] = $this->driverReceivableAmount($data);
 
-        if (! ($data['is_fixed'] ?? false)) {
+        /*if (! ($data['is_fixed'] ?? false)) {
             $data['payable_amount'] = max(
                 0,
                 $baseFreightAmount
@@ -46,7 +46,7 @@ class WaybillFinancialCalculator
                     + $data['commission_amount']
                     - $data['advance_freight_amount'],
             );
-        }
+        }*/
 
         return $data;
     }

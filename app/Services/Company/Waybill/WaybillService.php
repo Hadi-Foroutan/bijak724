@@ -165,18 +165,32 @@ class WaybillService
         if ($waybill?->referral_number !== null && $waybill->serial_number !== null) {
             $data['referral_number'] = $waybill->referral_number;
             $data['serial_number'] = $waybill->serial_number;
-            $data['bijak_tracking_code'] = $waybill->bijak_tracking_code
-                ?? $this->trackingCodeGenerator->generate($companyId);
         } else {
             $next = $this->referralNumberService->reserveNext($companyId)->data;
             $data['referral_number'] = (string) $next['referral_number'];
             $data['serial_number'] = $next['serial_number'];
-            $data['bijak_tracking_code'] = $this->trackingCodeGenerator->generate($companyId);
         }
 
+        $data['bijak_tracking_code'] = $this->trackingCode($companyId, $data, $waybill);
         $this->ensureBijakNumberIsAvailable($companyId, $data, $waybill?->getKey());
 
         return $data;
+    }
+
+    /** @param array<string, mixed> $data */
+    private function trackingCode(int $companyId, array $data, ?Waybill $waybill): ?string
+    {
+        if ($waybill?->bijak_tracking_code !== null) {
+            return $waybill->bijak_tracking_code;
+        }
+
+        $bijakNumber = trim((string) ($data['bijak_number'] ?? ''));
+
+        if (($data['status'] ?? null) !== WaybillStatus::Completed->value || $bijakNumber === '') {
+            return null;
+        }
+
+        return $this->trackingCodeGenerator->generate($companyId, $bijakNumber);
     }
 
     /** @param array<string, mixed> $data */

@@ -64,7 +64,7 @@ return [
         ['name' => 'serial_number', 'type' => 'string'],
         ['name' => 'issued_at', 'type' => 'dateTime'],
         ['name' => 'liability_insurance', 'type' => 'unsignedBigInteger', 'change' => true, 'index' => true, 'foreign' => ['table' => 'insurances', 'column' => 'id', 'on_delete' => 'null']],
-        ['name' => 'bijak_tracking_code', 'type' => 'string', 'length' => 8, 'unique' => true],
+        ['name' => 'bijak_tracking_code', 'type' => 'string', 'length' => 25, 'unique' => true, 'change' => true],
         ['name' => 'description', 'type' => 'text'],
         ['name' => 'status', 'type' => 'enum', 'values' => WaybillStatus::values(), 'default' => WaybillStatus::Incomplete->value, 'nullable' => false, 'index' => true],
         ['name' => 'transport_contract_id', 'type' => 'unsignedBigInteger', 'index' => true, 'foreign' => ['table' => 'transport_contracts', 'column' => 'id', 'on_delete' => 'null']],

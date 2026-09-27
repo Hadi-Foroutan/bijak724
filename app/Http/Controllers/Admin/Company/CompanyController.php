@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin\Company;
 
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\Company\AggregateCompanyReportRequest;
 use App\Http\Requests\Company\StoreCompanyRequest;
 use App\Http\Requests\Company\UpdateCompanyRequest;
+use App\Http\Resources\AdminCompanyWaybillReportResource;
 use App\Http\Resources\Companies\TreeCompaniesResource;
 use App\Http\Resources\CompanyResource;
 use App\Models\Company;
@@ -32,6 +34,18 @@ class CompanyController extends Controller
         $res = $this->companyService->index($request->all());
 
         return ResponseHandler::success($this->companiesResource($res->data, $request));
+    }
+
+    public function aggregateReport(AggregateCompanyReportRequest $request): JsonResponse
+    {
+        $result = $this->companyService->aggregateReport($request->validated());
+        $data = $result->data;
+
+        return ResponseHandler::success([
+            'active_companies_count' => $data['active_companies_count'],
+            'total_waybills_count' => $data['total_waybills_count'],
+            'companies' => $this->aggregateCompaniesResource($data['companies'], $request),
+        ]);
     }
 
     public function store(StoreCompanyRequest $request): JsonResponse
@@ -75,5 +89,16 @@ class CompanyController extends Controller
         }
 
         return CompanyResource::collection($companies)->resolve($request);
+    }
+
+    private function aggregateCompaniesResource(mixed $companies, Request $request): mixed
+    {
+        if ($companies instanceof LengthAwarePaginator) {
+            return $companies->through(
+                fn (Company $company): array => AdminCompanyWaybillReportResource::make($company)->resolve($request),
+            );
+        }
+
+        return AdminCompanyWaybillReportResource::collection($companies)->resolve($request);
     }
 }

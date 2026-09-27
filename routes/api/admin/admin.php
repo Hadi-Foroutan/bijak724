@@ -10,6 +10,8 @@ use App\Http\Controllers\Admin\User\UserController;
 use App\Http\Controllers\Admin\WaybillController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('companies/aggregate-report', [CompanyController::class, 'aggregateReport'])
+    ->name('companies.aggregate-report');
 Route::apiResource('companies', CompanyController::class);
 Route::prefix('companies')->name('companies.')->group(function () {
     Route::post('{company}/login-as', [CompanySupportTokenController::class, 'store'])->name('loginAs');

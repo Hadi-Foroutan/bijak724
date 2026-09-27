@@ -13,11 +13,16 @@ use App\Models\Cargo;
 use App\Models\City;
 use App\Models\Company;
 use App\Models\DriverLicenseType;
+use App\Models\FleetBrand;
+use App\Models\FleetType;
 use App\Models\Insurance;
+use App\Models\LoadingType;
 use App\Models\Packaging;
 use App\Models\State;
 use App\Models\User;
 use App\Services\Company\Waybill\WaybillService;
+use App\Services\Company\Waybill\WaybillTrackingCodeGenerator;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -92,6 +97,13 @@ beforeEach(function (): void {
     ]);
 
     $licenseType = DriverLicenseType::query()->create(['name' => 'پایه یک', 'code' => 1]);
+    $loadingType = LoadingType::query()->create(['name' => 'کفی', 'code' => 101]);
+    $fleetBrand = FleetBrand::query()->create(['name' => 'بنز', 'brand_code' => 10]);
+    $fleetType = FleetType::query()->create([
+        'tip_code' => 1001,
+        'name' => 'اکتروس',
+        'brand_code' => $fleetBrand->brand_code,
+    ]);
     $driverData = [
         'father_name' => 'حسن',
         'license_type' => $licenseType->id,
@@ -129,6 +141,10 @@ beforeEach(function (): void {
         'plate_second_letter' => 'ب',
         'plate_third_number' => '345',
         'plate_fourth_number' => '67',
+        'driver_license_type_id' => $licenseType->id,
+        'loading_type_id' => $loadingType->id,
+        'system_id' => $fleetBrand->id,
+        'tip_code' => $fleetType->tip_code,
         'has_violation' => false,
     ]);
     $defaultReferralId = $this->getJson('/api/user/referral-numbers')
@@ -159,12 +175,23 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertJsonPath('data.receiver_address_city_code', 1101)
         ->assertJsonPath('data.receiver_address_address', 'تهران، آدرس گیرنده')
         ->assertJsonPath('data.sender_first_name', 'علی')
+        ->assertJsonPath('data.sender_full_name', 'علی فرستنده')
+        ->assertJsonPath('data.sender.full_name', 'علی فرستنده')
         ->assertJsonPath('data.receiver_last_name', 'گیرنده')
+        ->assertJsonPath('data.receiver_full_name', 'رضا گیرنده')
+        ->assertJsonPath('data.receiver.full_name', 'رضا گیرنده')
         ->assertJsonPath('data.driver1_national_code', '1234567890')
+        ->assertJsonPath('data.driver1_full_name', 'حسین راننده')
+        ->assertJsonPath('data.driver2_full_name', 'محمد کمک راننده')
         ->assertJsonPath('data.driver2_phone', '09122222222')
         ->assertJsonPath('data.referral_driver_id', $this->thirdDriver->id)
         ->assertJsonPath('data.referral_driver_first_name', 'عباس')
+        ->assertJsonPath('data.referral_driver_full_name', 'عباس راننده حواله')
         ->assertJsonPath('data.referral_driver.phone_number_1', '09123333333')
+        ->assertJsonPath('data.fleet.driver_license_type.name', 'پایه یک')
+        ->assertJsonPath('data.fleet.loading_type.name', 'کفی')
+        ->assertJsonPath('data.fleet.brand.name', 'بنز')
+        ->assertJsonPath('data.fleet.type.name', 'اکتروس')
         ->assertJsonPath('data.referral_number', '1')
         ->assertJsonPath('data.description', 'توضیحات بارنامه')
         ->assertJsonPath('data.liability_insurance', $this->insurance->id)
@@ -189,7 +216,8 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
 
     expect($response->json('data.bijak_tracking_code'))
         ->toBeString()
-        ->toMatch('/^\d{8}$/');
+        ->toHaveLength(25)
+        ->toMatch('/^\d{4}1001\d{17}$/');
 
     $waybillId = $response->json('data.id');
     $cargoItemId = $response->json('data.cargos.0.id');
@@ -208,15 +236,23 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertJsonPath('data.description', 'توضیحات بارنامه')
         ->assertJsonPath('data.bijak_tracking_code', $response->json('data.bijak_tracking_code'))
         ->assertJsonPath('data.sender_first_name', 'علی')
+        ->assertJsonPath('data.sender_full_name', 'علی فرستنده')
         ->assertJsonPath('data.driver1_first_name', 'حسین')
+        ->assertJsonPath('data.driver1_full_name', 'حسین راننده')
         ->assertJsonPath('data.sender_address_postal_code', '1111111111')
         ->assertJsonPath('data.sender_address_address', 'تهران، آدرس فرستنده')
         ->assertJsonPath('data.sender.first_name', 'نام جدید')
+        ->assertJsonPath('data.sender.full_name', 'نام جدید فرستنده')
         ->assertJsonPath('data.first_driver.first_name', 'راننده جدید')
+        ->assertJsonPath('data.first_driver.full_name', 'راننده جدید راننده')
         ->assertJsonPath('data.sender_address.postal_code', '3333333333')
         ->assertJsonPath('data.sender_address.address', 'تهران، آدرس ویرایش‌شده فرستنده')
         ->assertJsonPath('data.receiver.last_name', 'گیرنده')
         ->assertJsonPath('data.referral_driver.last_name', 'راننده حواله')
+        ->assertJsonPath('data.fleet.driver_license_type.code', 1)
+        ->assertJsonPath('data.fleet.loading_type.code', 101)
+        ->assertJsonPath('data.fleet.brand.brand_code', 10)
+        ->assertJsonPath('data.fleet.type.tip_code', 1001)
         ->assertJsonCount(1, 'data.cargos');
 
     $updatePayload = completeWaybillPayload($this);
@@ -365,7 +401,7 @@ test('it validates and stores a referral waybill with only referral fields requi
             'referral_number',
         ]);
 
-    $this->postJson('/api/user/waybills', [
+    $referralWaybillId = $this->postJson('/api/user/waybills', [
         'status' => WaybillStatus::Referral->value,
         'referral_weight' => 1250.5,
         'quantity' => 10,
@@ -378,7 +414,19 @@ test('it validates and stores a referral waybill with only referral fields requi
         ->assertJsonPath('data.referral_number', '1')
         ->assertJsonPath('data.serial_number', 'SERIAL-1')
         ->assertJsonPath('data.bijak_number', null)
-        ->assertJsonPath('data.issued_at', null);
+        ->assertJsonPath('data.issued_at', null)
+        ->assertJsonPath('data.bijak_tracking_code', null)
+        ->json('data.id');
+
+    $this->travelTo(CarbonImmutable::parse('2026-09-27 12:00:00'));
+
+    $completed = $this->putJson(
+        "/api/user/waybills/{$referralWaybillId}",
+        completeWaybillPayload($this),
+    )->assertSuccessful();
+
+    expect($completed->json('data.bijak_tracking_code'))
+        ->toMatch('/^14051001\d{17}$/');
 });
 
 test('a completed waybill does not require referral-only fields', function () {
@@ -773,7 +821,20 @@ test('the default range completes after issuing number 999999', function () {
     $this->getJson('/api/user/referral-numbers/inquiry')->assertNotFound();
 });
 
+test('it generates a 25 digit tracking code from the Jalali year and bijak number', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-09-27 12:00:00'));
+
+    $trackingCode = app(WaybillTrackingCodeGenerator::class)
+        ->generate($this->company->id, '987654');
+
+    expect($trackingCode)
+        ->toHaveLength(25)
+        ->toMatch('/^1405987654\d{15}$/');
+});
+
 test('the referral driver can be the first or second driver', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-09-27 12:00:00'));
+
     $firstDriverPayload = completeWaybillPayload($this);
     $firstDriverPayload['referral_driver_id'] = $this->firstDriver->id;
 
@@ -791,7 +852,10 @@ test('the referral driver can be the first or second driver', function () {
         ->assertJsonPath('data.referral_driver_id', $this->secondDriver->id)
         ->assertJsonPath('data.referral_driver_national_code', '0987654321');
 
-    expect($secondResponse->json('data.bijak_tracking_code'))
+    expect($firstResponse->json('data.bijak_tracking_code'))
+        ->toMatch('/^14051001\d{17}$/')
+        ->and($secondResponse->json('data.bijak_tracking_code'))
+        ->toMatch('/^14051002\d{17}$/')
         ->not->toBe($firstResponse->json('data.bijak_tracking_code'));
 });
 

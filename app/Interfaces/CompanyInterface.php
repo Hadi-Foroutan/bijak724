@@ -3,11 +3,18 @@
 namespace App\Interfaces;
 
 use App\Models\Company;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
 interface CompanyInterface
 {
     public function all(array $params);
+
+    /**
+     * @param  array<string, mixed>  $params
+     * @return array{active_companies_count: int, total_waybills_count: int, companies: Collection<int, Company>|LengthAwarePaginator}
+     */
+    public function aggregateReport(array $params): array;
 
     /** @return Collection<int, Company> */
     public function tree(array $params): Collection;

@@ -16,7 +16,8 @@ class Waybill extends DynamicModel
 
     protected array $defaultRelations = [
         'sender', 'senderAddress.city', 'receiver', 'receiverAddress.city',
-        'firstDriver', 'secondDriver', 'referralDriver', 'fleet',
+        'firstDriver', 'secondDriver', 'referralDriver',
+        'fleet.driverLicenseType', 'fleet.loadingType', 'fleet.fleetBrand', 'fleet.fleetType',
         'transportContract', 'insurance.insuranceCompany',
         'cargos.cargo', 'cargos.packaging', 'cargos.productOwner',
     ];
