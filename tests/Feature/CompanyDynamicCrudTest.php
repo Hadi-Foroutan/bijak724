@@ -62,8 +62,26 @@ test('shipment parties and their nested addresses have complete company scoped c
         ->assertJsonPath('data.status', StatusEnum::ACTIVE->value)
         ->assertJsonPath('data.is_sender', true)
         ->assertJsonPath('data.is_receiver', false)
+        ->assertJsonPath('data.full_name', 'علی احمدی')
         ->assertJsonCount(0, 'data.addresses')
         ->json('data.id');
+
+    $this->assertDatabaseHas("company_{$this->company->id}_shipment_parties", [
+        'id' => $partyId,
+        'full_name' => 'علی احمدی',
+    ]);
+
+    $this->patchJson("/api/user/shipment-parties/{$partyId}", [
+        'first_name' => 'محمد',
+        'last_name' => 'رضایی',
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.full_name', 'محمد رضایی');
+
+    $this->assertDatabaseHas("company_{$this->company->id}_shipment_parties", [
+        'id' => $partyId,
+        'full_name' => 'محمد رضایی',
+    ]);
 
     $addressId = $this->postJson("/api/user/shipment-parties/{$partyId}/addresses", [
         'postal_code' => '1234567890',
@@ -88,6 +106,7 @@ test('shipment parties and their nested addresses have complete company scoped c
 
     $this->getJson("/api/user/shipment-parties/{$partyId}")
         ->assertSuccessful()
+        ->assertJsonPath('data.full_name', 'محمد رضایی')
         ->assertJsonPath('data.addresses.0.id', $addressId);
 
     $this->deleteJson("/api/user/shipment-parties/{$partyId}")->assertSuccessful();

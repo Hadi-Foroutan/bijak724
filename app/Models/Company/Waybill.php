@@ -15,7 +15,8 @@ class Waybill extends DynamicModel
     protected string $companyTableKey = 'waybills';
 
     protected array $defaultRelations = [
-        'sender', 'senderAddress.city', 'receiver', 'receiverAddress.city',
+        'sender', 'senderAddress.city', 'origin.city',
+        'receiver', 'receiverAddress.city', 'destination.city',
         'firstDriver', 'secondDriver', 'referralDriver',
         'fleet.driverLicenseType', 'fleet.loadingType', 'fleet.fleetBrand', 'fleet.fleetType',
         'transportContract', 'insurance.insuranceCompany',
@@ -32,8 +33,7 @@ class Waybill extends DynamicModel
         'sender_address_address',
         'sender_address_description',
         'sender_national_identifier',
-        'sender_first_name',
-        'sender_last_name',
+        'sender_full_name',
         'sender_mobile',
         'receiver_id',
         'receiver_address_id',
@@ -43,25 +43,26 @@ class Waybill extends DynamicModel
         'receiver_address_address',
         'receiver_address_description',
         'receiver_national_identifier',
-        'receiver_first_name',
-        'receiver_last_name',
+        'origin__city__code',
+        'destination__city__code',
+        'receiver_full_name',
         'receiver_mobile',
+
+        'firstDriver__full_name',
         'driver1_id',
         'driver1_national_code',
-        'driver1_first_name',
-        'driver1_last_name',
+        'driver1_full_name',
         'driver1_phone',
+
         'driver2_id',
         'driver2_national_code',
-        'driver2_first_name',
-        'driver2_last_name',
+        'driver2_full_name',
         'driver2_phone',
+
         'referral_driver_id',
         'referral_driver_national_code',
-        'referral_driver_first_name',
-        'referral_driver_last_name',
+        'referral_driver_full_name',
         'referral_driver_phone',
-        'fleet_id',
         'referral_weight',
         'quantity',
         'loading_started_at',
@@ -88,10 +89,15 @@ class Waybill extends DynamicModel
         'payable_amount',
         'freight_at_origin',
         'is_fixed',
+
+        'fleet_id',
+        'fleet__smart_card_number',
         'fleet__plate_first_number',
         'fleet__plate_second_letter',
         'fleet__plate_third_number',
         'fleet__plate_fourth_number',
+
+        'cargos__cargo__code',
     ];
 
     public function creator(): BelongsTo
@@ -138,6 +144,24 @@ class Waybill extends DynamicModel
             ShipmentPartyAddress::class,
             'receiver_address_id',
             relationName: 'receiverAddress',
+        );
+    }
+
+    public function origin(): BelongsTo
+    {
+        return $this->belongsToCompany(
+            ShipmentPartyAddress::class,
+            'sender_address_id',
+            relationName: 'origin',
+        );
+    }
+
+    public function destination(): BelongsTo
+    {
+        return $this->belongsToCompany(
+            ShipmentPartyAddress::class,
+            'receiver_address_id',
+            relationName: 'destination',
         );
     }
 

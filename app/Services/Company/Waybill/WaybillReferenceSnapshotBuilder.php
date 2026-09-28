@@ -14,14 +14,12 @@ class WaybillReferenceSnapshotBuilder
     private const REFERENCES = [
         'sender_id' => ['shipment_party', 'sender', [
             'national_identifier' => 'national_identifier',
-            'first_name' => 'first_name',
-            'last_name' => 'last_name',
+            'full_name' => 'full_name',
             'mobile' => 'mobile',
         ]],
         'receiver_id' => ['shipment_party', 'receiver', [
             'national_identifier' => 'national_identifier',
-            'first_name' => 'first_name',
-            'last_name' => 'last_name',
+            'full_name' => 'full_name',
             'mobile' => 'mobile',
         ]],
         'sender_address_id' => ['shipment_party_address', 'sender_address', [
@@ -40,20 +38,17 @@ class WaybillReferenceSnapshotBuilder
         ]],
         'driver1_id' => ['driver', 'driver1', [
             'national_code' => 'national_code',
-            'first_name' => 'first_name',
-            'last_name' => 'last_name',
+            'full_name' => 'full_name',
             'phone' => 'phone_number_1',
         ]],
         'driver2_id' => ['driver', 'driver2', [
             'national_code' => 'national_code',
-            'first_name' => 'first_name',
-            'last_name' => 'last_name',
+            'full_name' => 'full_name',
             'phone' => 'phone_number_1',
         ]],
         'referral_driver_id' => ['driver', 'referral_driver', [
             'national_code' => 'national_code',
-            'first_name' => 'first_name',
-            'last_name' => 'last_name',
+            'full_name' => 'full_name',
             'phone' => 'phone_number_1',
         ]],
     ];

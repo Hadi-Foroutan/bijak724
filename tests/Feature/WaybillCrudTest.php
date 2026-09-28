@@ -24,6 +24,7 @@ use App\Services\Company\Waybill\WaybillService;
 use App\Services\Company\Waybill\WaybillTrackingCodeGenerator;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -161,23 +162,143 @@ beforeEach(function (): void {
     ])->assertCreated()->json('data.id');
 });
 
+test('it exposes origin and descination address relations', function () {
+    $waybillId = $this->postJson('/api/user/waybills', [
+        'status' => WaybillStatus::Incomplete->value,
+        'sender_id' => $this->sender->id,
+        'sender_address_id' => $this->senderAddress->id,
+        'receiver_id' => $this->receiver->id,
+        'receiver_address_id' => $this->receiverAddress->id,
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.origin.id', $this->senderAddress->id)
+        ->assertJsonPath('data.origin.postal_code', '1111111111')
+        ->assertJsonPath('data.descination.id', $this->receiverAddress->id)
+        ->assertJsonPath('data.descination.postal_code', '2222222222')
+        ->json('data.id');
+
+    $this->senderAddress->update(['postal_code' => '3333333333']);
+
+    $this->getJson("/api/user/waybills/{$waybillId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.origin.id', $this->senderAddress->id)
+        ->assertJsonPath('data.origin.postal_code', '3333333333')
+        ->assertJsonPath('data.descination.id', $this->receiverAddress->id)
+        ->assertJsonPath('data.descination.postal_code', '2222222222');
+});
+
+test('it stores reference snapshot names only as full names', function () {
+    $waybillId = $this->postJson('/api/user/waybills', [
+        'status' => WaybillStatus::Incomplete->value,
+        'sender_id' => $this->sender->id,
+        'receiver_id' => $this->receiver->id,
+        'driver1_id' => $this->firstDriver->id,
+        'driver2_id' => $this->secondDriver->id,
+        'referral_driver_id' => $this->thirdDriver->id,
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.sender_full_name', 'علی فرستنده')
+        ->assertJsonPath('data.receiver_full_name', 'رضا گیرنده')
+        ->assertJsonPath('data.driver1_full_name', 'حسین راننده')
+        ->assertJsonPath('data.driver2_full_name', 'محمد کمک راننده')
+        ->assertJsonPath('data.referral_driver_full_name', 'عباس راننده حواله')
+        ->assertJsonMissingPath('data.sender_first_name')
+        ->assertJsonMissingPath('data.sender_last_name')
+        ->assertJsonMissingPath('data.receiver_first_name')
+        ->assertJsonMissingPath('data.receiver_last_name')
+        ->assertJsonMissingPath('data.driver1_first_name')
+        ->assertJsonMissingPath('data.driver1_last_name')
+        ->assertJsonMissingPath('data.driver2_first_name')
+        ->assertJsonMissingPath('data.driver2_last_name')
+        ->assertJsonMissingPath('data.referral_driver_first_name')
+        ->assertJsonMissingPath('data.referral_driver_last_name')
+        ->json('data.id');
+
+    $waybillTable = "company_{$this->company->id}_waybills";
+
+    $this->assertDatabaseHas($waybillTable, [
+        'id' => $waybillId,
+        'sender_full_name' => 'علی فرستنده',
+        'receiver_full_name' => 'رضا گیرنده',
+        'driver1_full_name' => 'حسین راننده',
+        'driver2_full_name' => 'محمد کمک راننده',
+        'referral_driver_full_name' => 'عباس راننده حواله',
+    ]);
+
+    expect(Schema::hasColumn($waybillTable, 'sender_first_name'))->toBeFalse()
+        ->and(Schema::hasColumn($waybillTable, 'driver1_last_name'))->toBeFalse()
+        ->and(Schema::hasColumn($waybillTable, 'referral_driver_first_name'))->toBeFalse();
+
+    $this->sender->update(['first_name' => 'نام جدید']);
+    $this->firstDriver->update(['first_name' => 'راننده جدید']);
+
+    $this->getJson("/api/user/waybills/{$waybillId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.sender_full_name', 'علی فرستنده')
+        ->assertJsonPath('data.driver1_full_name', 'حسین راننده');
+
+    $this->putJson("/api/user/waybills/{$waybillId}", completeWaybillPayload($this))
+        ->assertSuccessful()
+        ->assertJsonPath('data.sender_full_name', 'نام جدید فرستنده')
+        ->assertJsonPath('data.driver1_full_name', 'راننده جدید راننده')
+        ->assertJsonMissingPath('data.sender_first_name')
+        ->assertJsonMissingPath('data.driver1_last_name');
+});
+
+test('it migrates existing waybill snapshot names to full names', function () {
+    $legacyTable = 'company_999999_waybills';
+
+    Schema::create($legacyTable, function (Blueprint $table): void {
+        $table->id();
+        $table->string('sender_first_name')->nullable();
+        $table->string('sender_last_name')->nullable();
+        $table->string('driver1_first_name')->nullable();
+        $table->string('driver1_last_name')->nullable();
+    });
+
+    try {
+        DB::table($legacyTable)->insert([
+            'sender_first_name' => '  علی ',
+            'sender_last_name' => ' فرستنده  ',
+            'driver1_first_name' => 'حسین',
+            'driver1_last_name' => 'راننده',
+        ]);
+
+        $migration = require database_path(
+            'migrations/2026_09_28_160154_replace_waybill_snapshot_names_with_full_names.php',
+        );
+        $migration->up();
+
+        $waybill = DB::table($legacyTable)->first();
+
+        expect($waybill->sender_full_name)->toBe('علی فرستنده')
+            ->and($waybill->driver1_full_name)->toBe('حسین راننده')
+            ->and(Schema::hasColumn($legacyTable, 'sender_first_name'))->toBeFalse()
+            ->and(Schema::hasColumn($legacyTable, 'driver1_last_name'))->toBeFalse();
+    } finally {
+        Schema::dropIfExists($legacyTable);
+    }
+});
+
 test('it creates a complete waybill with snapshots cargos and calculated contract amounts', function () {
     $response = $this->postJson('/api/user/waybills', completeWaybillPayload($this))
         ->assertCreated()
         ->assertJsonPath('data.sender_address_id', $this->senderAddress->id)
         ->assertJsonPath('data.sender_address.postal_code', '1111111111')
+        ->assertJsonPath('data.origin.id', $this->senderAddress->id)
+        ->assertJsonPath('data.origin.postal_code', '1111111111')
         ->assertJsonPath('data.sender_address_postal_code', '1111111111')
         ->assertJsonPath('data.sender_address_city_code', 1101)
         ->assertJsonPath('data.sender_address_address', 'تهران، آدرس فرستنده')
         ->assertJsonPath('data.receiver_address_id', $this->receiverAddress->id)
         ->assertJsonPath('data.receiver_address.postal_code', '2222222222')
+        ->assertJsonPath('data.descination.id', $this->receiverAddress->id)
+        ->assertJsonPath('data.descination.postal_code', '2222222222')
         ->assertJsonPath('data.receiver_address_postal_code', '2222222222')
         ->assertJsonPath('data.receiver_address_city_code', 1101)
         ->assertJsonPath('data.receiver_address_address', 'تهران، آدرس گیرنده')
-        ->assertJsonPath('data.sender_first_name', 'علی')
         ->assertJsonPath('data.sender_full_name', 'علی فرستنده')
         ->assertJsonPath('data.sender.full_name', 'علی فرستنده')
-        ->assertJsonPath('data.receiver_last_name', 'گیرنده')
         ->assertJsonPath('data.receiver_full_name', 'رضا گیرنده')
         ->assertJsonPath('data.receiver.full_name', 'رضا گیرنده')
         ->assertJsonPath('data.driver1_national_code', '1234567890')
@@ -185,7 +306,6 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertJsonPath('data.driver2_full_name', 'محمد کمک راننده')
         ->assertJsonPath('data.driver2_phone', '09122222222')
         ->assertJsonPath('data.referral_driver_id', $this->thirdDriver->id)
-        ->assertJsonPath('data.referral_driver_first_name', 'عباس')
         ->assertJsonPath('data.referral_driver_full_name', 'عباس راننده حواله')
         ->assertJsonPath('data.referral_driver.phone_number_1', '09123333333')
         ->assertJsonPath('data.fleet.driver_license_type.name', 'پایه یک')
@@ -235,9 +355,7 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertJsonPath('data.referral_number', '1')
         ->assertJsonPath('data.description', 'توضیحات بارنامه')
         ->assertJsonPath('data.bijak_tracking_code', $response->json('data.bijak_tracking_code'))
-        ->assertJsonPath('data.sender_first_name', 'علی')
         ->assertJsonPath('data.sender_full_name', 'علی فرستنده')
-        ->assertJsonPath('data.driver1_first_name', 'حسین')
         ->assertJsonPath('data.driver1_full_name', 'حسین راننده')
         ->assertJsonPath('data.sender_address_postal_code', '1111111111')
         ->assertJsonPath('data.sender_address_address', 'تهران، آدرس فرستنده')
@@ -247,6 +365,8 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertJsonPath('data.first_driver.full_name', 'راننده جدید راننده')
         ->assertJsonPath('data.sender_address.postal_code', '3333333333')
         ->assertJsonPath('data.sender_address.address', 'تهران، آدرس ویرایش‌شده فرستنده')
+        ->assertJsonPath('data.origin.postal_code', '3333333333')
+        ->assertJsonPath('data.origin.address', 'تهران، آدرس ویرایش‌شده فرستنده')
         ->assertJsonPath('data.receiver.last_name', 'گیرنده')
         ->assertJsonPath('data.referral_driver.last_name', 'راننده حواله')
         ->assertJsonPath('data.fleet.driver_license_type.code', 1)
@@ -264,9 +384,9 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertSuccessful()
         ->assertJsonPath('data.payable_amount', 999999)
         ->assertJsonPath('data.bijak_tracking_code', $response->json('data.bijak_tracking_code'))
-        ->assertJsonPath('data.sender_first_name', 'علی')
+        ->assertJsonPath('data.sender_full_name', 'علی فرستنده')
         ->assertJsonPath('data.referral_driver_id', $this->firstDriver->id)
-        ->assertJsonPath('data.referral_driver_first_name', 'راننده جدید')
+        ->assertJsonPath('data.referral_driver_full_name', 'راننده جدید راننده')
         ->assertJsonPath('data.referral_number', '1')
         ->assertJsonPath('data.cargos.0.id', $cargoItemId);
 });
