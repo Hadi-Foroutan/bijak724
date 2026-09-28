@@ -153,7 +153,7 @@ class AuthService
             $data['role'] = $this->supportTokenService->supportRole();
             $data['permissions'] = $this->supportTokenService->permissionsForToken($token);
             $data['auth_mode'] = 'company_support';
-            $data['support_access'] = $companyContext;
+            $data['company_access'] = $companyContext;
 
             return $data;
         }
