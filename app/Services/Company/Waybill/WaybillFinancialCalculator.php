@@ -29,13 +29,13 @@ class WaybillFinancialCalculator
             return (int) round($baseFreightAmount * $percentage / 100);
         };
 
-        $data['advance_freight_amount'] = $percentageAmount(TransportContractItemName::AdvanceFreight);
-        $data['weighbridge_amount'] = $this->optionalAmount($data, 'weighbridge_amount', $percentageAmount(TransportContractItemName::WeighbridgeCost));
-        $data['loading_amount'] = $this->optionalAmount($data, 'loading_amount', $percentageAmount(TransportContractItemName::LoadingCost));
-        $data['warehousing_amount'] = $this->optionalAmount($data, 'warehousing_amount', $percentageAmount(TransportContractItemName::Warehousing));
-        $data['commission_amount'] = $percentageAmount(TransportContractItemName::Commission);
-        $data['insurance_amount'] = $percentageAmount(TransportContractItemName::InsurancePremium);
-        $data['insurance_tax_amount'] = $percentageAmount(TransportContractItemName::InsuranceVat);
+//        $data['advance_freight_amount'] = $percentageAmount(TransportContractItemName::AdvanceFreight);
+//        $data['weighbridge_amount'] = $this->optionalAmount($data, 'weighbridge_amount', $percentageAmount(TransportContractItemName::WeighbridgeCost));
+//        $data['loading_amount'] = $this->optionalAmount($data, 'loading_amount', $percentageAmount(TransportContractItemName::LoadingCost));
+//        $data['warehousing_amount'] = $this->optionalAmount($data, 'warehousing_amount', $percentageAmount(TransportContractItemName::Warehousing));
+//        $data['commission_amount'] = $percentageAmount(TransportContractItemName::Commission);
+//        $data['insurance_amount'] = $percentageAmount(TransportContractItemName::InsurancePremium);
+//        $data['insurance_tax_amount'] = $percentageAmount(TransportContractItemName::InsuranceVat);
         //        $data['driver_receivable_amount'] = $this->driverReceivableAmount($data);
 
         /*if (! ($data['is_fixed'] ?? false)) {

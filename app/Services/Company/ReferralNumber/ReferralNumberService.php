@@ -219,7 +219,7 @@ class ReferralNumberService
             'referral_number' => $record->last_number === null
                 ? (int) $record->from_number
                 : (int) $record->last_number + 1,
-            'date' => Carbon::now()->format('Y-m-d'),
+            'date' => Carbon::now(),
         ];
     }
 
