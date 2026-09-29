@@ -49,7 +49,7 @@ class ReferralNumberService
             }
 
             $record = $this->referralNumberRepository->create($companyId, [
-                'title' => 'پیشفرض',
+                'title' => 'پیش فرض',
                 'serial_number' => '1405',
                 'from_number' => self::DEFAULT_FROM_NUMBER,
                 'to_number' => self::DEFAULT_TO_NUMBER,

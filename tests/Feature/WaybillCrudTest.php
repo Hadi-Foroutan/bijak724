@@ -941,7 +941,7 @@ test('the default range completes after issuing number 999999', function () {
     ])->assertSuccessful();
 
     $tableName = "company_{$this->company->id}_referral_numbers";
-    $defaultId = DB::table($tableName)->where('title', 'پیشفرض')->value('id');
+    $defaultId = DB::table($tableName)->where('title', 'پیش فرض')->value('id');
     DB::table($tableName)
         ->where('id', $defaultId)
         ->update(['last_number' => 999998]);

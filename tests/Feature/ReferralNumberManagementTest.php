@@ -142,7 +142,7 @@ test('new companies receive an active default range with 900000 available number
     $this->getJson('/api/user/referral-numbers')
         ->assertSuccessful()
         ->assertJsonCount(1, 'data')
-        ->assertJsonPath('data.0.title', 'پیشفرض')
+        ->assertJsonPath('data.0.title', 'پیش فرض')
         ->assertJsonPath('data.0.serial_number', '1405')
         ->assertJsonPath('data.0.from_number', 100000)
         ->assertJsonPath('data.0.to_number', 999999)

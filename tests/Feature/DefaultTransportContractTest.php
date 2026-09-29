@@ -12,7 +12,7 @@ test('it creates a universal default transport contract for every new company', 
     $company = Company::factory()->create();
     $transportContract = $company->transportContracts()->with('items')->sole();
 
-    expect($transportContract->title)->toBe('پیشفرض')
+    expect($transportContract->title)->toBe('پیش فرض')
         ->and($transportContract->contract_number)->toBe('1')
         ->and($transportContract->contract_date->toDateString())->toBe($nextYearDate)
         ->and($transportContract->customer_name)->toBe('عمومی')

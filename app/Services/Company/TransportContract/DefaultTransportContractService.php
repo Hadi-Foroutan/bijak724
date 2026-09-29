@@ -19,7 +19,7 @@ class DefaultTransportContractService
     {
         return DB::transaction(function () use ($company): ServiceResult {
             $contract = $this->transportContractRepository->createWithItems($company->id, [
-                'title' => 'پیشفرض',
+                'title' => 'پیش فرض',
                 'contract_number' => '1',
                 'contract_date' => now()->addYear()->toDateString(),
                 'customer_name' => 'عمومی',
