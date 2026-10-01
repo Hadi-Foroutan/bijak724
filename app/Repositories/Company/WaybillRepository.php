@@ -45,6 +45,14 @@ class WaybillRepository implements WaybillRepositoryInterface
             ->findOrFail($id);
     }
 
+    public function findOrFailForUpdate(int $companyId, int $id): Waybill
+    {
+        return $this->query($companyId)
+            ->with($this->waybill->defaultRelations())
+            ->lockForUpdate()
+            ->findOrFail($id);
+    }
+
     public function update(int $companyId, int $id, array $data): Waybill
     {
         unset($data['owner_company_id']);
@@ -119,6 +127,42 @@ class WaybillRepository implements WaybillRepositoryInterface
             $bijakNumber,
             $ignoreWaybillId,
         );
+    }
+
+    public function firstAvailableBijakNumber(
+        int $companyId,
+        string $serialNumber,
+        int $fromNumber,
+        int $toNumber,
+    ): ?int {
+        $firstAvailableNumber = $fromNumber;
+        $usedNumbers = $this->waybill
+            ->newSharedQueryForCompany($companyId)
+            ->select('bijak_number')
+            ->where('owner_company_id', $companyId)
+            ->where('serial_number', $serialNumber)
+            ->whereNotNull('bijak_number')
+            ->whereIn('status', [
+                WaybillStatus::Completed->value,
+                WaybillStatus::Canceled->value,
+            ])
+            ->whereBetween('bijak_number', [$fromNumber, $toNumber])
+            ->orderByRaw('CAST(bijak_number AS UNSIGNED)')
+            ->cursor();
+
+        foreach ($usedNumbers as $waybill) {
+            $usedNumber = (int) $waybill->bijak_number;
+
+            if ($usedNumber > $firstAvailableNumber) {
+                break;
+            }
+
+            if ($usedNumber === $firstAvailableNumber) {
+                $firstAvailableNumber++;
+            }
+        }
+
+        return $firstAvailableNumber <= $toNumber ? $firstAvailableNumber : null;
     }
 
     private function numberExists(

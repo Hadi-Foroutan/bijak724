@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Services\Company\CompanyTableService;
 use App\Services\Company\Insurance\DefaultInsuranceService;
 use App\Services\Company\ReferralNumber\ReferralNumberService;
+use App\Services\Company\Settings\CompanySettingService;
 use App\Services\Company\TransportContract\DefaultTransportContractService;
 
 class CompanyObserver
@@ -16,6 +17,7 @@ class CompanyObserver
         protected DefaultTransportContractService $defaultTransportContractService,
         protected DefaultInsuranceService $defaultInsuranceService,
         protected ReferralNumberService $referralNumberService,
+        protected CompanySettingService $companySettingService,
     ) {}
 
     /**
@@ -31,6 +33,7 @@ class CompanyObserver
 
         $this->referralNumberService->ensureDefaultForCompany($company->id);
         $this->defaultInsuranceService->createForCompany($company);
+        $this->companySettingService->ensureDefaultsForCompany($company->id);
     }
 
     /**

@@ -10,7 +10,7 @@ class ShipmentPartyResource extends CompanyDynamicResource
     protected function relations(Request $request): array
     {
         return [
-            'addresses' => ShipmentPartyAddressResource::collection($this->whenLoaded('addresses')),
+            'addresses' => ShipmentPartyAddressResource::collection($this->addresses),
         ];
     }
 }

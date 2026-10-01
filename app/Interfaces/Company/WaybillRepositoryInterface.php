@@ -20,6 +20,8 @@ interface WaybillRepositoryInterface
 
     public function findOrFail(int $companyId, int $id): Waybill;
 
+    public function findOrFailForUpdate(int $companyId, int $id): Waybill;
+
     /** @param array<string, mixed> $data */
     public function update(int $companyId, int $id, array $data): Waybill;
 
@@ -45,4 +47,11 @@ interface WaybillRepositoryInterface
         string $bijakNumber,
         ?int $ignoreWaybillId = null,
     ): bool;
+
+    public function firstAvailableBijakNumber(
+        int $companyId,
+        string $serialNumber,
+        int $fromNumber,
+        int $toNumber,
+    ): ?int;
 }

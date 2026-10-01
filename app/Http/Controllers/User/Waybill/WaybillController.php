@@ -70,6 +70,16 @@ class WaybillController extends Controller
         );
     }
 
+    public function cancel(Request $request, int $waybill): JsonResponse
+    {
+        $result = $this->waybillService->cancel($this->companyId($request), $waybill);
+
+        return ResponseHandler::success(
+            WaybillResource::make($result->data)->resolve($request),
+            __('public.waybill_canceled_success'),
+        );
+    }
+
     public function destroy(Request $request, int $waybill): JsonResponse
     {
         $result = $this->waybillService->delete($this->companyId($request), $waybill);

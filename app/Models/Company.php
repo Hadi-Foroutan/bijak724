@@ -136,6 +136,11 @@ class Company extends Model
         return $this->hasMany(CargoGroupCargo::class);
     }
 
+    public function settings(): HasMany
+    {
+        return $this->hasMany(CompanySetting::class);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Scopes

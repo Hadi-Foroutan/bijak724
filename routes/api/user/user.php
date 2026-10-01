@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\User\Cargo\CargoController;
 use App\Http\Controllers\User\CargoGroupController;
+use App\Http\Controllers\User\CompanySettingController;
 use App\Http\Controllers\User\CompanyUserController;
 use App\Http\Controllers\User\Dashboard\DashboardController;
 use App\Http\Controllers\User\Driver\DriverAccountController;
@@ -28,6 +29,11 @@ Route::prefix('dashboard')->name('dashboard.')->controller(DashboardController::
 
 Route::apiResource('notifications', NotificationController::class)
     ->only(['index', 'show']);
+
+Route::get('settings', [CompanySettingController::class, 'show'])
+    ->name('settings.show');
+Route::match(['put', 'patch'], 'settings', [CompanySettingController::class, 'update'])
+    ->name('settings.update');
 
 Route::get('{user}/permissions', [CompanyUserController::class, 'permissions'])
     ->name('permissions.index');
@@ -95,6 +101,8 @@ Route::apiResource('shipment-parties.addresses', ShipmentPartyAddressController:
     ]);
 
 // Route::get('waybills/options', [WaybillController::class, 'options'])->name('waybills.options');
+Route::patch('waybills/{waybill}/cancel', [WaybillController::class, 'cancel'])
+    ->name('waybills.cancel');
 Route::apiResource('waybills', WaybillController::class);
 // Route::apiResource('cargos', CargoController::class);
 Route::apiResource('product-owners', ProductOwnerController::class)

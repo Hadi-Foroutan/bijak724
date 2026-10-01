@@ -11,6 +11,7 @@ return [
         'admin.roles.' => 'مدیریت نقش‌های ادمین',
         'user.dashboard.' => 'مدیریت داشبورد کاربر',
         'user.notifications.' => 'مشاهده اعلان‌های کاربر',
+        'user.settings.' => 'مدیریت تنظیمات شرکت',
         'user.users.' => 'مدیریت کاربران شرکت',
         'user.drivers.' => 'مدیریت رانندگان',
         'user.fleets.' => 'مدیریت ناوگان',
@@ -41,6 +42,6 @@ return [
 
     'non_default_permissions' => [
         'user.users.*',
-//        'user.fleets.*'
+        //        'user.fleets.*'
     ],
 ];

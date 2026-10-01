@@ -26,4 +26,10 @@ interface ReferralNumberRepositoryInterface
     public function delete(int $companyId, int $id): void;
 
     public function active(int $companyId, ?int $ignoreId = null): ?ReferralNumber;
+
+    public function activeContainingBijakNumber(
+        int $companyId,
+        string $serialNumber,
+        int $bijakNumber,
+    ): ?ReferralNumber;
 }

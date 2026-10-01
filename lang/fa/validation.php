@@ -311,6 +311,7 @@ return [
         'cargos.*.description' => 'توضیحات محموله',
         'cargos.*.title' => 'عنوان محموله',
         'cargos.*.origin_weight' => 'وزن مبدأ محموله',
+        'general.assign_first_available_waybill_number' => 'اختصاص اولین شماره بارنامه آزاد',
         'cargos.*.value' => 'ارزش محموله',
         'cargos.*.quantity' => 'تعداد محموله',
         'cargos.*.is_traffic' => 'ترافیکی بودن محموله',

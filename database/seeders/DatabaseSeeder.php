@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
             SettingsSeeder::class,
             RoleSeeder::class,
             CompanySeeder::class,
+            CompanySettingsSeeder::class,
             UserSeeder::class,
             ProductOwnerSeeder::class,
             ShipmentPartiesSeeder::class,

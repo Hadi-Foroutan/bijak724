@@ -211,7 +211,7 @@ test('it resets and regenerates route permissions with groups and role links', f
         ->and($addressGroup->permissions()->where('name', 'user.addresses.index')->exists())->toBeTrue()
         ->and(Permission::query()->where('name', 'user.shipment-parties.addresses.index')->exists())->toBeFalse()
         ->and($waybillGroup->permissions()->count())->toBe(6)
-        ->and($waybillGroup->permissions()->where('name', 'user.waybills.options')->exists())->toBeTrue()
+        ->and($waybillGroup->permissions()->where('name', 'user.waybills.cancel')->exists())->toBeTrue()
         ->and($cargoGroup->permissions()->count())->toBe(5)
         ->and($productOwnerGroup->permissions()->count())->toBe(5)
         ->and($generalGroup->permissions()->count())->toBe(7);

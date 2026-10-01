@@ -101,6 +101,10 @@ return [
     'user.waybills.show' => 'مشاهده بیجک',
     'user.waybills.update' => 'ویرایش بیجک',
     'user.waybills.destroy' => 'حذف بیجک',
+    'user.waybills.cancel' => 'ابطال بیجک',
+
+    'user.settings.show' => 'مشاهده تنظیمات شرکت',
+    'user.settings.update' => 'ویرایش تنظیمات شرکت',
 
     'user.general.cargos' => 'مشاهده لیست عمومی محموله‌ها',
     'user.general.packaging' => 'مشاهده لیست عمومی بسته‌بندی‌ها',

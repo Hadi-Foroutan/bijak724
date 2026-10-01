@@ -2,6 +2,7 @@
 
 namespace App\Services\Company\ReferralNumber;
 
+use App\Enums\CompanySettingKey;
 use App\Enums\ReferralNumberStatus;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\ReferralNumberRepositoryInterface;
@@ -9,6 +10,7 @@ use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Models\Company;
 use App\Models\Company\ReferralNumber;
 use App\Services\Company\CompanyDataOwnerResolver;
+use App\Services\Company\Settings\CompanySettingService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
@@ -23,6 +25,7 @@ class ReferralNumberService
         protected ReferralNumberRepositoryInterface $referralNumberRepository,
         protected CompanyDataOwnerResolver $companyDataOwnerResolver,
         protected WaybillRepositoryInterface $waybillRepository,
+        protected CompanySettingService $companySettingService,
     ) {}
 
     public function index(int $companyId, array $params): ServiceResult
@@ -138,6 +141,73 @@ class ReferralNumberService
             );
         }
 
+        return $this->reserve($companyId, $record);
+    }
+
+    /**
+     * Must be called inside the waybill issuance transaction.
+     */
+    public function reserveNextForBijak(
+        int $companyId,
+        string $serialNumber,
+        int $bijakNumber,
+    ): ServiceResult {
+        $this->lockCompany($companyId);
+        $activeRecord = $this->referralNumberRepository->active($companyId);
+
+        if ($activeRecord === null || $this->isExhausted($activeRecord)) {
+            return ServiceResult::error(
+                __('public.referral_issuance_unavailable'),
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
+        }
+
+        $record = $this->referralNumberRepository->activeContainingBijakNumber(
+            $companyId,
+            $serialNumber,
+            $bijakNumber,
+        );
+
+        if ($record === null) {
+            return ServiceResult::error(
+                __('public.waybill_bijak_range_invalid'),
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
+        }
+
+        if ($this->companySettingService->boolean(
+            $companyId,
+            CompanySettingKey::AssignFirstAvailableWaybillNumber,
+        )) {
+            $firstAvailableNumber = $this->waybillRepository->firstAvailableBijakNumber(
+                $companyId,
+                $serialNumber,
+                (int) $record->from_number,
+                (int) $record->to_number,
+            );
+
+            if ($firstAvailableNumber === null) {
+                return ServiceResult::error(
+                    __('public.referral_issuance_unavailable'),
+                    Response::HTTP_UNPROCESSABLE_ENTITY,
+                );
+            }
+
+            if ($bijakNumber !== $firstAvailableNumber) {
+                return ServiceResult::error(
+                    __('public.waybill_first_available_bijak_required', [
+                        'number' => $firstAvailableNumber,
+                    ]),
+                    Response::HTTP_UNPROCESSABLE_ENTITY,
+                );
+            }
+        }
+
+        return $this->reserve($companyId, $record);
+    }
+
+    private function reserve(int $companyId, ReferralNumber $record): ServiceResult
+    {
         $next = $this->nextNumber($record);
 
         if ($this->waybillRepository->referralNumberExists(
@@ -202,6 +272,7 @@ class ReferralNumberService
         }
     }
 
+    // 2,755,000
     private function lockCompany(int $companyId): void
     {
         Company::query()

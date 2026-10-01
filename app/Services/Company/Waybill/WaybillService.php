@@ -24,6 +24,12 @@ class WaybillService
         'issued_at',
     ];
 
+    private const IMMUTABLE_UPDATE_FIELDS = [
+        'bijak_number',
+        'serial_number',
+        'bijak_tracking_code',
+    ];
+
     public function __construct(
         protected WaybillRepositoryInterface $waybillRepository,
         protected WaybillReferenceSnapshotBuilder $snapshotBuilder,
@@ -76,7 +82,14 @@ class WaybillService
                 $data = $this->financialCalculator->calculate($companyId, $data);
                 $status = $this->normalizeStatus($data);
 
-                if (in_array($status, [WaybillStatus::Incomplete, WaybillStatus::Canceled], true)) {
+                if ($status === WaybillStatus::Canceled) {
+                    ServiceResult::error(
+                        __('public.waybill_direct_cancel_forbidden'),
+                        Response::HTTP_UNPROCESSABLE_ENTITY,
+                    );
+                }
+
+                if ($status === WaybillStatus::Incomplete || $status === WaybillStatus::Canceled) {
                     $data = $this->clearIssuanceFields($data);
                 } else {
                     $data = $this->prepareIssuance($companyId, $data);
@@ -112,17 +125,26 @@ class WaybillService
         try {
             return DB::transaction(function () use ($companyId, $id, $data): ServiceResult {
                 /** @var Waybill $waybill */
-                $waybill = $this->waybillRepository->findOrFail($companyId, $id);
+                $waybill = $this->waybillRepository->findOrFailForUpdate($companyId, $id);
+                $this->ensureEditable($waybill);
+                $data = Arr::except($data, self::IMMUTABLE_UPDATE_FIELDS);
                 $cargosWereProvided = array_key_exists('cargos', $data);
                 $cargos = Arr::pull($data, 'cargos', []) ?? [];
                 $data = $this->snapshotBuilder->forUpdate($companyId, $waybill, $data);
                 $data = $this->financialCalculator->calculate($companyId, $data);
                 $status = $this->normalizeStatus($data);
 
+                if (in_array($status, [WaybillStatus::Completed, WaybillStatus::Canceled], true)) {
+                    ServiceResult::error(
+                        $status === WaybillStatus::Canceled
+                            ? __('public.waybill_direct_cancel_forbidden')
+                            : __('public.waybill_direct_issue_forbidden'),
+                        Response::HTTP_UNPROCESSABLE_ENTITY,
+                    );
+                }
+
                 if ($status === WaybillStatus::Incomplete) {
                     $data = $this->clearIssuanceFields($data);
-                } elseif ($status === WaybillStatus::Canceled) {
-                    $data = $this->preserveIssuanceFields($data, $waybill);
                 } else {
                     $data = $this->prepareIssuance($companyId, $data, $waybill);
                 }
@@ -139,6 +161,27 @@ class WaybillService
         } catch (UniqueConstraintViolationException $exception) {
             return $this->handleNumberUniqueViolation($exception);
         }
+    }
+
+    public function cancel(int $companyId, int $id): ServiceResult
+    {
+        return DB::transaction(function () use ($companyId, $id): ServiceResult {
+            /** @var Waybill $waybill */
+            $waybill = $this->waybillRepository->findOrFailForUpdate($companyId, $id);
+
+            if ($waybill->status !== WaybillStatus::Completed) {
+                ServiceResult::error(
+                    __('public.waybill_cancel_status_invalid'),
+                    Response::HTTP_UNPROCESSABLE_ENTITY,
+                );
+            }
+
+            $this->waybillRepository->update($companyId, $id, [
+                'status' => WaybillStatus::Canceled->value,
+            ]);
+
+            return ServiceResult::success($this->waybillRepository->findOrFail($companyId, $id));
+        });
     }
 
     /** @param array<string, mixed> $data */
@@ -167,7 +210,13 @@ class WaybillService
             $data['referral_number'] = $waybill->referral_number;
             $data['serial_number'] = $waybill->serial_number;
         } else {
-            $next = $this->referralNumberService->reserveNext($companyId)->data;
+            $next = ($data['status'] ?? null) === WaybillStatus::Completed->value
+                ? $this->referralNumberService->reserveNextForBijak(
+                    $companyId,
+                    trim((string) ($data['serial_number'] ?? '')),
+                    (int) ($data['bijak_number'] ?? 0),
+                )->data
+                : $this->referralNumberService->reserveNext($companyId)->data;
             $data['referral_number'] = (string) $next['referral_number'];
             $data['serial_number'] = $next['serial_number'];
         }
@@ -205,14 +254,14 @@ class WaybillService
         return ($data['status'] ?? null) === WaybillStatus::Completed->value ? now() : null;
     }
 
-    /** @param array<string, mixed> $data */
-    private function preserveIssuanceFields(array $data, Waybill $waybill): array
+    private function ensureEditable(Waybill $waybill): void
     {
-        foreach ([...self::ISSUANCE_FIELDS, 'referral_number', 'bijak_tracking_code'] as $field) {
-            $data[$field] = $waybill->getAttribute($field);
+        if (in_array($waybill->status, [WaybillStatus::Completed, WaybillStatus::Canceled], true)) {
+            ServiceResult::error(
+                __('public.waybill_edit_forbidden'),
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
         }
-
-        return $data;
     }
 
     /** @param array<string, mixed> $data */
