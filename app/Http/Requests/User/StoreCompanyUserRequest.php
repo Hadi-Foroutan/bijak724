@@ -50,7 +50,7 @@ class StoreCompanyUserRequest extends BaseRequest
             'remove_profile_image' => ['sometimes', 'boolean'],
             'remove_signature_image' => ['sometimes', 'boolean'],
             'description' => ['nullable', 'string'],
-            'status' => ['sometimes', 'string', Rule::enum(UserStatusEnum::class)],
+            'status' => ['sometimes','string', Rule::enum(UserStatusEnum::class)],
         ];
     }
 

@@ -134,12 +134,10 @@ class StoreWaybillRequest extends BaseRequest
         mixed $requiredWhenCompleted,
         mixed $requiredWhenReferral,
     ): array {
-        $minimumInsuranceAmount = $this->hasStatus(WaybillStatus::Completed) ? 'min:1' : 'min:0';
-
         return [
             'status' => ['required', Rule::enum(WaybillStatus::class)],
             'referral_weight' => ['nullable', 'numeric', 'min:0'],
-            'quantity' => ['nullable', 'integer', $minimumInsuranceAmount],
+            'quantity' => ['nullable', 'integer'],
             'loading_started_at' => [$requiredWhenReferral, 'nullable', 'date'],
             'loading_ended_at' => [$requiredWhenReferral, 'nullable', 'date', 'after_or_equal:loading_started_at'],
             'bijak_number' => [$requiredWhenCompleted, 'nullable', 'integer'],
