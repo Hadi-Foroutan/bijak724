@@ -60,6 +60,7 @@ return [
         ['name' => 'bijak_number', 'type' => 'string'],
         ['name' => 'serial_number', 'type' => 'string'],
         ['name' => 'issued_at', 'type' => 'dateTime'],
+        ['name' => 'issued_by_print_name', 'type' => 'string'],
         ['name' => 'liability_insurance', 'type' => 'unsignedBigInteger', 'change' => true, 'index' => true, 'foreign' => ['table' => 'insurances', 'column' => 'id', 'on_delete' => 'null']],
         ['name' => 'bijak_tracking_code', 'type' => 'string', 'length' => 25, 'unique' => true, 'change' => true],
         ['name' => 'description', 'type' => 'text'],

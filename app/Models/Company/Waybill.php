@@ -72,6 +72,7 @@ class Waybill extends DynamicModel
         'bijak_number',
         'serial_number',
         'issued_at',
+        'issued_by_print_name',
         'liability_insurance',
         'bijak_tracking_code',
         'description',

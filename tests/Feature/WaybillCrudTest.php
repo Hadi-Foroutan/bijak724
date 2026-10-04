@@ -32,7 +32,9 @@ uses(LazilyRefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->withoutMiddleware(CheckPermission::class);
-    $this->user = User::factory()->create();
+    $this->user = User::factory()->create([
+        'print_name' => 'کاربر صادرکننده',
+    ]);
     $this->company = Company::factory()->create();
     $this->insurance = Insurance::factory()->for($this->company)->create();
     $this->withToken($this->user->createToken(
@@ -693,6 +695,7 @@ test('a completed waybill requires its document fields', function () {
     unset(
         $payload['bijak_number'],
         $payload['serial_number'],
+        $payload['issued_at'],
         $payload['liability_insurance'],
     );
 
@@ -701,37 +704,42 @@ test('a completed waybill requires its document fields', function () {
         ->assertJsonValidationErrors([
             'bijak_number',
             'serial_number',
+            'issued_at',
             'liability_insurance',
         ]);
 });
 
-test('a completed waybill records the server date and time once', function () {
+test('a completed waybill stores the requested issuance time and issuer print name', function () {
     $this->travelTo(CarbonImmutable::parse('2026-09-27 14:35:42', 'Asia/Tehran'));
     $payload = completeWaybillPayload($this);
-    unset($payload['issued_at']);
+    $payload['issued_at'] = '2026-09-25 08:15:30';
 
     $created = $this->postJson('/api/user/waybills', $payload)
-        ->assertCreated();
+        ->assertCreated()
+        ->assertJsonPath('data.issued_at', '2026-09-25 08:15:30')
+        ->assertJsonPath('data.issued_by_print_name', 'کاربر صادرکننده');
     $waybillId = $created->json('data.id');
 
-    expect(CarbonImmutable::parse($created->json('data.issued_at'))
-        ->setTimezone('Asia/Tehran')
-        ->format('Y-m-d H:i:s'))
-        ->toBe('2026-09-27 14:35:42');
+    $this->user->update(['print_name' => 'نام چاپی جدید']);
 
-    $this->travelTo(CarbonImmutable::parse('2026-09-28 09:10:11', 'Asia/Tehran'));
-
-    $this->putJson("/api/user/waybills/{$waybillId}", [
-        'status' => WaybillStatus::Incomplete->value,
-        'issued_at' => '2026-09-28',
-    ])
-        ->assertUnprocessable()
-        ->assertJsonPath('errors.error.0', __('public.waybill_edit_forbidden'));
+    $this->getJson("/api/user/waybills/{$waybillId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.issued_by_print_name', 'کاربر صادرکننده');
 
     $this->assertDatabaseHas("company_{$this->company->id}_waybills", [
         'id' => $waybillId,
-        'issued_at' => '2026-09-27 14:35:42',
+        'issued_at' => '2026-09-25 08:15:30',
+        'issued_by_print_name' => 'کاربر صادرکننده',
     ]);
+});
+
+test('a completed waybill requires issuance date and time in the expected format', function () {
+    $payload = completeWaybillPayload($this);
+    $payload['issued_at'] = '2026-09-25';
+
+    $this->postJson('/api/user/waybills', $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('issued_at');
 });
 
 test('it prevents creating a canceled waybill directly', function () {
@@ -793,6 +801,7 @@ test('an incomplete waybill never stores issuance fields', function () {
         ->assertJsonPath('data.bijak_number', null)
         ->assertJsonPath('data.serial_number', null)
         ->assertJsonPath('data.issued_at', null)
+        ->assertJsonPath('data.issued_by_print_name', null)
         ->json('data.id');
 
     $this->putJson("/api/user/waybills/{$waybillId}", [
@@ -807,13 +816,15 @@ test('an incomplete waybill never stores issuance fields', function () {
         ->assertJsonPath('data.bijak_number', null)
         ->assertJsonPath('data.serial_number', null)
         ->assertJsonPath('data.bijak_tracking_code', null)
-        ->assertJsonPath('data.issued_at', null);
+        ->assertJsonPath('data.issued_at', null)
+        ->assertJsonPath('data.issued_by_print_name', null);
 
     $this->assertDatabaseHas("company_{$this->company->id}_waybills", [
         'id' => $waybillId,
         'bijak_number' => null,
         'serial_number' => null,
         'issued_at' => null,
+        'issued_by_print_name' => null,
     ]);
 });
 
@@ -822,6 +833,16 @@ test('an incomplete waybill can be completed through update', function () {
         'status' => WaybillStatus::Incomplete->value,
     ])->assertCreated()->json('data.id');
 
+    $issuer = User::factory()->create([
+        'print_name' => 'اپراتور نهایی صدور',
+    ]);
+    $this->app['auth']->forgetGuards();
+    $this->withToken($issuer->createToken(
+        'waybill-issuer-session',
+        ['company-support', "company:{$this->company->id}"],
+        now()->addMinutes(30),
+    )->plainTextToken);
+
     $this->putJson("/api/user/waybills/{$waybillId}", completeWaybillPayload($this))
         ->assertSuccessful()
         ->assertJsonPath('data.status', WaybillStatus::Completed->value)
@@ -829,7 +850,14 @@ test('an incomplete waybill can be completed through update', function () {
         ->assertJsonPath('data.serial_number', 'SERIAL-1')
         ->assertJsonPath('data.referral_number', '1')
         ->assertJsonPath('data.referral_serial', 'SERIAL-1')
-        ->assertJsonPath('data.issued_at', fn (mixed $issuedAt): bool => $issuedAt !== null);
+        ->assertJsonPath('data.issued_by_print_name', 'اپراتور نهایی صدور')
+        ->assertJsonPath('data.issued_at', '2026-09-07 11:00:00');
+
+    $this->assertDatabaseHas("company_{$this->company->id}_waybills", [
+        'id' => $waybillId,
+        'created_by' => $this->user->id,
+        'issued_by_print_name' => 'اپراتور نهایی صدور',
+    ]);
 });
 
 test('an incomplete waybill accepts null values without requiring any other field', function () {

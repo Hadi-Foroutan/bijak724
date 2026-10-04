@@ -39,6 +39,7 @@ class WaybillController extends Controller
             [
                 ...$request->validated(),
                 'created_by' => (int) $request->user()->getKey(),
+                'issued_by_print_name' => $request->user()->print_name,
             ],
         );
 
@@ -61,7 +62,10 @@ class WaybillController extends Controller
         $result = $this->waybillService->update(
             $this->companyId($request),
             $waybill,
-            $request->validated(),
+            [
+                ...$request->validated(),
+                'issued_by_print_name' => $request->user()->print_name,
+            ],
         );
 
         return ResponseHandler::success(

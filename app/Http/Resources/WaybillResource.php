@@ -10,13 +10,13 @@ class WaybillResource extends CompanyDynamicResource
     protected function relations(Request $request): array
     {
         return [
-            'issued_at' => $this->issued_at,
+            'issued_at' => $this->issued_at?->format('Y-m-d H:i:s'),
             'sender' => ShipmentPartyResource::make($this->whenLoaded('sender')),
             'sender_address' => ShipmentPartyAddressResource::make($this->whenLoaded('senderAddress')),
-//            'origin' => ShipmentPartyAddressResource::make($this->whenLoaded('origin')),
+            //            'origin' => ShipmentPartyAddressResource::make($this->whenLoaded('origin')),
             'receiver' => ShipmentPartyResource::make($this->whenLoaded('receiver')),
             'receiver_address' => ShipmentPartyAddressResource::make($this->whenLoaded('receiverAddress')),
-//            'destination' => ShipmentPartyAddressResource::make($this->whenLoaded('destination')),
+            //            'destination' => ShipmentPartyAddressResource::make($this->whenLoaded('destination')),
             'first_driver' => DriverResource::make($this->whenLoaded('firstDriver')),
             'second_driver' => DriverResource::make($this->whenLoaded('secondDriver')),
             'referral_driver' => DriverResource::make($this->whenLoaded('referralDriver')),
