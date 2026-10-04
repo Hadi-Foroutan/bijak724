@@ -39,7 +39,7 @@ class WaybillController extends Controller
             [
                 ...$request->validated(),
                 'created_by' => (int) $request->user()->getKey(),
-                'issued_by_print_name' => $request->user()->print_name,
+                'issued_by_print_name' => $request->user()->printNameOrFullName(),
             ],
         );
 
@@ -64,7 +64,7 @@ class WaybillController extends Controller
             $waybill,
             [
                 ...$request->validated(),
-                'issued_by_print_name' => $request->user()->print_name,
+                'issued_by_print_name' => $request->user()->printNameOrFullName(),
             ],
         );
 

@@ -834,7 +834,9 @@ test('an incomplete waybill can be completed through update', function () {
     ])->assertCreated()->json('data.id');
 
     $issuer = User::factory()->create([
-        'print_name' => 'اپراتور نهایی صدور',
+        'first_name' => 'اپراتور',
+        'last_name' => 'نهایی صدور',
+        'print_name' => null,
     ]);
     $this->app['auth']->forgetGuards();
     $this->withToken($issuer->createToken(

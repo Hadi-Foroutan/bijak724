@@ -44,7 +44,7 @@ class StoreUserRequest extends BaseRequest
             ],
 
             'print_name' => [
-                'required',
+                'nullable',
                 'string',
             ],
 

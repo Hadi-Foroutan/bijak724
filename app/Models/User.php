@@ -144,6 +144,19 @@ class User extends Authenticatable
         return $this->status == UserStatusEnum::ACTIVE->value ?? false;
     }
 
+    public function printNameOrFullName(): ?string
+    {
+        $printName = trim((string) $this->print_name);
+
+        if ($printName !== '') {
+            return $printName;
+        }
+
+        $fullName = trim((string) $this->full_name);
+
+        return $fullName === '' ? $this->makeFullName() : $fullName;
+    }
+
     public function hasRole(string $roleName): bool
     {
         return $this->roles()->where('name', $roleName)->exists();

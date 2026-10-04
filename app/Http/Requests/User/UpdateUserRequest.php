@@ -13,7 +13,7 @@ class UpdateUserRequest extends BaseRequest
             'first_name' => ['required', 'string'],
             'last_name' => ['required', 'string'],
             'role_id' => ['required', 'exists:roles,id'],
-            'print_name' => ['required', 'string'],
+            'print_name' => ['nullable', 'string'],
             'phone' => ['nullable', 'string', 'unique:users,phone'],
             'email' => ['nullable', 'email', 'unique:users,email'],
             'username' => ['required', 'string', 'unique:users,username'],

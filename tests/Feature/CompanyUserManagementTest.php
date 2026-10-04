@@ -68,13 +68,15 @@ test('company manager creates a default user only for current company', function
         ->and($user->permissions()->where('name', 'user.users.destroy')->exists())->toBeFalse();
 });
 
-test('company manager creates and updates a user without a phone number', function () {
+test('company manager creates and updates a user without phone and print names', function () {
     $payload = companyUserPayload();
-    unset($payload['phone']);
+    unset($payload['phone'], $payload['print_name']);
 
     $response = $this->postJson('/api/user/users', $payload)
         ->assertSuccessful()
-        ->assertJsonPath('data.phone', null);
+        ->assertJsonPath('data.phone', null)
+        ->assertJsonPath('data.print_name', null)
+        ->assertJsonPath('data.full_name', 'علی احمدی');
 
     $userId = $response->json('data.id');
 
@@ -84,7 +86,9 @@ test('company manager creates and updates a user without a phone number', functi
     ])
         ->assertSuccessful()
         ->assertJsonPath('data.first_name', 'بدون تلفن')
-        ->assertJsonPath('data.phone', null);
+        ->assertJsonPath('data.phone', null)
+        ->assertJsonPath('data.print_name', null)
+        ->assertJsonPath('data.full_name', 'بدون تلفن احمدی');
 
     $this->assertDatabaseHas('users', [
         'id' => $userId,
