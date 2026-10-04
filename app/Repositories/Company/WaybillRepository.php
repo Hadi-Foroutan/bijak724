@@ -101,17 +101,35 @@ class WaybillRepository implements WaybillRepositoryInterface
 
     public function referralNumberExists(
         int $companyId,
-        string $serialNumber,
+        string $referralSerial,
         string $referralNumber,
         ?int $ignoreWaybillId = null,
     ): bool {
-        return $this->numberExists(
-            $companyId,
-            $serialNumber,
-            'referral_number',
-            $referralNumber,
-            $ignoreWaybillId,
-        );
+        return $this->waybill
+            ->newSharedQueryForCompany($companyId)
+            ->where('owner_company_id', $companyId)
+            ->where('referral_serial', $referralSerial)
+            ->where('referral_number', $referralNumber)
+            ->when($ignoreWaybillId !== null, fn (Builder $query): Builder => $query->whereKeyNot($ignoreWaybillId))
+            ->exists();
+    }
+
+    public function highestUsedReferralNumber(
+        int $companyId,
+        string $referralSerial,
+        int $fromNumber,
+        int $toNumber,
+    ): ?int {
+        $highestNumber = $this->waybill
+            ->newSharedQueryForCompany($companyId)
+            ->where('owner_company_id', $companyId)
+            ->where('referral_serial', $referralSerial)
+            ->whereNotNull('referral_number')
+            ->whereRaw('CAST(referral_number AS UNSIGNED) BETWEEN ? AND ?', [$fromNumber, $toNumber])
+            ->selectRaw('MAX(CAST(referral_number AS UNSIGNED)) AS highest_number')
+            ->value('highest_number');
+
+        return $highestNumber === null ? null : (int) $highestNumber;
     }
 
     public function bijakNumberExists(

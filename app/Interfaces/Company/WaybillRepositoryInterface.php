@@ -36,10 +36,17 @@ interface WaybillRepositoryInterface
 
     public function referralNumberExists(
         int $companyId,
-        string $serialNumber,
+        string $referralSerial,
         string $referralNumber,
         ?int $ignoreWaybillId = null,
     ): bool;
+
+    public function highestUsedReferralNumber(
+        int $companyId,
+        string $referralSerial,
+        int $fromNumber,
+        int $toNumber,
+    ): ?int;
 
     public function bijakNumberExists(
         int $companyId,

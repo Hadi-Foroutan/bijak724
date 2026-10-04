@@ -50,7 +50,8 @@ test('it creates lists shows updates and deletes referral number ranges', functi
     $this->getJson('/api/user/referral-numbers/inquiry')->assertNotFound();
 
     $tableName = "company_{$this->company->id}_referral_numbers";
-    expect(Schema::hasIndex($tableName, "{$tableName}_active_unique"))->toBeTrue();
+    expect(Schema::hasIndex($tableName, "{$tableName}_active_unique"))->toBeTrue()
+        ->and(Schema::hasColumn($tableName, 'serial_number'))->toBeTrue();
 });
 
 test('it allows only one active referral number range per company', function () {
@@ -109,6 +110,7 @@ test('active referral numbers are isolated between companies', function () {
 
     $this->getJson('/api/user/referral-numbers/inquiry')
         ->assertSuccessful()
+        ->assertJsonPath('data.referral_number', 100)
         ->assertJsonPath('data.serial_number', 'OTHER-SER');
 });
 

@@ -68,6 +68,7 @@ class Waybill extends DynamicModel
         'loading_started_at',
         'loading_ended_at',
         'referral_number',
+        'referral_serial',
         'bijak_number',
         'serial_number',
         'issued_at',

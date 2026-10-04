@@ -148,6 +148,19 @@ beforeEach(function (): void {
         'tip_code' => $fleetType->tip_code,
         'has_violation' => false,
     ]);
+    $defaultBijakId = $this->getJson('/api/user/bijak-numbers')
+        ->assertSuccessful()
+        ->json('data.0.id');
+    $this->patchJson("/api/user/bijak-numbers/{$defaultBijakId}", [
+        'status' => 'inactive',
+    ])->assertSuccessful();
+    $this->bijakNumberId = $this->postJson('/api/user/bijak-numbers', [
+        'title' => 'دفتر حواله',
+        'serial_number' => 'SERIAL-1',
+        'from_number' => 1,
+        'to_number' => 2000,
+    ])->assertCreated()->json('data.id');
+
     $defaultReferralId = $this->getJson('/api/user/referral-numbers')
         ->assertSuccessful()
         ->json('data.0.id');
@@ -511,48 +524,169 @@ test('waybill status is required', function () {
         ->assertJsonValidationErrors('status');
 });
 
-test('it validates and stores a referral waybill with only referral fields required', function () {
-    $this->postJson('/api/user/waybills', ['status' => WaybillStatus::Referral->value])
+test('it requires referral fields and issues a referral waybill through the inquiry service', function () {
+    $this->postJson('/api/user/waybills', [
+        'status' => WaybillStatus::Referral->value,
+        'cargos' => [[]],
+    ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors([
-            'referral_weight',
-            'quantity',
+            'sender_id',
+            'sender_address_id',
+            'receiver_id',
+            'receiver_address_id',
+            'driver1_id',
+            'referral_driver_id',
+            'fleet_id',
             'loading_started_at',
             'loading_ended_at',
-            'referral_number',
+            'cargos.0.cargo_id',
+            'cargos.0.packaging_id',
+            'cargos.0.origin_weight',
         ]);
 
-    $referralWaybillId = $this->postJson('/api/user/waybills', [
-        'status' => WaybillStatus::Referral->value,
-        'referral_weight' => 1250.5,
-        'quantity' => 10,
-        'loading_started_at' => '2026-09-07 08:00:00',
-        'loading_ended_at' => '2026-09-07 10:00:00',
-        'referral_number' => 'REF-1',
-    ])
+    $referralPayload = referralWaybillPayload($this);
+    $referralWaybillId = $this->postJson('/api/user/waybills', $referralPayload)
         ->assertCreated()
         ->assertJsonPath('data.status', WaybillStatus::Referral->value)
         ->assertJsonPath('data.referral_number', '1')
-        ->assertJsonPath('data.serial_number', 'SERIAL-1')
+        ->assertJsonPath('data.referral_serial', 'SERIAL-1')
+        ->assertJsonPath('data.insurance_amount', 0)
+        ->assertJsonPath('data.serial_number', null)
         ->assertJsonPath('data.bijak_number', null)
         ->assertJsonPath('data.issued_at', null)
         ->assertJsonPath('data.bijak_tracking_code', null)
         ->json('data.id');
 
     $this->putJson("/api/user/waybills/{$referralWaybillId}", [
-        'status' => WaybillStatus::Referral->value,
+        ...$referralPayload,
         'referral_weight' => 1300,
         'quantity' => 11,
         'loading_started_at' => '2026-09-07 08:00:00',
         'loading_ended_at' => '2026-09-07 10:00:00',
-        'referral_number' => 'IGNORED-BY-SERVICE',
         'description' => 'حواله ویرایش‌شده',
     ])
         ->assertSuccessful()
         ->assertJsonPath('data.referral_weight', '1300.000')
         ->assertJsonPath('data.description', 'حواله ویرایش‌شده')
         ->assertJsonPath('data.referral_number', '1')
-        ->assertJsonPath('data.serial_number', 'SERIAL-1');
+        ->assertJsonPath('data.referral_serial', 'SERIAL-1')
+        ->assertJsonPath('data.serial_number', null);
+});
+
+test('updating an incomplete waybill to referral uses create validation and reserves a referral number', function () {
+    $waybillId = $this->postJson('/api/user/waybills', [
+        'status' => WaybillStatus::Incomplete->value,
+    ])->assertCreated()->json('data.id');
+
+    $this->putJson("/api/user/waybills/{$waybillId}", [
+        'status' => WaybillStatus::Referral->value,
+        'cargos' => [[]],
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors([
+            'sender_id',
+            'sender_address_id',
+            'receiver_id',
+            'receiver_address_id',
+            'driver1_id',
+            'referral_driver_id',
+            'fleet_id',
+            'loading_started_at',
+            'loading_ended_at',
+            'cargos.0.cargo_id',
+            'cargos.0.packaging_id',
+            'cargos.0.origin_weight',
+        ]);
+
+    $this->putJson("/api/user/waybills/{$waybillId}", referralWaybillPayload($this))
+        ->assertSuccessful()
+        ->assertJsonPath('data.status', WaybillStatus::Referral->value)
+        ->assertJsonPath('data.referral_number', '1')
+        ->assertJsonPath('data.referral_serial', 'SERIAL-1')
+        ->assertJsonPath('data.serial_number', null)
+        ->assertJsonPath('data.bijak_number', null);
+
+    $this->getJson("/api/user/referral-numbers/{$this->referralNumberId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.last_number', 1);
+});
+
+test('referral inquiry assigns the next number and canceled numbers cannot be reused', function () {
+    $waybillId = $this->postJson('/api/user/waybills', [
+        'status' => WaybillStatus::Incomplete->value,
+    ])->assertCreated()->json('data.id');
+
+    $this->postJson('/api/user/referral-numbers/inquiry')
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('waybill_id');
+
+    $this->postJson('/api/user/referral-numbers/inquiry', [
+        'waybill_id' => $waybillId,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.id', $waybillId)
+        ->assertJsonPath('data.referral_number', '1')
+        ->assertJsonPath('data.referral_serial', 'SERIAL-1')
+        ->assertJsonPath('data.serial_number', null);
+
+    $this->patchJson("/api/user/waybills/{$waybillId}", [
+        'status' => WaybillStatus::Incomplete->value,
+        'description' => 'پیش‌نویس ویرایش‌شده پس از استعلام',
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.status', WaybillStatus::Referral->value)
+        ->assertJsonPath('data.description', 'پیش‌نویس ویرایش‌شده پس از استعلام')
+        ->assertJsonPath('data.referral_number', '1')
+        ->assertJsonPath('data.referral_serial', 'SERIAL-1');
+
+    $this->assertDatabaseHas("company_{$this->company->id}_waybills", [
+        'id' => $waybillId,
+        'status' => WaybillStatus::Referral->value,
+        'referral_number' => '1',
+        'referral_serial' => 'SERIAL-1',
+    ]);
+
+    $this->postJson('/api/user/referral-numbers/inquiry', [
+        'waybill_id' => $waybillId,
+    ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.error.0', __('public.waybill_referral_already_assigned'));
+
+    $this->patchJson("/api/user/waybills/{$waybillId}/referral/cancel")
+        ->assertSuccessful()
+        ->assertJsonPath('data.referral_number', null);
+
+    $this->getJson("/api/user/referral-numbers/{$this->referralNumberId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.last_number', 1);
+
+    $this->postJson('/api/user/referral-numbers/inquiry', [
+        'waybill_id' => $waybillId,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.referral_number', '2');
+
+    $this->patchJson("/api/user/waybills/{$waybillId}/referral/cancel")
+        ->assertSuccessful()
+        ->assertJsonPath('data.referral_number', null);
+
+    $referralPayload = referralWaybillPayload($this);
+
+    $createdWaybillId = $this->postJson('/api/user/waybills', $referralPayload)
+        ->assertCreated()
+        ->assertJsonPath('data.referral_number', '3')
+        ->assertJsonPath('data.referral_serial', 'SERIAL-1')
+        ->assertJsonPath('data.serial_number', null)
+        ->json('data.id');
+
+    $this->assertDatabaseHas("company_{$this->company->id}_waybills", [
+        'id' => $createdWaybillId,
+        'status' => WaybillStatus::Referral->value,
+        'referral_number' => '3',
+        'referral_serial' => 'SERIAL-1',
+        'serial_number' => null,
+    ]);
 });
 
 test('a completed waybill does not require referral-only fields', function () {
@@ -569,6 +703,25 @@ test('a completed waybill does not require referral-only fields', function () {
         ->assertCreated()
         ->assertJsonPath('data.status', WaybillStatus::Completed->value)
         ->assertJsonPath('data.referral_number', '1');
+});
+
+test('insurance amount accepts zero for referral and requires at least one for completed', function () {
+    $this->postJson('/api/user/waybills', referralWaybillPayload($this))
+        ->assertCreated()
+        ->assertJsonPath('data.insurance_amount', 0);
+
+    $completedPayload = completeWaybillPayload($this);
+    $completedPayload['insurance_amount'] = 0;
+
+    $this->postJson('/api/user/waybills', $completedPayload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('insurance_amount');
+
+    $completedPayload['insurance_amount'] = 1;
+
+    $this->postJson('/api/user/waybills', $completedPayload)
+        ->assertCreated()
+        ->assertJsonPath('data.insurance_amount', 1);
 });
 
 test('a completed waybill requires its document fields', function () {
@@ -619,6 +772,16 @@ test('a completed waybill records the server date and time once', function () {
 
 test('it prevents creating a canceled waybill directly', function () {
     $this->postJson('/api/user/waybills', ['status' => WaybillStatus::Canceled->value])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.error.0', __('public.waybill_direct_cancel_forbidden'));
+
+    $waybillId = $this->postJson('/api/user/waybills', [
+        'status' => WaybillStatus::Incomplete->value,
+    ])->assertCreated()->json('data.id');
+
+    $this->putJson("/api/user/waybills/{$waybillId}", [
+        'status' => WaybillStatus::Canceled->value,
+    ])
         ->assertUnprocessable()
         ->assertJsonPath('errors.error.0', __('public.waybill_direct_cancel_forbidden'));
 });
@@ -675,12 +838,12 @@ test('an incomplete waybill never stores issuance fields', function () {
         'bijak_tracking_code' => 'UPDATED-TRACKING-CODE',
         'issued_at' => '2026-09-08 11:00:00',
     ])
-        ->assertUnprocessable()
-        ->assertJsonValidationErrors([
-            'bijak_number',
-            'serial_number',
-            'bijak_tracking_code',
-        ]);
+        ->assertSuccessful()
+        ->assertJsonPath('data.status', WaybillStatus::Incomplete->value)
+        ->assertJsonPath('data.bijak_number', null)
+        ->assertJsonPath('data.serial_number', null)
+        ->assertJsonPath('data.bijak_tracking_code', null)
+        ->assertJsonPath('data.issued_at', null);
 
     $this->assertDatabaseHas("company_{$this->company->id}_waybills", [
         'id' => $waybillId,
@@ -726,7 +889,7 @@ test('a complete waybill requires a non empty bijak number', function () {
         ->assertJsonValidationErrors('bijak_number');
 });
 
-test('a completed waybill number and serial must belong to the active referral range', function () {
+test('a completed waybill number and serial must belong to the active bijak range', function () {
     $outsideRange = completeWaybillPayload($this);
     $outsideRange['bijak_number'] = 2001;
 
@@ -741,7 +904,7 @@ test('a completed waybill number and serial must belong to the active referral r
         ->assertUnprocessable()
         ->assertJsonPath('errors.error.0', __('public.waybill_bijak_range_invalid'));
 
-    $this->getJson("/api/user/referral-numbers/{$this->referralNumberId}")
+    $this->getJson("/api/user/bijak-numbers/{$this->bijakNumberId}")
         ->assertSuccessful()
         ->assertJsonPath('data.last_number', null);
 });
@@ -882,7 +1045,7 @@ test('it rejects unknown cargo and packaging codes and a product owner from anot
         ->assertJsonValidationErrors('cargos.0.product_owner_id');
 });
 
-test('it reserves a referral number only when a completed waybill is stored', function () {
+test('it reserves document numbers when a waybill is created or updated to completed', function () {
     $this->travelTo(CarbonImmutable::parse('2026-09-27 16:20:30', 'Asia/Tehran'));
 
     $draftId = $this->postJson('/api/user/waybills', ['status' => WaybillStatus::Incomplete->value])
@@ -911,20 +1074,27 @@ test('it reserves a referral number only when a completed waybill is stored', fu
         ->assertSuccessful()
         ->assertJsonPath('data.referral_number', 2);
 
-    $this->putJson("/api/user/waybills/{$draftId}", [
-        'status' => WaybillStatus::Completed->value,
-    ])->assertUnprocessable()
-        ->assertJsonValidationErrors('status');
+    $updatePayload = completeWaybillPayload($this);
+    $updatePayload['bijak_number'] = 1002;
+
+    $this->putJson("/api/user/waybills/{$draftId}", $updatePayload)
+        ->assertSuccessful()
+        ->assertJsonPath('data.status', WaybillStatus::Completed->value)
+        ->assertJsonPath('data.referral_number', '2')
+        ->assertJsonPath('data.referral_serial', 'SERIAL-1')
+        ->assertJsonPath('data.bijak_number', '1002')
+        ->assertJsonPath('data.serial_number', 'SERIAL-1');
 
     $this->getJson('/api/user/referral-numbers/inquiry')
         ->assertSuccessful()
-        ->assertJsonPath('data.referral_number', 2);
+        ->assertJsonPath('data.referral_number', 3);
 });
 
-test('waybill serial and document numbers have company scoped unique indexes', function () {
+test('waybill document numbers have company scoped unique indexes', function () {
     $tableName = "company_{$this->company->id}_waybills";
 
-    expect(Schema::hasIndex($tableName, "{$tableName}_serial_referral_unique"))->toBeTrue()
+    expect(Schema::hasIndex($tableName, "{$tableName}_referral_unique"))->toBeTrue()
+        ->and(Schema::hasIndex($tableName, "{$tableName}_serial_referral_unique"))->toBeFalse()
         ->and(Schema::hasIndex($tableName, "{$tableName}_serial_bijak_unique"))->toBeTrue()
         ->and(Schema::hasColumn($tableName, 'status'))->toBeTrue()
         ->and(Schema::hasColumn($tableName, 'is_incomplete'))->toBeFalse();
@@ -940,6 +1110,7 @@ test('waybill number checks are scoped to the exact company owner', function () 
     DB::table($tableName)->insert([
         'owner_company_id' => $branch->id,
         'serial_number' => 'SHARED-SERIAL',
+        'referral_serial' => 'SHARED-SERIAL',
         'referral_number' => '5001',
         'bijak_number' => '6001',
         'created_at' => now(),
@@ -962,11 +1133,12 @@ test('non unique database errors are not reported as duplicate waybill numbers',
         ->toThrow(QueryException::class);
 });
 
-test('database rejects duplicate referral and bijak numbers in the same serial', function () {
+test('database rejects duplicate referral numbers and bijak numbers in the same serial', function () {
     $tableName = "company_{$this->company->id}_waybills";
     $base = [
         'owner_company_id' => $this->company->id,
         'serial_number' => 'DB-SERIAL',
+        'referral_serial' => 'DB-REF-SERIAL',
         'created_at' => now(),
         'updated_at' => now(),
     ];
@@ -979,6 +1151,7 @@ test('database rejects duplicate referral and bijak numbers in the same serial',
 
     expect(fn () => DB::table($tableName)->insert([
         ...$base,
+        'serial_number' => 'OTHER-SERIAL',
         'referral_number' => '7001',
         'bijak_number' => '8002',
     ]))->toThrow(QueryException::class);
@@ -1009,30 +1182,42 @@ test('it rejects a used bijak number in the same serial without consuming a refe
         ->assertJsonPath('data.last_number', 1);
 });
 
-test('it rejects a referral number that is already assigned to a waybill', function () {
+test('it advances past assigned referral numbers when the range counter is stale', function () {
     $this->postJson('/api/user/waybills', completeWaybillPayload($this))
         ->assertCreated();
+
+    DB::table("company_{$this->company->id}_waybills")->insert([
+        'owner_company_id' => $this->company->id,
+        'status' => WaybillStatus::Completed->value,
+        'referral_serial' => 'SERIAL-1',
+        'referral_number' => '3',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
 
     DB::table("company_{$this->company->id}_referral_numbers")
         ->where('id', $this->referralNumberId)
         ->update(['last_number' => null]);
 
-    $payload = completeWaybillPayload($this);
-    $payload['bijak_number'] = 1002;
+    $this->getJson('/api/user/referral-numbers/inquiry')
+        ->assertSuccessful()
+        ->assertJsonPath('data.referral_number', 4);
 
-    $this->postJson('/api/user/waybills', $payload)
-        ->assertUnprocessable()
-        ->assertJsonPath(
-            'errors.error.0',
-            __('public.waybill_referral_number_used', [
-                'number' => 1,
-                'serial' => 'SERIAL-1',
-            ]),
-        );
+    $waybillId = $this->postJson('/api/user/waybills', referralWaybillPayload($this))
+        ->assertCreated()
+        ->assertJsonPath('data.referral_number', '4')
+        ->assertJsonPath('data.referral_serial', 'SERIAL-1')
+        ->json('data.id');
+
+    $this->assertDatabaseHas("company_{$this->company->id}_waybills", [
+        'id' => $waybillId,
+        'referral_serial' => 'SERIAL-1',
+        'referral_number' => '4',
+    ]);
 
     $this->getJson("/api/user/referral-numbers/{$this->referralNumberId}")
         ->assertSuccessful()
-        ->assertJsonPath('data.last_number', null);
+        ->assertJsonPath('data.last_number', 4);
 });
 
 test('it completes the referral range at the final issued waybill', function () {
@@ -1079,13 +1264,11 @@ test('the default range completes after issuing number 999999', function () {
         ->assertJsonPath('data.serial_number', '1405');
 
     $payload = completeWaybillPayload($this);
-    $payload['bijak_number'] = 100000;
-    $payload['serial_number'] = '1405';
 
     $this->postJson('/api/user/waybills', $payload)
         ->assertCreated()
         ->assertJsonPath('data.referral_number', '999999')
-        ->assertJsonPath('data.serial_number', '1405');
+        ->assertJsonPath('data.serial_number', 'SERIAL-1');
 
     $this->getJson("/api/user/referral-numbers/{$defaultId}")
         ->assertSuccessful()
@@ -1243,6 +1426,30 @@ test('completed and canceled waybills cannot be edited', function () {
         ->assertJsonPath('errors.error.0', __('public.waybill_edit_forbidden'));
 });
 
+test('editing a referral waybill keeps its referral status when incomplete is requested', function () {
+    $waybillId = $this->postJson('/api/user/waybills', referralWaybillPayload($this))
+        ->assertCreated()
+        ->assertJsonPath('data.status', WaybillStatus::Referral->value)
+        ->json('data.id');
+
+    $this->putJson("/api/user/waybills/{$waybillId}", [
+        'status' => WaybillStatus::Incomplete->value,
+        'description' => 'ویرایش حواله بدون تغییر وضعیت',
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.status', WaybillStatus::Referral->value)
+        ->assertJsonPath('data.description', 'ویرایش حواله بدون تغییر وضعیت')
+        ->assertJsonPath('data.referral_number', '1')
+        ->assertJsonPath('data.referral_serial', 'SERIAL-1');
+
+    $this->assertDatabaseHas("company_{$this->company->id}_waybills", [
+        'id' => $waybillId,
+        'status' => WaybillStatus::Referral->value,
+        'referral_number' => '1',
+        'referral_serial' => 'SERIAL-1',
+    ]);
+});
+
 /** @return array<string, mixed> */
 function completeWaybillPayload(object $test): array
 {
@@ -1270,7 +1477,10 @@ function completeWaybillPayload(object $test): array
         'transport_contract_id' => $test->contract->id,
         'base_freight_amount' => 100000,
         'weighbridge_amount' => 0,
+        'insurance_amount' => 1000,
+        'insurance_tax_amount' => 100,
         'detention_amount' => 5000,
+        'payable_amount' => 106100,
         'freight_at_origin' => true,
         'is_fixed' => false,
         'cargos' => [[
@@ -1289,6 +1499,31 @@ function completeWaybillPayload(object $test): array
             'driver_account_number' => 'IR-123',
             'container_number' => 'CONT-1',
             'container_number_2' => null,
+        ]],
+    ];
+}
+
+/** @return array<string, mixed> */
+function referralWaybillPayload(object $test): array
+{
+    return [
+        'status' => WaybillStatus::Referral->value,
+        'sender_id' => $test->sender->id,
+        'sender_address_id' => $test->senderAddress->id,
+        'receiver_id' => $test->receiver->id,
+        'receiver_address_id' => $test->receiverAddress->id,
+        'driver1_id' => $test->firstDriver->id,
+        'referral_driver_id' => $test->thirdDriver->id,
+        'fleet_id' => $test->fleet->id,
+        'referral_weight' => 1250.5,
+        'quantity' => 10,
+        'loading_started_at' => '2026-09-07 08:00:00',
+        'loading_ended_at' => '2026-09-07 10:00:00',
+        'insurance_amount' => 0,
+        'cargos' => [[
+            'cargo_id' => $test->cargo->code,
+            'packaging_id' => $test->packaging->code,
+            'origin_weight' => 1250.5,
         ]],
     ];
 }

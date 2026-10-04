@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\User\BijakNumberController;
 use App\Http\Controllers\User\Cargo\CargoController;
 use App\Http\Controllers\User\CargoGroupController;
 use App\Http\Controllers\User\CompanySettingController;
@@ -72,7 +73,14 @@ Route::prefix('fleets')->name('fleets.')->group(function () {
 });
 Route::apiResource('fleets', FleetController::class);
 
-Route::get('referral-numbers/inquiry', [ReferralNumberController::class, 'inquiry'])
+Route::match(['get', 'post'], 'bijak-numbers/inquiry', [BijakNumberController::class, 'inquiry'])
+    ->name('bijak-numbers.inquiry');
+Route::apiResource('bijak-numbers', BijakNumberController::class)
+    ->parameters(['bijak-numbers' => 'bijakNumber']);
+
+Route::match(['get', 'post'], 'referral-numbers/inquiry', [ReferralNumberController::class, 'preview'])
+    ->name('referral-numbers.preview');
+Route::post('referral-numbers/inquiry', [ReferralNumberController::class, 'inquiry'])
     ->name('referral-numbers.inquiry');
 Route::apiResource('referral-numbers', ReferralNumberController::class)
     ->parameters(['referral-numbers' => 'referralNumber']);
@@ -103,6 +111,8 @@ Route::apiResource('shipment-parties.addresses', ShipmentPartyAddressController:
 // Route::get('waybills/options', [WaybillController::class, 'options'])->name('waybills.options');
 Route::patch('waybills/{waybill}/cancel', [WaybillController::class, 'cancel'])
     ->name('waybills.cancel');
+Route::patch('waybills/{waybill}/referral/cancel', [WaybillController::class, 'cancelReferral'])
+    ->name('waybills.referral.cancel');
 Route::apiResource('waybills', WaybillController::class);
 // Route::apiResource('cargos', CargoController::class);
 Route::apiResource('product-owners', ProductOwnerController::class)

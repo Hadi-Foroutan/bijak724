@@ -4,9 +4,11 @@ namespace App\Http\Controllers\User;
 
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\ReferralNumber\InquiryReferralNumberRequest;
 use App\Http\Requests\ReferralNumber\StoreReferralNumberRequest;
 use App\Http\Requests\ReferralNumber\UpdateReferralNumberRequest;
 use App\Http\Resources\ReferralNumberResource;
+use App\Http\Resources\WaybillResource;
 use App\Services\Company\ReferralNumber\ReferralNumberService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -43,9 +45,24 @@ class ReferralNumberController extends Controller
         return ResponseHandler::success(ReferralNumberResource::make($result->data)->resolve($request));
     }
 
-    public function inquiry(Request $request): JsonResponse
+    public function inquiry(InquiryReferralNumberRequest $request): JsonResponse
     {
-        return ResponseHandler::success($this->referralNumberService->inquiry($this->companyId($request))->data);
+        $result = $this->referralNumberService->inquiry(
+            $this->companyId($request),
+            $request->integer('waybill_id'),
+        );
+
+        return ResponseHandler::success(
+            WaybillResource::make($result->data)->resolve($request),
+            __('public.waybill_referral_assigned_success'),
+        );
+    }
+
+    public function preview(Request $request): JsonResponse
+    {
+        return ResponseHandler::success(
+            $this->referralNumberService->preview($this->companyId($request))->data,
+        );
     }
 
     public function update(UpdateReferralNumberRequest $request, int $referralNumber): JsonResponse

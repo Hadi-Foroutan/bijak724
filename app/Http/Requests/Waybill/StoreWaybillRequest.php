@@ -54,6 +54,10 @@ class StoreWaybillRequest extends BaseRequest
         $requiredWhenReferral = Rule::requiredIf(
             fn (): bool => $this->hasStatus(WaybillStatus::Referral),
         );
+        $requiredWhenCompletedOrReferral = Rule::requiredIf(
+            fn (): bool => $this->hasStatus(WaybillStatus::Completed)
+                || $this->hasStatus(WaybillStatus::Referral),
+        );
 
         return [
             ...$this->referenceRules(
@@ -62,7 +66,7 @@ class StoreWaybillRequest extends BaseRequest
                 $driverRepository,
                 $fleetRepository,
                 $companyId,
-                $requiredWhenCompleted,
+                $requiredWhenCompletedOrReferral,
             ),
             ...$this->documentRules(
                 $insuranceRepository,
@@ -71,7 +75,12 @@ class StoreWaybillRequest extends BaseRequest
                 $requiredWhenReferral,
             ),
             ...$this->financialRules($transportContractRepository, $companyId, $requiredWhenCompleted),
-            ...$this->cargoRules($productOwnerRepository, $companyId, $requiredWhenCompleted),
+            ...$this->cargoRules(
+                $productOwnerRepository,
+                $companyId,
+                $requiredWhenCompleted,
+                $requiredWhenCompletedOrReferral,
+            ),
         ];
     }
 
@@ -82,39 +91,39 @@ class StoreWaybillRequest extends BaseRequest
         DriverRepositoryInterface $driverRepository,
         FleetRepositoryInterface $fleetRepository,
         int $companyId,
-        mixed $requiredWhenComplete,
+        mixed $requiredWhenCompletedOrReferral,
     ): array {
         return [
             'sender_id' => [
-                $requiredWhenComplete,
+                $requiredWhenCompletedOrReferral,
                 'nullable',
                 'integer',
                 $shipmentPartyRepository->existsRule($companyId)->where('is_sender', true),
             ],
             'sender_address_id' => [
-                $requiredWhenComplete,
+                $requiredWhenCompletedOrReferral,
                 'nullable',
                 'integer',
                 $shipmentPartyAddressRepository->existsRule($companyId)
                     ->where('shipment_party_id', $this->integer('sender_id')),
             ],
             'receiver_id' => [
-                $requiredWhenComplete,
+                $requiredWhenCompletedOrReferral,
                 'nullable',
                 'integer',
                 $shipmentPartyRepository->existsRule($companyId)->where('is_receiver', true),
             ],
             'receiver_address_id' => [
-                $requiredWhenComplete,
+                $requiredWhenCompletedOrReferral,
                 'nullable',
                 'integer',
                 $shipmentPartyAddressRepository->existsRule($companyId)
                     ->where('shipment_party_id', $this->integer('receiver_id')),
             ],
-            'driver1_id' => [$requiredWhenComplete, 'nullable', 'integer', $driverRepository->existsRule($companyId)],
+            'driver1_id' => [$requiredWhenCompletedOrReferral, 'nullable', 'integer', $driverRepository->existsRule($companyId)],
             'driver2_id' => ['nullable', 'integer', 'different:driver1_id', $driverRepository->existsRule($companyId)],
-            'referral_driver_id' => [$requiredWhenComplete, 'nullable', 'integer', $driverRepository->existsRule($companyId)],
-            'fleet_id' => [$requiredWhenComplete, 'nullable', 'integer', $fleetRepository->existsRule($companyId)],
+            'referral_driver_id' => [$requiredWhenCompletedOrReferral, 'nullable', 'integer', $driverRepository->existsRule($companyId)],
+            'fleet_id' => [$requiredWhenCompletedOrReferral, 'nullable', 'integer', $fleetRepository->existsRule($companyId)],
         ];
     }
 
@@ -125,15 +134,22 @@ class StoreWaybillRequest extends BaseRequest
         mixed $requiredWhenCompleted,
         mixed $requiredWhenReferral,
     ): array {
+        $minimumInsuranceAmount = $this->hasStatus(WaybillStatus::Completed) ? 'min:1' : 'min:0';
+
         return [
             'status' => ['required', Rule::enum(WaybillStatus::class)],
-            'referral_weight' => [$requiredWhenReferral, 'nullable', 'numeric', 'min:0'],
-            'quantity' => [$requiredWhenReferral, 'nullable', 'integer', 'min:1'],
+            'referral_weight' => ['nullable', 'numeric', 'min:0'],
+            'quantity' => ['nullable', 'integer', $minimumInsuranceAmount],
             'loading_started_at' => [$requiredWhenReferral, 'nullable', 'date'],
             'loading_ended_at' => [$requiredWhenReferral, 'nullable', 'date', 'after_or_equal:loading_started_at'],
-            'referral_number' => [$requiredWhenReferral, 'nullable', 'string', 'max:255'],
             'bijak_number' => [$requiredWhenCompleted, 'nullable', 'integer'],
-            'serial_number' => [$requiredWhenCompleted, 'nullable', 'string', 'max:255'],
+            'serial_number' => [
+                'exclude_unless:status,'.WaybillStatus::Completed->value,
+                $requiredWhenCompleted,
+                'nullable',
+                'string',
+                'max:255',
+            ],
             'issued_at' => ['nullable', 'date'],
             'liability_insurance' => [
                 $requiredWhenCompleted,
@@ -151,6 +167,8 @@ class StoreWaybillRequest extends BaseRequest
         int $companyId,
         mixed $requiredWhenComplete,
     ): array {
+        $minimumInsuranceAmount = $this->hasStatus(WaybillStatus::Completed) ? 'min:1' : 'min:0';
+
         return [
             'transport_contract_id' => [
                 $requiredWhenComplete,
@@ -164,12 +182,13 @@ class StoreWaybillRequest extends BaseRequest
             'loading_amount' => ['nullable', 'integer', 'min:0'],
             'warehousing_amount' => ['nullable', 'integer', 'min:0'],
             'commission_amount' => ['nullable', 'integer', 'min:0'],
-            'insurance_amount' => [$requiredWhenComplete, 'integer', 'min:1'],
-            'insurance_tax_amount' => [$requiredWhenComplete, 'integer', 'min:0'],
+            'insurance_amount' => [$requiredWhenComplete, 'nullable', 'integer', $minimumInsuranceAmount],
+            'insurance_tax_amount' => [$requiredWhenComplete, 'nullable', 'integer', 'min:0'],
             'detention_amount' => ['nullable', 'integer', 'min:0'],
             'driver_receivable_amount' => ['nullable', 'integer', 'min:0'],
             'payable_amount' => [
                 $requiredWhenComplete,
+                'nullable',
                 'integer',
                 'min:0',
             ],
@@ -182,20 +201,24 @@ class StoreWaybillRequest extends BaseRequest
     private function cargoRules(
         ProductOwnerRepositoryInterface $productOwnerRepository,
         int $companyId,
-        mixed $requiredWhenComplete,
+        mixed $requiredWhenCompleted,
+        mixed $requiredWhenCompletedOrReferral,
     ): array {
-        $minimumCargoCount = $this->hasStatus(WaybillStatus::Completed) ? 'min:1' : 'min:0';
+        $minimumCargoCount = $this->hasStatus(WaybillStatus::Completed)
+            || $this->hasStatus(WaybillStatus::Referral)
+                ? 'min:1'
+                : 'min:0';
 
         return [
-            'cargos' => [$requiredWhenComplete, 'nullable', 'array', $minimumCargoCount, 'max:10'],
-            'cargos.*.cargo_id' => [$requiredWhenComplete, 'nullable', 'integer', Rule::exists(Cargo::class, 'code')],
-            'cargos.*.packaging_id' => [$requiredWhenComplete, 'nullable', 'integer', Rule::exists(Packaging::class, 'code')],
+            'cargos' => [$requiredWhenCompletedOrReferral, 'nullable', 'array', $minimumCargoCount, 'max:10'],
+            'cargos.*.cargo_id' => [$requiredWhenCompletedOrReferral, 'nullable', 'integer', Rule::exists(Cargo::class, 'code')],
+            'cargos.*.packaging_id' => [$requiredWhenCompletedOrReferral, 'nullable', 'integer', Rule::exists(Packaging::class, 'code')],
             'cargos.*.product_owner_id' => ['nullable', 'integer', $productOwnerRepository->existsRule($companyId)],
             'cargos.*.description' => ['nullable', 'string'],
             'cargos.*.title' => ['nullable', 'string', 'max:255'],
-            'cargos.*.origin_weight' => [$requiredWhenComplete, 'nullable', 'numeric', 'min:0'],
-            'cargos.*.value' => [$requiredWhenComplete, 'nullable', 'integer', 'min:0'],
-            'cargos.*.quantity' => [$requiredWhenComplete, 'nullable', 'integer', 'min:1'],
+            'cargos.*.origin_weight' => [$requiredWhenCompletedOrReferral, 'numeric', $minimumCargoCount],
+            'cargos.*.value' => [$requiredWhenCompleted, 'nullable', 'integer', 'min:0'],
+            'cargos.*.quantity' => [$requiredWhenCompleted, 'nullable', 'integer', $minimumCargoCount],
             'cargos.*.is_traffic' => ['nullable', 'boolean'],
             //            'cargos.*.cottage_number' => ['nullable', 'string', 'max:255'],
             //            'cargos.*.cottage_number_2' => ['nullable', 'string', 'max:255'],

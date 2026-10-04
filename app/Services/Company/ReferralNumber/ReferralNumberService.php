@@ -2,21 +2,23 @@
 
 namespace App\Services\Company\ReferralNumber;
 
-use App\Enums\CompanySettingKey;
 use App\Enums\ReferralNumberStatus;
+use App\Enums\WaybillStatus;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\ReferralNumberRepositoryInterface;
 use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Models\Company;
 use App\Models\Company\ReferralNumber;
+use App\Models\Company\Waybill;
 use App\Services\Company\CompanyDataOwnerResolver;
-use App\Services\Company\Settings\CompanySettingService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class ReferralNumberService
 {
+    public const DEFAULT_SERIAL_NUMBER = '1405';
+
     public const DEFAULT_FROM_NUMBER = 100000;
 
     public const DEFAULT_TO_NUMBER = 999999;
@@ -25,7 +27,6 @@ class ReferralNumberService
         protected ReferralNumberRepositoryInterface $referralNumberRepository,
         protected CompanyDataOwnerResolver $companyDataOwnerResolver,
         protected WaybillRepositoryInterface $waybillRepository,
-        protected CompanySettingService $companySettingService,
     ) {}
 
     public function index(int $companyId, array $params): ServiceResult
@@ -53,7 +54,7 @@ class ReferralNumberService
 
             $record = $this->referralNumberRepository->create($companyId, [
                 'title' => 'پیش فرض',
-                'serial_number' => '1405',
+                'serial_number' => self::DEFAULT_SERIAL_NUMBER,
                 'from_number' => self::DEFAULT_FROM_NUMBER,
                 'to_number' => self::DEFAULT_TO_NUMBER,
                 'last_number' => null,
@@ -115,124 +116,115 @@ class ReferralNumberService
         });
     }
 
-    public function inquiry(int $companyId): ServiceResult
+    public function inquiry(int $companyId, int $waybillId): ServiceResult
+    {
+        return DB::transaction(function () use ($companyId, $waybillId): ServiceResult {
+            /** @var Waybill $waybill */
+            $waybill = $this->waybillRepository->findOrFailForUpdate($companyId, $waybillId);
+
+            if (in_array($waybill->status, [WaybillStatus::Completed, WaybillStatus::Canceled], true)) {
+                ServiceResult::error(
+                    __('public.waybill_referral_assignment_status_invalid'),
+                    Response::HTTP_UNPROCESSABLE_ENTITY,
+                );
+            }
+
+            if ($waybill->referral_number !== null) {
+                ServiceResult::error(
+                    __('public.waybill_referral_already_assigned'),
+                    Response::HTTP_UNPROCESSABLE_ENTITY,
+                );
+            }
+
+            $next = $this->reserveNext($companyId, $waybillId)->data;
+
+            $this->waybillRepository->update($companyId, $waybillId, [
+                'referral_number' => (string) $next['referral_number'],
+                'referral_serial' => (string) $next['serial_number'],
+                'status' => WaybillStatus::Referral->value,
+            ]);
+
+            return ServiceResult::success($this->waybillRepository->findOrFail($companyId, $waybillId));
+        });
+    }
+
+    public function preview(int $companyId): ServiceResult
     {
         $record = $this->referralNumberRepository->active($companyId);
 
-        if ($record === null || $this->isExhausted($record)) {
+        if ($record === null) {
             return ServiceResult::error(__('public.referral_not_found'), Response::HTTP_NOT_FOUND);
         }
 
-        return ServiceResult::success($this->nextNumber($record));
+        $next = $this->nextNumber($companyId, $record);
+
+        if ((int) $next['referral_number'] > (int) $record->to_number) {
+            return ServiceResult::error(__('public.referral_not_found'), Response::HTTP_NOT_FOUND);
+        }
+
+        return ServiceResult::success($next);
     }
 
     /**
      * Must be called inside the waybill issuance transaction.
      */
-    public function reserveNext(int $companyId): ServiceResult
+    public function reserveNext(int $companyId, ?int $ignoreWaybillId = null): ServiceResult
     {
         $this->lockCompany($companyId);
         $record = $this->referralNumberRepository->active($companyId);
 
-        if ($record === null || $this->isExhausted($record)) {
-            return ServiceResult::error(
-                __('public.referral_issuance_unavailable'),
-                Response::HTTP_UNPROCESSABLE_ENTITY,
-            );
-        }
-
-        return $this->reserve($companyId, $record);
-    }
-
-    /**
-     * Must be called inside the waybill issuance transaction.
-     */
-    public function reserveNextForBijak(
-        int $companyId,
-        string $serialNumber,
-        int $bijakNumber,
-    ): ServiceResult {
-        $this->lockCompany($companyId);
-        $activeRecord = $this->referralNumberRepository->active($companyId);
-
-        if ($activeRecord === null || $this->isExhausted($activeRecord)) {
-            return ServiceResult::error(
-                __('public.referral_issuance_unavailable'),
-                Response::HTTP_UNPROCESSABLE_ENTITY,
-            );
-        }
-
-        $record = $this->referralNumberRepository->activeContainingBijakNumber(
-            $companyId,
-            $serialNumber,
-            $bijakNumber,
-        );
-
         if ($record === null) {
             return ServiceResult::error(
-                __('public.waybill_bijak_range_invalid'),
+                __('public.referral_issuance_unavailable'),
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
         }
 
-        if ($this->companySettingService->boolean(
-            $companyId,
-            CompanySettingKey::AssignFirstAvailableWaybillNumber,
-        )) {
-            $firstAvailableNumber = $this->waybillRepository->firstAvailableBijakNumber(
-                $companyId,
-                $serialNumber,
-                (int) $record->from_number,
-                (int) $record->to_number,
-            );
-
-            if ($firstAvailableNumber === null) {
-                return ServiceResult::error(
-                    __('public.referral_issuance_unavailable'),
-                    Response::HTTP_UNPROCESSABLE_ENTITY,
-                );
-            }
-
-            if ($bijakNumber !== $firstAvailableNumber) {
-                return ServiceResult::error(
-                    __('public.waybill_first_available_bijak_required', [
-                        'number' => $firstAvailableNumber,
-                    ]),
-                    Response::HTTP_UNPROCESSABLE_ENTITY,
-                );
-            }
-        }
-
-        return $this->reserve($companyId, $record);
+        return $this->reserve($companyId, $record, $ignoreWaybillId);
     }
 
-    private function reserve(int $companyId, ReferralNumber $record): ServiceResult
-    {
-        $next = $this->nextNumber($record);
+    private function reserve(
+        int $companyId,
+        ReferralNumber $record,
+        ?int $ignoreWaybillId = null,
+    ): ServiceResult {
+        $next = $this->nextNumber($companyId, $record);
+        $issuedNumber = (int) $next['referral_number'];
+
+        if ($issuedNumber > (int) $record->to_number) {
+            return ServiceResult::error(
+                __('public.referral_issuance_unavailable'),
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
+        }
 
         if ($this->waybillRepository->referralNumberExists(
             $companyId,
-            (string) $next['serial_number'],
-            (string) $next['referral_number'],
+            (string) $record->serial_number,
+            (string) $issuedNumber,
+            $ignoreWaybillId,
         )) {
             return ServiceResult::error(
                 __('public.waybill_referral_number_used', [
-                    'number' => $next['referral_number'],
-                    'serial' => $next['serial_number'],
+                    'number' => $issuedNumber,
+                    'serial' => $record->serial_number,
                 ]),
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
         }
 
         $record->update([
-            'last_number' => $next['referral_number'],
-            'status' => $next['referral_number'] >= $record->to_number
+            'last_number' => $issuedNumber,
+            'status' => $issuedNumber >= $record->to_number
                 ? ReferralNumberStatus::Completed->value
                 : ReferralNumberStatus::Active->value,
-            'active_slot' => $next['referral_number'] >= $record->to_number ? null : 1,
+            'active_slot' => $issuedNumber >= $record->to_number ? null : 1,
         ]);
 
-        return ServiceResult::success($next);
+        return ServiceResult::success([
+            ...$next,
+            'referral_number' => $issuedNumber,
+        ]);
     }
 
     /** @param array<string, mixed> $data */
@@ -272,7 +264,6 @@ class ReferralNumberService
         }
     }
 
-    // 2,755,000
     private function lockCompany(int $companyId): void
     {
         Company::query()
@@ -281,22 +272,24 @@ class ReferralNumberService
             ->firstOrFail();
     }
 
-    /** @return array<string, int|string> */
-    private function nextNumber(ReferralNumber $record): array
+    /** @return array<string, int|string|Carbon> */
+    private function nextNumber(int $companyId, ReferralNumber $record): array
     {
+        $rangeNextNumber = $record->last_number === null
+            ? (int) $record->from_number
+            : (int) $record->last_number + 1;
+        $highestUsedNumber = $this->waybillRepository->highestUsedReferralNumber(
+            $companyId,
+            (string) $record->serial_number,
+            (int) $record->from_number,
+            (int) $record->to_number,
+        );
+
         return [
             'id' => (int) $record->id,
-            'serial_number' => $record->serial_number,
-            'referral_number' => $record->last_number === null
-                ? (int) $record->from_number
-                : (int) $record->last_number + 1,
+            'serial_number' => (string) $record->serial_number,
+            'referral_number' => max($rangeNextNumber, ($highestUsedNumber ?? 0) + 1),
             'date' => Carbon::now(),
         ];
-    }
-
-    private function isExhausted(ReferralNumber $record): bool
-    {
-        return $record->last_number !== null
-            && (int) $record->last_number >= (int) $record->to_number;
     }
 }

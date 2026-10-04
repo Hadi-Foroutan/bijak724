@@ -38,8 +38,8 @@ class CompanyTableService
             $this->ensureWaybillNumberUniqueIndexes($tableName, $tableKey);
             $this->ensureWaybillDashboardIndexes($tableName, $tableKey);
 
-            if ($tableKey === 'referral_numbers') {
-                $this->ensureReferralNumberActiveIndex($tableName);
+            if ($this->isNumberRangeTable($tableKey)) {
+                $this->ensureNumberRangeActiveIndex($tableName);
             }
 
             return;
@@ -59,14 +59,14 @@ class CompanyTableService
                 $table->unique($this->fleetPlateColumns(), "{$tableName}_plate_unique");
             }
 
-            if ($tableKey === 'referral_numbers') {
+            if ($this->isNumberRangeTable($tableKey)) {
                 $table->unique(['owner_company_id', 'active_slot'], "{$tableName}_active_unique");
             }
 
             if ($tableKey === 'waybills') {
                 $table->unique(
-                    ['owner_company_id', 'serial_number', 'referral_number'],
-                    "{$tableName}_serial_referral_unique",
+                    ['owner_company_id', 'referral_serial', 'referral_number'],
+                    "{$tableName}_referral_unique",
                 );
                 $table->unique(
                     ['owner_company_id', 'serial_number', 'bijak_number'],
@@ -78,7 +78,7 @@ class CompanyTableService
         });
     }
 
-    private function ensureReferralNumberActiveIndex(string $tableName): void
+    private function ensureNumberRangeActiveIndex(string $tableName): void
     {
         if (Schema::hasIndex($tableName, "{$tableName}_active_unique")) {
             return;
@@ -87,6 +87,11 @@ class CompanyTableService
         Schema::table($tableName, function (Blueprint $table) use ($tableName): void {
             $table->unique(['owner_company_id', 'active_slot'], "{$tableName}_active_unique");
         });
+    }
+
+    private function isNumberRangeTable(string $tableKey): bool
+    {
+        return in_array($tableKey, ['bijak_numbers', 'referral_numbers'], true);
     }
 
     private function ensureFleetPlateUniqueIndex(string $tableName, string $tableKey): void
@@ -106,8 +111,30 @@ class CompanyTableService
             return;
         }
 
+        $legacyReferralIndex = "{$tableName}_serial_referral_unique";
+
+        if (Schema::hasIndex($tableName, $legacyReferralIndex)) {
+            Schema::table($tableName, function (Blueprint $table) use ($legacyReferralIndex): void {
+                $table->dropUnique($legacyReferralIndex);
+            });
+        }
+
+        $referralIndex = "{$tableName}_referral_unique";
+        $referralIndexColumns = ['owner_company_id', 'referral_serial', 'referral_number'];
+        $currentReferralIndex = collect(Schema::getIndexes($tableName))
+            ->firstWhere('name', $referralIndex);
+
+        if (
+            $currentReferralIndex !== null
+            && array_values($currentReferralIndex['columns']) !== $referralIndexColumns
+        ) {
+            Schema::table($tableName, function (Blueprint $table) use ($referralIndex): void {
+                $table->dropUnique($referralIndex);
+            });
+        }
+
         $indexes = [
-            "{$tableName}_serial_referral_unique" => ['owner_company_id', 'serial_number', 'referral_number'],
+            $referralIndex => $referralIndexColumns,
             "{$tableName}_serial_bijak_unique" => ['owner_company_id', 'serial_number', 'bijak_number'],
         ];
 

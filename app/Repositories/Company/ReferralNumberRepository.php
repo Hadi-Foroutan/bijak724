@@ -70,20 +70,4 @@ class ReferralNumberRepository implements ReferralNumberRepositoryInterface
             ->lockForUpdate()
             ->first();
     }
-
-    public function activeContainingBijakNumber(
-        int $companyId,
-        string $serialNumber,
-        int $bijakNumber,
-    ): ?ReferralNumber {
-        return $this->referralNumber
-            ->newSharedQueryForCompany($companyId)
-            ->where('owner_company_id', $companyId)
-            ->where('status', ReferralNumberStatus::Active->value)
-            ->where('serial_number', $serialNumber)
-            ->where('from_number', '<=', $bijakNumber)
-            ->where('to_number', '>=', $bijakNumber)
-            ->lockForUpdate()
-            ->first();
-    }
 }

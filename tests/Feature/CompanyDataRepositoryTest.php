@@ -1,5 +1,6 @@
 <?php
 
+use App\Interfaces\Company\BijakNumberRepositoryInterface;
 use App\Interfaces\Company\CargoRepositoryInterface;
 use App\Interfaces\Company\DriverAccountRepositoryInterface;
 use App\Interfaces\Company\DriverRepositoryInterface;
@@ -10,6 +11,7 @@ use App\Interfaces\Company\ShipmentPartyAddressRepositoryInterface;
 use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
 use App\Interfaces\Company\WaybillCargoRepositoryInterface;
 use App\Interfaces\Company\WaybillRepositoryInterface;
+use App\Models\Company\BijakNumber;
 use App\Models\Company\Cargo;
 use App\Models\Company\Driver;
 use App\Models\Company\DriverAccount;
@@ -69,6 +71,7 @@ test('dedicated repository applies dynamic table search configuration', function
 
 test('every dynamic table repository declares its dedicated model', function () {
     $repositories = [
+        BijakNumberRepositoryInterface::class => [BijakNumber::class, 'bijak_numbers'],
         CargoRepositoryInterface::class => [Cargo::class, 'cargos'],
         DriverRepositoryInterface::class => [Driver::class, 'drivers'],
         DriverAccountRepositoryInterface::class => [DriverAccount::class, 'driver_accounts'],

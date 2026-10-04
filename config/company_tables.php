@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\BijakNumberStatus;
 use App\Enums\FleetOwnershipType;
 use App\Enums\ReferralNumberStatus;
 use App\Enums\StatusEnum;
@@ -55,6 +56,7 @@ return [
         ['name' => 'loading_started_at', 'type' => 'dateTime'],
         ['name' => 'loading_ended_at', 'type' => 'dateTime'],
         ['name' => 'referral_number', 'type' => 'string'],
+        ['name' => 'referral_serial', 'type' => 'string'],
         ['name' => 'bijak_number', 'type' => 'string'],
         ['name' => 'serial_number', 'type' => 'string'],
         ['name' => 'issued_at', 'type' => 'dateTime'],
@@ -139,6 +141,15 @@ return [
         ['name' => 'bank_name', 'type' => 'string', 'nullable' => false],
         ['name' => 'owner_name', 'type' => 'string', 'nullable' => false],
         ['name' => 'is_default', 'type' => 'boolean', 'default' => false, 'nullable' => false],
+    ],
+    'bijak_numbers' => [
+        ['name' => 'title', 'type' => 'string', 'nullable' => false],
+        ['name' => 'serial_number', 'type' => 'string', 'nullable' => false],
+        ['name' => 'from_number', 'type' => 'unsignedBigInteger', 'nullable' => false],
+        ['name' => 'to_number', 'type' => 'unsignedBigInteger', 'nullable' => false],
+        ['name' => 'last_number', 'type' => 'unsignedBigInteger'],
+        ['name' => 'status', 'type' => 'enum', 'values' => BijakNumberStatus::values(), 'default' => BijakNumberStatus::Active->value, 'nullable' => false],
+        ['name' => 'active_slot', 'type' => 'unsignedInteger', 'api' => false, 'searchable' => false],
     ],
     'referral_numbers' => [
         ['name' => 'title', 'type' => 'string', 'nullable' => false],

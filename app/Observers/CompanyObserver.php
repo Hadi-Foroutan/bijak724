@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Enums\CompanyParentEnum;
 use App\Models\Company;
+use App\Services\Company\BijakNumber\BijakNumberService;
 use App\Services\Company\CompanyTableService;
 use App\Services\Company\Insurance\DefaultInsuranceService;
 use App\Services\Company\ReferralNumber\ReferralNumberService;
@@ -16,6 +17,7 @@ class CompanyObserver
         protected CompanyTableService $companyTableService,
         protected DefaultTransportContractService $defaultTransportContractService,
         protected DefaultInsuranceService $defaultInsuranceService,
+        protected BijakNumberService $bijakNumberService,
         protected ReferralNumberService $referralNumberService,
         protected CompanySettingService $companySettingService,
     ) {}
@@ -31,6 +33,7 @@ class CompanyObserver
             $this->companyTableService->sync($company->id);
         }
 
+        $this->bijakNumberService->ensureDefaultForCompany($company->id);
         $this->referralNumberService->ensureDefaultForCompany($company->id);
         $this->defaultInsuranceService->createForCompany($company);
         $this->companySettingService->ensureDefaultsForCompany($company->id);

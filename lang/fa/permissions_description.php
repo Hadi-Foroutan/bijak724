@@ -70,6 +70,21 @@ return [
     'user.fleets.destroy' => 'حذف ناوگان از شرکت کاربر',
     'user.fleets.inquiry' => 'استعلام ناوگان کاربر',
 
+    'user.bijak-numbers.index' => 'مشاهده فهرست بازه‌های شماره بیجک',
+    'user.bijak-numbers.store' => 'ایجاد بازه شماره بیجک',
+    'user.bijak-numbers.show' => 'مشاهده بازه شماره بیجک',
+    'user.bijak-numbers.update' => 'ویرایش بازه شماره بیجک',
+    'user.bijak-numbers.destroy' => 'حذف بازه شماره بیجک',
+    'user.bijak-numbers.inquiry' => 'استعلام شماره بیجک آزاد',
+
+    'user.referral-numbers.index' => 'مشاهده فهرست بازه‌های شماره حواله',
+    'user.referral-numbers.store' => 'ایجاد بازه شماره حواله',
+    'user.referral-numbers.show' => 'مشاهده بازه شماره حواله',
+    'user.referral-numbers.update' => 'ویرایش بازه شماره حواله',
+    'user.referral-numbers.destroy' => 'حذف بازه شماره حواله',
+    'user.referral-numbers.inquiry' => 'استعلام شماره حواله آزاد',
+    'user.referral-numbers.preview' => 'مشاهده شماره حواله آزاد بعدی',
+
     'user.addresses.index' => 'مشاهده لیست آدرس‌های فرستندگان و گیرندگان',
     'user.addresses.store' => 'ایجاد آدرس جدید برای فرستنده یا گیرنده',
     'user.addresses.show' => 'مشاهده آدرس فرستنده یا گیرنده',
@@ -102,6 +117,7 @@ return [
     'user.waybills.update' => 'ویرایش بیجک',
     'user.waybills.destroy' => 'حذف بیجک',
     'user.waybills.cancel' => 'ابطال بیجک',
+    'user.waybills.referral.cancel' => 'ابطال شماره حواله بارنامه',
 
     'user.settings.show' => 'مشاهده تنظیمات شرکت',
     'user.settings.update' => 'ویرایش تنظیمات شرکت',
