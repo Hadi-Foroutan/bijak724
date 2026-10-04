@@ -2,9 +2,14 @@
 
 use App\Enums\StatusEnum;
 use App\Http\Middleware\CheckPermission;
+use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Models\Company;
+use App\Models\Company\Driver;
 use App\Models\DriverLicenseType;
 use App\Models\User;
+use App\Services\Company\Driver\DriverService;
+use App\Services\Company\Waybill\IssuedWaybillDeletionGuard;
+use App\Services\Uploads\CompanyImageUploader;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -117,6 +122,51 @@ test('profile image is optional and can be removed during driver update', functi
         ->assertJsonPath('data.profile_image_url', null);
 
     Storage::disk('public')->assertMissing($path);
+});
+
+test('optional driver fields can be cleared during update', function () {
+    $driverId = $this->postJson('/api/user/drivers', $this->driverPayload)
+        ->assertCreated()
+        ->json('data.id');
+
+    $this->postJson("/api/user/drivers/{$driverId}", [
+        'father_name' => null,
+        'license_number' => null,
+        'license_expiry_date' => null,
+    ])->assertSuccessful();
+
+    $this->assertDatabaseHas("company_{$this->company->id}_drivers", [
+        'id' => $driverId,
+        'father_name' => null,
+        'license_number' => null,
+        'license_expiry_date' => null,
+    ]);
+});
+
+test('driver update keeps the original database exception and removes a newly uploaded image', function () {
+    $driver = new Driver;
+    $driver->profile_image_path = null;
+
+    $repository = Mockery::mock(DriverRepositoryInterface::class);
+    $repository->shouldReceive('findOrFail')
+        ->once()
+        ->with($this->company->id, 15)
+        ->andReturn($driver);
+    $repository->shouldReceive('update')
+        ->once()
+        ->andThrow(new RuntimeException('database update failed'));
+
+    $service = new DriverService(
+        $repository,
+        app(CompanyImageUploader::class),
+        Mockery::mock(IssuedWaybillDeletionGuard::class),
+    );
+
+    expect(fn () => $service->update($this->company->id, 15, [
+        'profile_image' => driverProfileImage('replacement.png'),
+    ]))->toThrow(RuntimeException::class, 'database update failed');
+
+    expect(Storage::disk('public')->allFiles("companies/{$this->company->id}/drivers"))->toBeEmpty();
 });
 
 test('string false keeps the driver profile image and invalid delete values are rejected', function () {

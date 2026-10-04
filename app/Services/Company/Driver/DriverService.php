@@ -8,10 +8,11 @@ use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Services\Company\Waybill\IssuedWaybillDeletionGuard;
 use App\Services\Uploads\CompanyImageUploader;
 use Illuminate\Http\UploadedFile;
-use Throwable;
 
 class DriverService
 {
+    private const PROFILE_IMAGE_COLLECTION = 'drivers';
+
     public function __construct(
         protected DriverRepositoryInterface $driverRepository,
         protected CompanyImageUploader $imageUploader,
@@ -32,16 +33,17 @@ class DriverService
             return ServiceResult::success($this->driverRepository->create($companyId, $data));
         }
 
-        $path = $this->imageUploader->upload($image, $companyId, 'drivers');
-        $data['profile_image_path'] = $path;
+        $driver = $this->imageUploader->uploadWithRollback(
+            $image,
+            $companyId,
+            self::PROFILE_IMAGE_COLLECTION,
+            fn (string $path) => $this->driverRepository->create($companyId, [
+                ...$data,
+                'profile_image_path' => $path,
+            ]),
+        );
 
-        try {
-            return ServiceResult::success($this->driverRepository->create($companyId, $data));
-        } catch (Throwable $throwable) {
-            $this->imageUploader->delete($path);
-
-            throw $throwable;
-        }
+        return ServiceResult::success($driver);
     }
 
     public function show(int $companyId, int $id): ServiceResult
@@ -52,35 +54,29 @@ class DriverService
     public function update(int $companyId, int $id, array $data): ServiceResult
     {
         $driver = $this->driverRepository->findOrFail($companyId, $id);
-        $currentPath = $driver->profile_image_path;
         $image = $this->pullProfileImage($data);
-        $removeProfileImage = $data['remove_profile_image'] ?? $data['is_profile_delete'] ?? false;
-        unset($data['remove_profile_image'], $data['is_profile_delete']);
-
-        $newPath = null;
+        $removeProfileImage = $this->pullProfileImageRemoval($data);
 
         if ($image !== null) {
-            $newPath = $this->imageUploader->upload($image, $companyId, 'drivers');
-            $data['profile_image_path'] = $newPath;
-        } elseif ($removeProfileImage) {
-            $data['profile_image_path'] = null;
-        }
-
-        try {
-            $result = ServiceResult::success(
-                $this->driverRepository->update($companyId, $id, $data),
+            return $this->updateWithProfileImage(
+                $companyId,
+                $id,
+                $data,
+                $image,
+                $driver->profile_image_path,
             );
-        } catch (Throwable) {
-            $this->imageUploader->delete($newPath);
-
-            return ServiceResult::error(__('public.internal_error', ['attribute' => 'خطایی هنگام آپلود']));
         }
 
-        if (array_key_exists('profile_image_path', $data) && $currentPath !== $data['profile_image_path']) {
-            $this->imageUploader->delete($currentPath);
+        if ($removeProfileImage) {
+            return $this->updateWithoutProfileImage(
+                $companyId,
+                $id,
+                $data,
+                $driver->profile_image_path,
+            );
         }
 
-        return $result;
+        return ServiceResult::success($this->driverRepository->update($companyId, $id, $data));
     }
 
     public function delete(int $companyId, int $id): ServiceResult
@@ -114,5 +110,53 @@ class DriverService
         unset($data['profile_image']);
 
         return $image instanceof UploadedFile ? $image : null;
+    }
+
+    private function pullProfileImageRemoval(array &$data): bool
+    {
+        $shouldRemove = (bool) ($data['remove_profile_image'] ?? false)
+            || (bool) ($data['is_profile_delete'] ?? false);
+
+        unset($data['remove_profile_image'], $data['is_profile_delete']);
+
+        return $shouldRemove;
+    }
+
+    private function updateWithProfileImage(
+        int $companyId,
+        int $id,
+        array $data,
+        UploadedFile $image,
+        ?string $currentPath,
+    ): ServiceResult {
+        $driver = $this->imageUploader->uploadWithRollback(
+            $image,
+            $companyId,
+            self::PROFILE_IMAGE_COLLECTION,
+            fn (string $path) => $this->driverRepository->update($companyId, $id, [
+                ...$data,
+                'profile_image_path' => $path,
+            ]),
+        );
+
+        $this->imageUploader->delete($currentPath);
+
+        return ServiceResult::success($driver);
+    }
+
+    private function updateWithoutProfileImage(
+        int $companyId,
+        int $id,
+        array $data,
+        ?string $currentPath,
+    ): ServiceResult {
+        $driver = $this->driverRepository->update($companyId, $id, [
+            ...$data,
+            'profile_image_path' => null,
+        ]);
+
+        $this->imageUploader->delete($currentPath);
+
+        return ServiceResult::success($driver);
     }
 }

@@ -32,7 +32,7 @@ class UpdateDriverRequest extends BaseRequest
             'father_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'license_number' => ['sometimes', 'nullable', 'string', 'max:255'],
             'license_type' => ['sometimes', 'required', 'integer', Rule::exists(DriverLicenseType::class, 'id')],
-            'license_expiry_date' => ['sometimes', 'nullable'],
+            'license_expiry_date' => ['sometimes', 'nullable', 'date'],
             'phone_number_1' => ['sometimes', 'nullable', 'string', 'max:20'],
             'phone_number_2' => ['sometimes', 'nullable', 'string', 'max:20'],
             'phone_number_3' => ['sometimes', 'nullable', 'string', 'max:20'],

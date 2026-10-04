@@ -2,11 +2,13 @@
 
 namespace App\Services\Uploads;
 
+use Closure;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use InvalidArgumentException;
 use RuntimeException;
+use Throwable;
 
 class CompanyImageUploader
 {
@@ -33,6 +35,29 @@ class CompanyImageUploader
         }
 
         return $path;
+    }
+
+    /**
+     * @template TResult
+     *
+     * @param  Closure(string): TResult  $operation
+     * @return TResult
+     */
+    public function uploadWithRollback(
+        UploadedFile $image,
+        int $companyId,
+        string $collection,
+        Closure $operation,
+    ): mixed {
+        $path = $this->upload($image, $companyId, $collection);
+
+        try {
+            return $operation($path);
+        } catch (Throwable $throwable) {
+            $this->delete($path);
+
+            throw $throwable;
+        }
     }
 
     public function replace(

@@ -28,7 +28,7 @@ class StoreDriverRequest extends BaseRequest
             'father_name' => ['nullable', 'string', 'max:255'],
             'license_number' => ['nullable', 'string', 'max:255'],
             'license_type' => ['required', 'integer', Rule::exists(DriverLicenseType::class, 'id')],
-            'license_expiry_date' => ['nullable'],
+            'license_expiry_date' => ['nullable', 'date'],
             'phone_number_1' => ['nullable', 'string', 'max:20'],
             'phone_number_2' => ['nullable', 'string', 'max:20'],
             'phone_number_3' => ['nullable', 'string', 'max:20'],
