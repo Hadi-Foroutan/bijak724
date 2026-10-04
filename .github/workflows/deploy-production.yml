@@ -32,12 +32,6 @@ jobs:
       - name: Install PHP dependencies
         run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-      - name: Install frontend dependencies
-        run: npm ci
-
-      - name: Build frontend assets
-        run: npm run build
-
       - name: Configure deployment SSH key
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
