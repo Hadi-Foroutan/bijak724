@@ -325,7 +325,7 @@ return [
         'father_name' => 'نام پدر',
         'license_number' => 'شماره گواهینامه',
         'license_expire_date' => 'اعتبار گواهینامه',
-        'Y-m-d' => 'فرمت تاریخ',
+        'organization_code' => 'کد سازمانی',
     ],
 
 ];

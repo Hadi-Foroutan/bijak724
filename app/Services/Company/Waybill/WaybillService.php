@@ -143,15 +143,8 @@ class WaybillService
                 $data = $this->financialCalculator->calculate($companyId, $data);
 
                 if ($status === WaybillStatus::Canceled) {
-                    ServiceResult::error(
-                        __('public.waybill_edit_forbidden'),
-                        Response::HTTP_UNPROCESSABLE_ENTITY,
-                    );
-                }
-
-                if ($status === WaybillStatus::Completed) {
-                    ServiceResult::error(
-                        __('public.waybill_edit_forbidden'),
+                    return ServiceResult::error(
+                        __('public.waybill_direct_cancel_forbidden'),
                         Response::HTTP_UNPROCESSABLE_ENTITY,
                     );
                 }

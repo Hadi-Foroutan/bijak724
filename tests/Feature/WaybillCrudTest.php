@@ -817,6 +817,21 @@ test('an incomplete waybill never stores issuance fields', function () {
     ]);
 });
 
+test('an incomplete waybill can be completed through update', function () {
+    $waybillId = $this->postJson('/api/user/waybills', [
+        'status' => WaybillStatus::Incomplete->value,
+    ])->assertCreated()->json('data.id');
+
+    $this->putJson("/api/user/waybills/{$waybillId}", completeWaybillPayload($this))
+        ->assertSuccessful()
+        ->assertJsonPath('data.status', WaybillStatus::Completed->value)
+        ->assertJsonPath('data.bijak_number', '1001')
+        ->assertJsonPath('data.serial_number', 'SERIAL-1')
+        ->assertJsonPath('data.referral_number', '1')
+        ->assertJsonPath('data.referral_serial', 'SERIAL-1')
+        ->assertJsonPath('data.issued_at', fn (mixed $issuedAt): bool => $issuedAt !== null);
+});
+
 test('an incomplete waybill accepts null values without requiring any other field', function () {
     $this->postJson('/api/user/waybills', [
         'status' => WaybillStatus::Incomplete->value,
