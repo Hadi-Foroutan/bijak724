@@ -29,3 +29,15 @@ test('it refreshes full name when user names change', function () {
 
     expect($user->refresh()->full_name)->toBe('Updated User');
 });
+
+test('it refreshes user full name on every update', function () {
+    $user = User::factory()->create([
+        'first_name' => 'Current',
+        'last_name' => 'Name',
+    ]);
+
+    User::query()->whereKey($user->id)->update(['full_name' => 'Stale Name']);
+    $user->refresh()->update(['description' => 'Updated description']);
+
+    expect($user->refresh()->full_name)->toBe('Current Name');
+});

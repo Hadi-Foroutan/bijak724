@@ -122,6 +122,19 @@ test('it updates and deletes a driver', function () {
     ]);
 });
 
+test('it refreshes driver full name on every update', function () {
+    $driverRepository = app(DriverRepositoryInterface::class);
+    $driver = $driverRepository->create($this->company->id, $this->driverPayload);
+
+    $driver->newQuery()->whereKey($driver->id)->update(['full_name' => 'نام قدیمی']);
+
+    $updatedDriver = $driverRepository->update($this->company->id, $driver->id, [
+        'description' => 'ویرایش بدون تغییر نام',
+    ]);
+
+    expect($updatedDriver->full_name)->toBe('علی احمدی');
+});
+
 test('it validates driver data and company scoped national code uniqueness', function () {
     app(DriverRepositoryInterface::class)->create(
         $this->company->id,

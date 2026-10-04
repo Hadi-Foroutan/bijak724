@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Enums\RoleEnum;
 use App\Enums\UserStatusEnum;
 use App\Traits\AdvancedSearch;
+use App\Traits\HasFullName;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -16,7 +17,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use AdvancedSearch, HasApiTokens, HasFactory, SoftDeletes;
+    use AdvancedSearch, HasApiTokens, HasFactory, HasFullName, SoftDeletes;
 
     protected $fillable = [
         'company_id',
@@ -73,23 +74,6 @@ class User extends Authenticatable
         'updated_at',
         'deleted_at',
     ];
-
-    protected static function booted(): void
-    {
-        static::saving(function ($user) {
-            if ($user->isDirty(['first_name', 'last_name'])) {
-                $user->full_name = $user->makeFullName();
-            }
-        });
-    }
-
-    private function makeFullName(): ?string
-    {
-        $first = trim($this->first_name ?? '');
-        $last = trim($this->last_name ?? '');
-
-        return trim($first.' '.$last) ?: null;
-    }
 
     protected function casts(): array
     {

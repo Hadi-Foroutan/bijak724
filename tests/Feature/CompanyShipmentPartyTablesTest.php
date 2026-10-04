@@ -46,6 +46,7 @@ test('company gets shipment parties and their address tables', function () {
             'title',
             'first_name',
             'last_name',
+            'full_name',
             'mobile',
             'landline',
             'intermediary_code',
@@ -63,6 +64,25 @@ test('company gets shipment parties and their address tables', function () {
         ]))->toBeTrue()
         ->and(config('company_tables.sender_receivers'))->toBeNull()
         ->and(config('company_tables.addresses'))->toBeNull();
+});
+
+test('shipment party refreshes full name on every update', function () {
+    $partyRepository = app(ShipmentPartyRepositoryInterface::class);
+    $party = $partyRepository->create($this->company->id, [
+        'national_identifier' => '10000000001',
+        'is_sender' => true,
+        'is_receiver' => false,
+        'first_name' => 'علی',
+        'last_name' => 'احمدی',
+    ]);
+
+    $party->newQuery()->whereKey($party->id)->update(['full_name' => 'نام قدیمی']);
+
+    $updatedParty = $partyRepository->update($this->company->id, $party->id, [
+        'mobile' => '09120000000',
+    ]);
+
+    expect($updatedParty->full_name)->toBe('علی احمدی');
 });
 
 test('shipment party accepts multiple addresses and cascades them on delete', function () {

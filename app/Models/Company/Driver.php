@@ -4,30 +4,21 @@ namespace App\Models\Company;
 
 use App\Models\DriverLicenseType;
 use App\Models\DynamicModel;
+use App\Traits\HasFullName;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Str;
 
 class Driver extends DynamicModel
 {
+    use HasFullName;
+
     protected string $companyTableKey = 'drivers';
 
     protected array $defaultRelations = [
         'licenseType',
         'defaultAccount',
     ];
-
-    protected static function booted(): void
-    {
-        static::saving(function (Driver $driver): void {
-            if ($driver->first_name === null || $driver->last_name === null) {
-                return;
-            }
-
-            $driver->full_name = Str::squish("{$driver->first_name} {$driver->last_name}");
-        });
-    }
 
     public function licenseType(): BelongsTo
     {

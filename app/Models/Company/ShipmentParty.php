@@ -3,25 +3,18 @@
 namespace App\Models\Company;
 
 use App\Models\DynamicModel;
+use App\Traits\HasFullName;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Str;
 
 class ShipmentParty extends DynamicModel
 {
+    use HasFullName;
+
     protected string $companyTableKey = 'shipment_parties';
 
     protected array $defaultRelations = [
         'addresses.city',
     ];
-
-    protected static function booted(): void
-    {
-        static::saving(function (ShipmentParty $shipmentParty): void {
-            $fullName = Str::squish("{$shipmentParty->first_name} {$shipmentParty->last_name}");
-
-            $shipmentParty->full_name = $fullName === '' ? null : $fullName;
-        });
-    }
 
     public function addresses(): HasMany
     {
