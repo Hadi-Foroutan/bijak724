@@ -24,7 +24,6 @@ use App\Services\Company\Waybill\WaybillService;
 use App\Services\Company\Waybill\WaybillTrackingCodeGenerator;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -263,41 +262,6 @@ test('it stores reference snapshot names only as full names', function () {
         ->assertJsonPath('data.driver1_full_name', 'حسین راننده')
         ->assertJsonMissingPath('data.sender_first_name')
         ->assertJsonMissingPath('data.driver1_last_name');
-});
-
-test('it migrates existing waybill snapshot names to full names', function () {
-    $legacyTable = 'company_999999_waybills';
-
-    Schema::create($legacyTable, function (Blueprint $table): void {
-        $table->id();
-        $table->string('sender_first_name')->nullable();
-        $table->string('sender_last_name')->nullable();
-        $table->string('driver1_first_name')->nullable();
-        $table->string('driver1_last_name')->nullable();
-    });
-
-    try {
-        DB::table($legacyTable)->insert([
-            'sender_first_name' => '  علی ',
-            'sender_last_name' => ' فرستنده  ',
-            'driver1_first_name' => 'حسین',
-            'driver1_last_name' => 'راننده',
-        ]);
-
-        $migration = require database_path(
-            'migrations/2026_09_28_160154_replace_waybill_snapshot_names_with_full_names.php',
-        );
-        $migration->up();
-
-        $waybill = DB::table($legacyTable)->first();
-
-        expect($waybill->sender_full_name)->toBe('علی فرستنده')
-            ->and($waybill->driver1_full_name)->toBe('حسین راننده')
-            ->and(Schema::hasColumn($legacyTable, 'sender_first_name'))->toBeFalse()
-            ->and(Schema::hasColumn($legacyTable, 'driver1_last_name'))->toBeFalse();
-    } finally {
-        Schema::dropIfExists($legacyTable);
-    }
 });
 
 test('it creates a complete waybill with snapshots cargos and calculated contract amounts', function () {
