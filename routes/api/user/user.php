@@ -78,8 +78,6 @@ Route::match(['get', 'post'], 'bijak-numbers/inquiry', [BijakNumberController::c
 Route::apiResource('bijak-numbers', BijakNumberController::class)
     ->parameters(['bijak-numbers' => 'bijakNumber']);
 
-Route::match(['get', 'post'], 'referral-numbers/inquiry', [ReferralNumberController::class, 'preview'])
-    ->name('referral-numbers.preview');
 Route::post('referral-numbers/inquiry', [ReferralNumberController::class, 'inquiry'])
     ->name('referral-numbers.inquiry');
 Route::apiResource('referral-numbers', ReferralNumberController::class)
