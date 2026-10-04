@@ -150,7 +150,7 @@ class StoreWaybillRequest extends BaseRequest
                 'string',
                 'max:255',
             ],
-            'issued_at' => [$requiredWhenCompleted, 'nullable', 'date_format:Y-m-d H:i:s'],
+            'issued_at' => [$requiredWhenCompleted, 'nullable','date'],
             'liability_insurance' => [
                 $requiredWhenCompleted,
                 'nullable',
