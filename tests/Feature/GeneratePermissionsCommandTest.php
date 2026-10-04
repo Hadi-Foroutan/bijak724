@@ -225,3 +225,44 @@ test('it resets and regenerates route permissions with groups and role links', f
     expect($companyManager->permissions()->count())
         ->toBe($companyManagerRole->fresh()->permissions()->count());
 });
+
+test('it skips regeneration when stored permissions already match routes', function () {
+    $this->travelTo(now()->startOfSecond());
+
+    $this->artisan('generate-permissions')->assertSuccessful();
+
+    $permission = Permission::query()->orderBy('id')->firstOrFail();
+    $permissionId = $permission->id;
+    $createdAt = $permission->created_at->toDateTimeString();
+    $permissionCount = Permission::query()->count();
+
+    $this->travel(1)->day();
+
+    $this->artisan('generate-permissions')
+        ->expectsOutputToContain('Permissions already match the application routes. Skipping regeneration.')
+        ->assertSuccessful();
+
+    $permission->refresh();
+
+    expect($permission->id)->toBe($permissionId)
+        ->and($permission->created_at->toDateTimeString())->toBe($createdAt)
+        ->and(Permission::query()->count())->toBe($permissionCount);
+});
+
+test('it regenerates permissions when generated permission attributes change', function () {
+    $this->artisan('generate-permissions')->assertSuccessful();
+
+    $permission = Permission::query()->orderBy('id')->firstOrFail();
+    $expectedDisplayName = $permission->display_name;
+
+    $permission->update([
+        'display_name' => 'Changed permission name',
+    ]);
+
+    $this->artisan('generate-permissions')
+        ->expectsOutputToContain('Permission changes detected. Start syncing permissions...')
+        ->assertSuccessful();
+
+    expect(Permission::query()->where('name', $permission->name)->value('display_name'))
+        ->toBe($expectedDisplayName);
+});

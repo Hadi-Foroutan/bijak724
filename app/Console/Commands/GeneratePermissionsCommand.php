@@ -18,7 +18,8 @@ use Illuminate\Support\Str;
 
 class GeneratePermissionsCommand extends Command
 {
-    protected $signature = 'generate-permissions';
+    protected $signature = 'generate-permissions
+                            {--force : Regenerate permissions even when they already match the routes}';
 
     protected $description = 'Sync permissions with routes and assign them to roles and users';
 
@@ -34,16 +35,26 @@ class GeneratePermissionsCommand extends Command
 
     public function handle(): int
     {
-        $this->info('Start syncing permissions...');
-
         $routeNames = $this->routeNames();
+        $expectedPermissions = $this->expectedPermissions($routeNames);
+
+        if (! $this->option('force') && $this->permissionsAreCurrent($expectedPermissions)) {
+            $this->info('Permissions already match the application routes. Skipping regeneration.');
+
+            return self::SUCCESS;
+        }
+
+        $this->info($this->option('force')
+            ? 'Forced permission regeneration started...'
+            : 'Permission changes detected. Start syncing permissions...');
+
         $existingUserPermissions = $this->existingUserPermissionNames();
 
         $this->warn('Resetting permission tables...');
         $this->resetPermissionTables();
         $this->info('Tables cleared and IDs reset.');
 
-        $permissions = $this->createPermissions($routeNames);
+        $permissions = $this->createPermissions($expectedPermissions);
         $this->info("Created {$permissions->count()} permissions from routes.");
 
         $groups = $this->createPermissionGroups($permissions);
@@ -79,6 +90,52 @@ class GeneratePermissionsCommand extends Command
     {
         return collect($this->excludedRoutes)
             ->contains(fn (string $pattern): bool => Str::is($pattern, $name));
+    }
+
+    /**
+     * @param  Collection<int, string>  $routeNames
+     * @return Collection<int, array{name: string, display_name: string, description: string, is_default: bool}>
+     */
+    private function expectedPermissions(Collection $routeNames): Collection
+    {
+        return $routeNames->map(function (string $name): array {
+            $displayName = $this->permissionDisplayName($name);
+
+            return [
+                'name' => $name,
+                'display_name' => $displayName,
+                'description' => $displayName,
+                'is_default' => $this->isDefaultPermission($name),
+            ];
+        });
+    }
+
+    /**
+     * @param  Collection<int, array{name: string, display_name: string, description: string, is_default: bool}>  $expectedPermissions
+     */
+    private function permissionsAreCurrent(Collection $expectedPermissions): bool
+    {
+        $storedPermissions = Permission::query()
+            ->withTrashed()
+            ->orderBy('name')
+            ->get(['name', 'display_name', 'description', 'is_default', 'deleted_at'])
+            ->map(fn (Permission $permission): array => [
+                'name' => $permission->name,
+                'display_name' => $permission->display_name,
+                'description' => $permission->description,
+                'is_default' => (bool) $permission->is_default,
+                'is_deleted' => $permission->trashed(),
+            ]);
+
+        $expected = $expectedPermissions
+            ->sortBy('name')
+            ->values()
+            ->map(fn (array $permission): array => [
+                ...$permission,
+                'is_deleted' => false,
+            ]);
+
+        return $storedPermissions->values()->all() === $expected->all();
     }
 
     private function resetPermissionTables(): void
@@ -124,22 +181,15 @@ class GeneratePermissionsCommand extends Command
     }
 
     /**
-     * @param  Collection<int, string>  $routeNames
+     * @param  Collection<int, array{name: string, display_name: string, description: string, is_default: bool}>  $expectedPermissions
      * @return Collection<string, Permission>
      */
-    private function createPermissions(Collection $routeNames): Collection
+    private function createPermissions(Collection $expectedPermissions): Collection
     {
-        return $routeNames->mapWithKeys(function (string $name): array {
-            $displayName = $this->permissionDisplayName($name);
+        return $expectedPermissions->mapWithKeys(function (array $attributes): array {
+            $permission = Permission::query()->create($attributes);
 
-            $permission = Permission::query()->create([
-                'name' => $name,
-                'display_name' => $displayName,
-                'description' => $displayName,
-                'is_default' => $this->isDefaultPermission($name),
-            ]);
-
-            return [$name => $permission];
+            return [$attributes['name'] => $permission];
         });
     }
 
