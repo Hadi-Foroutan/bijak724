@@ -14,5 +14,5 @@ interface NotificationRepositoryInterface
     public function findOrFail(int $id): Notification;
 
     /** @param array<string, mixed> $data */
-    public function create(int $senderId, array $data): Notification;
+    public function create(array $data): Notification;
 }

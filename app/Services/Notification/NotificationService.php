@@ -24,7 +24,8 @@ class NotificationService
     public function store(int $senderId, array $data): ServiceResult
     {
         $data['should_remove_previous'] ??= false;
-        $notification = $this->notificationRepository->create($senderId, $data);
+        $data['sender_id'] = $senderId;
+        $notification = $this->notificationRepository->create($data);
 
         NotificationSent::dispatch($notification);
 

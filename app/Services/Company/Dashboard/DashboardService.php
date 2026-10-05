@@ -54,7 +54,7 @@ class DashboardService
                                 return [
                                     'date' => $date->toDateString(),
                                     'label' => $date->locale('fa')->translatedFormat('j F'),
-                                    'count' => (int) $counts->get($date->toDateString(), 0),
+                                    'count' => $counts->get($date->toDateString(), 0),
                                 ];
                             })
                             ->all(),

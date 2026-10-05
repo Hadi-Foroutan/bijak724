@@ -22,10 +22,10 @@ class NotificationRepository implements NotificationRepositoryInterface
         return Notification::query()->with('sender')->findOrFail($id);
     }
 
-    public function create(int $senderId, array $data): Notification
+    public function create(array $data): Notification
     {
         return Notification::query()
-            ->create([...$data, 'sender_id' => $senderId])
+            ->create($data)
             ->load('sender');
     }
 }
