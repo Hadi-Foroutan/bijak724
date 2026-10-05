@@ -8,6 +8,7 @@ use Database\Factories\TransportContractFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TransportContract extends Model
@@ -15,7 +16,11 @@ class TransportContract extends Model
     /** @use HasFactory<TransportContractFactory> */
     use AdvancedSearch, HasFactory;
 
-    protected array $searchableFields = ['company_id', 'title', 'contract_number', 'contract_date', 'customer_name', 'status', 'is_default', 'default_owned', 'default_rental', 'default_free', 'default_unknown'];
+    protected $attributes = [
+        'is_public' => true,
+    ];
+
+    protected array $searchableFields = ['company_id', 'title', 'contract_number', 'contract_date', 'customer_name', 'status', 'is_public', 'is_default', 'default_owned', 'default_rental', 'default_free', 'default_unknown'];
 
     protected array $globalSearchFields = ['title', 'contract_number', 'customer_name', 'description'];
 
@@ -25,6 +30,7 @@ class TransportContract extends Model
     {
         return [
             'contract_date' => 'date', 'status' => StatusEnum::class,
+            'is_public' => 'boolean',
             'is_default' => 'boolean',
             'default_owned' => 'boolean', 'default_rental' => 'boolean', 'default_free' => 'boolean',
             'default_unknown' => 'boolean',
@@ -39,5 +45,10 @@ class TransportContract extends Model
     public function items(): HasMany
     {
         return $this->hasMany(TransportContractItem::class)->orderBy('id');
+    }
+
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class)->withTimestamps();
     }
 }

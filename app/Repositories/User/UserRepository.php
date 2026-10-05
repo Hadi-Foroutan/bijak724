@@ -2,11 +2,13 @@
 
 namespace App\Repositories\User;
 
+use App\Enums\RoleEnum;
 use App\Interfaces\UserInterface;
 use App\Models\User;
 use App\Services\Company\CompanyHierarchyService;
 use App\Services\TreeBuilder;
 use Closure;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 class UserRepository implements UserInterface
@@ -87,6 +89,28 @@ class UserRepository implements UserInterface
             ->whereIn('company_id', $this->companyHierarchyService->visibleUserCompanyIds($companyId))
             ->with(['roles', 'parent'])
             ->findOrFail($userId);
+    }
+
+    public function eligibleTransportContractUserIds(int $companyId, array $userIds): array
+    {
+        if ($userIds === []) {
+            return [];
+        }
+
+        return User::query()
+            ->where('company_id', $companyId)
+            ->whereKey($userIds)
+            ->whereDoesntHave(
+                'roles',
+                fn (Builder $query): Builder => $query->where(
+                    'name',
+                    RoleEnum::COMPANY_MANAGER->value,
+                ),
+            )
+            ->orderBy('id')
+            ->pluck('id')
+            ->map(fn (mixed $userId): int => (int) $userId)
+            ->all();
     }
 
     private function usersForTree(array $params, ?Closure $queryCallback = null): Collection

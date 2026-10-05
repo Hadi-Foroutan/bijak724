@@ -1,7 +1,9 @@
 <?php
 
+use App\Enums\RoleEnum;
 use App\Http\Middleware\CheckPermission;
 use App\Models\Company;
+use App\Models\Role;
 use App\Models\TransportContract;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -213,6 +215,112 @@ test('transport contracts cannot be accessed by another company', function () {
     $this->getJson("/api/user/transport-contracts/{$otherContract->id}")->assertNotFound();
     $this->patchJson("/api/user/transport-contracts/{$otherContract->id}", ['title' => 'غیرمجاز'])->assertNotFound();
     $this->deleteJson("/api/user/transport-contracts/{$otherContract->id}")->assertNotFound();
+});
+
+test('transport contracts can be limited to selected users while managers always have access', function () {
+    $assignedUser = User::factory()->create(['company_id' => $this->company->id]);
+    $unassignedUser = User::factory()->create(['company_id' => $this->company->id]);
+    $manager = User::factory()->create(['company_id' => $this->company->id]);
+    $otherCompanyUser = User::factory()->create();
+    $managerRole = Role::query()->create([
+        'name' => RoleEnum::COMPANY_MANAGER->value,
+        'display_name' => 'مدیر شرکت',
+    ]);
+    $manager->roles()->attach($managerRole);
+
+    $contractId = $this->postJson(
+        '/api/user/transport-contracts',
+        transportContractPayload('TC-ACCESS'),
+    )
+        ->assertCreated()
+        ->assertJsonPath('data.is_public', true)
+        ->json('data.id');
+
+    $useCompanyToken = function (User $user): void {
+        app('auth')->forgetGuards();
+        $this->withToken($user->createToken(
+            'transport-contract-access',
+            ['company-user', "company:{$this->company->id}"],
+            now()->addMinutes(30),
+        )->plainTextToken);
+    };
+
+    $useCompanyToken($unassignedUser);
+    $this->getJson('/api/user/transport-contracts')
+        ->assertSuccessful()
+        ->assertJsonFragment(['id' => $contractId]);
+
+    $useCompanyToken($manager);
+    $this->putJson("/api/user/transport-contracts/{$contractId}/users", [
+        'user_ids' => [$manager->id],
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('user_ids');
+    $this->putJson("/api/user/transport-contracts/{$contractId}/users", [
+        'user_ids' => [$otherCompanyUser->id],
+    ])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('user_ids');
+    $this->putJson("/api/user/transport-contracts/{$contractId}/users", [
+        'user_ids' => [$assignedUser->id],
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.transport_contract_id', $contractId)
+        ->assertJsonPath('data.user_ids.0', $assignedUser->id)
+        ->assertJsonPath('data.is_public', false);
+
+    $this->assertDatabaseHas('transport_contract_user', [
+        'transport_contract_id' => $contractId,
+        'user_id' => $assignedUser->id,
+    ]);
+    $this->assertDatabaseHas('transport_contracts', [
+        'id' => $contractId,
+        'is_public' => false,
+    ]);
+
+    $useCompanyToken($assignedUser);
+    $this->getJson('/api/user/transport-contracts')
+        ->assertSuccessful()
+        ->assertJsonFragment(['id' => $contractId]);
+    $this->getJson('/api/user/waybills/options')
+        ->assertSuccessful()
+        ->assertJsonFragment(['id' => $contractId]);
+
+    $useCompanyToken($unassignedUser);
+    $contracts = $this->getJson('/api/user/transport-contracts')->assertSuccessful();
+    expect(collect($contracts->json('data'))->pluck('id'))->not->toContain($contractId);
+    $this->getJson("/api/user/transport-contracts/{$contractId}")->assertNotFound();
+    $this->putJson("/api/user/transport-contracts/{$contractId}/users", [
+        'user_ids' => [$unassignedUser->id],
+    ])->assertForbidden();
+    $this->postJson('/api/user/waybills', [
+        'status' => 'incomplete',
+        'transport_contract_id' => $contractId,
+    ])->assertJsonValidationErrors('transport_contract_id');
+    $waybillOptions = $this->getJson('/api/user/waybills/options')->assertSuccessful();
+    expect(collect($waybillOptions->json('data.transport_contracts'))->pluck('id'))
+        ->not->toContain($contractId);
+
+    $useCompanyToken($manager);
+    $this->getJson("/api/user/transport-contracts/{$contractId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.id', $contractId)
+        ->assertJsonPath('data.user_ids.0', $assignedUser->id);
+    $this->putJson("/api/user/transport-contracts/{$contractId}/users", [
+        'user_ids' => [],
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.user_ids', [])
+        ->assertJsonPath('data.is_public', true);
+    $this->assertDatabaseHas('transport_contracts', [
+        'id' => $contractId,
+        'is_public' => true,
+    ]);
+
+    $useCompanyToken($unassignedUser);
+    $this->getJson("/api/user/transport-contracts/{$contractId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.id', $contractId);
 });
 
 /** @return array<string, mixed> */

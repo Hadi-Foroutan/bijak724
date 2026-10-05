@@ -74,7 +74,11 @@ class StoreWaybillRequest extends BaseRequest
                 $requiredWhenCompleted,
                 $requiredWhenReferral,
             ),
-            ...$this->financialRules($transportContractRepository, $companyId, $requiredWhenCompleted),
+            ...$this->financialRules(
+                $transportContractRepository,
+                $companyId,
+                $requiredWhenCompleted,
+            ),
             ...$this->cargoRules(
                 $productOwnerRepository,
                 $companyId,
@@ -148,7 +152,7 @@ class StoreWaybillRequest extends BaseRequest
                 'string',
                 'max:255',
             ],
-            'issued_at' => [$requiredWhenCompleted, 'nullable','date'],
+            'issued_at' => [$requiredWhenCompleted, 'nullable', 'date'],
             'liability_insurance' => [
                 $requiredWhenCompleted,
                 'nullable',

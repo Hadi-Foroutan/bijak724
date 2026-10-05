@@ -6,6 +6,7 @@ use App\Interfaces\Company\TransportContractRepositoryInterface;
 use App\Models\Company;
 use App\Models\TransportContract;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Exists;
@@ -17,12 +18,23 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
         Company::query()->whereKey($companyId)->lockForUpdate()->firstOrFail();
     }
 
-    public function search(int $companyId, array $filters): Collection|LengthAwarePaginator
-    {
-        return TransportContract::searchRecords(
-            $filters,
-            fn ($query) => $query->where('company_id', $companyId)->with('items'),
-        );
+    public function search(
+        int $companyId,
+        array $filters,
+        ?int $userId = null,
+        bool $canViewAll = true,
+    ): Collection|LengthAwarePaginator {
+        return TransportContract::searchRecords($filters, function (Builder $query) use (
+            $companyId,
+            $userId,
+            $canViewAll,
+        ): void {
+            $this->applyVisibility(
+                $query->where('company_id', $companyId),
+                $userId,
+                $canViewAll,
+            )->with('items');
+        });
     }
 
     public function findOrFail(int $companyId, int $id): TransportContract
@@ -33,13 +45,47 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
             ->findOrFail($id);
     }
 
-    public function options(int $companyId): Collection
-    {
-        return TransportContract::query()
-            ->where('company_id', $companyId)
+    public function findAccessibleOrFail(
+        int $companyId,
+        int $id,
+        int $userId,
+        bool $canViewAll,
+    ): TransportContract {
+        return $this->applyVisibility(
+            TransportContract::query()->where('company_id', $companyId),
+            $userId,
+            $canViewAll,
+        )
+            ->with('items')
+            ->findOrFail($id);
+    }
+
+    public function options(
+        int $companyId,
+        ?int $userId = null,
+        bool $canViewAll = true,
+    ): Collection {
+        return $this->applyVisibility(
+            TransportContract::query()->where('company_id', $companyId),
+            $userId,
+            $canViewAll,
+        )
             ->with('items')
             ->orderBy('title')
             ->get();
+    }
+
+    public function accessibleExists(
+        int $companyId,
+        int $id,
+        int $userId,
+        bool $canViewAll,
+    ): bool {
+        return $this->applyVisibility(
+            TransportContract::query()->where('company_id', $companyId),
+            $userId,
+            $canViewAll,
+        )->whereKey($id)->exists();
     }
 
     public function existsRule(int $companyId): Exists
@@ -86,8 +132,39 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
         }
     }
 
+    public function syncUsers(TransportContract $transportContract, array $userIds): array
+    {
+        $transportContract->users()->sync($userIds);
+        $transportContract->forceFill(['is_public' => $userIds === []])->save();
+
+        return $transportContract->users()
+            ->orderBy('users.id')
+            ->pluck('users.id')
+            ->map(fn (mixed $userId): int => (int) $userId)
+            ->all();
+    }
+
     public function delete(TransportContract $transportContract): void
     {
         $transportContract->delete();
+    }
+
+    private function applyVisibility(
+        Builder $query,
+        ?int $userId,
+        bool $canViewAll,
+    ): Builder {
+        if ($canViewAll) {
+            return $query;
+        }
+
+        return $query->where(function (Builder $visibilityQuery) use ($userId): void {
+            $visibilityQuery
+                ->where('is_public', true)
+                ->orWhereHas(
+                    'users',
+                    fn (Builder $userQuery): Builder => $userQuery->whereKey($userId ?? 0),
+                );
+        });
     }
 }

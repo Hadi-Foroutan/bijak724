@@ -113,6 +113,11 @@ class User extends Authenticatable
         )->withTimestamps();
     }
 
+    public function transportContracts(): BelongsToMany
+    {
+        return $this->belongsToMany(TransportContract::class)->withTimestamps();
+    }
+
     public function hasAnyRole(): bool
     {
         return $this->roles()->get()->isNotEmpty();

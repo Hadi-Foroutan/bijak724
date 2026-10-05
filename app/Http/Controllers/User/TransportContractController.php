@@ -7,8 +7,10 @@ use App\Enums\TransportContractItemType;
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TransportContract\StoreTransportContractRequest;
+use App\Http\Requests\TransportContract\SyncTransportContractUsersRequest;
 use App\Http\Requests\TransportContract\UpdateTransportContractRequest;
 use App\Http\Resources\TransportContractResource;
+use App\Models\User;
 use App\Services\Company\TransportContract\TransportContractService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -49,7 +51,13 @@ class TransportContractController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $result = $this->transportContractService->index($this->companyId($request), $request->all());
+        /** @var User $user */
+        $user = $request->user();
+        $result = $this->transportContractService->index(
+            $this->companyId($request),
+            $user,
+            $request->all(),
+        );
 
         return ResponseHandler::success(
             $this->resourceCollection($result->data, TransportContractResource::class, $request),
@@ -69,16 +77,25 @@ class TransportContractController extends Controller
 
     public function show(Request $request, int $transportContract): JsonResponse
     {
-        $result = $this->transportContractService->show($this->companyId($request), $transportContract);
+        /** @var User $user */
+        $user = $request->user();
+        $result = $this->transportContractService->show(
+            $this->companyId($request),
+            $transportContract,
+            $user,
+        );
 
         return ResponseHandler::success(TransportContractResource::make($result->data)->resolve($request));
     }
 
     public function update(UpdateTransportContractRequest $request, int $transportContract): JsonResponse
     {
+        /** @var User $user */
+        $user = $request->user();
         $result = $this->transportContractService->update(
             $this->companyId($request),
             $transportContract,
+            $user,
             $request->validated(),
         );
 
@@ -90,8 +107,30 @@ class TransportContractController extends Controller
 
     public function destroy(Request $request, int $transportContract): JsonResponse
     {
-        $result = $this->transportContractService->destroy($this->companyId($request), $transportContract);
+        /** @var User $user */
+        $user = $request->user();
+        $result = $this->transportContractService->destroy(
+            $this->companyId($request),
+            $transportContract,
+            $user,
+        );
 
         return ResponseHandler::success([], $result->data);
+    }
+
+    public function syncUsers(
+        SyncTransportContractUsersRequest $request,
+        int $transportContract,
+    ): JsonResponse {
+        $result = $this->transportContractService->syncUsers(
+            $this->companyId($request),
+            $transportContract,
+            $request->validated('user_ids'),
+        );
+
+        return ResponseHandler::success(
+            $result->data,
+            __('public.update_success', ['attribute' => 'کاربران قرارداد حمل']),
+        );
     }
 }

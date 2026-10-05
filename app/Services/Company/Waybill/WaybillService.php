@@ -9,11 +9,14 @@ use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Interfaces\WaybillRepositoryInterface as SharedWaybillRepositoryInterface;
 use App\Models\Company\Waybill;
 use App\Models\TransportContract;
+use App\Models\User;
 use App\Services\Company\BijakNumber\BijakNumberService;
 use App\Services\Company\ReferralNumber\ReferralNumberService;
+use App\Services\Company\TransportContract\TransportContractAccessService;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
 class WaybillService
@@ -41,6 +44,7 @@ class WaybillService
         protected ReferralNumberService $referralNumberService,
         protected TransportContractRepositoryInterface $transportContractRepository,
         protected SharedWaybillRepositoryInterface $sharedWaybillRepository,
+        protected TransportContractAccessService $transportContractAccessService,
     ) {}
 
     public function index(int $companyId, array $params): ServiceResult
@@ -53,9 +57,13 @@ class WaybillService
         return ServiceResult::success($this->waybillRepository->findOrFail($companyId, $id));
     }
 
-    public function options(int $companyId): ServiceResult
+    public function options(int $companyId, User $user): ServiceResult
     {
-        $contracts = $this->transportContractRepository->options($companyId);
+        $contracts = $this->transportContractRepository->options(
+            $companyId,
+            $user->id,
+            $this->transportContractAccessService->canViewAll($user),
+        );
 
         return ServiceResult::success([
             'statuses' => collect(WaybillStatus::cases())->map(fn (WaybillStatus $status): array => [
@@ -75,10 +83,11 @@ class WaybillService
     }
 
     /** @param array<string, mixed> $data */
-    public function create(int $companyId, array $data): ServiceResult
+    public function create(int $companyId, array $data, User $user): ServiceResult
     {
         try {
-            return DB::transaction(function () use ($companyId, $data): ServiceResult {
+            return DB::transaction(function () use ($companyId, $data, $user): ServiceResult {
+                $this->validateTransportContractAccess($companyId, $user, $data);
                 $cargos = Arr::pull($data, 'cargos', []) ?? [];
                 $data = $this->snapshotBuilder->forCreate($companyId, $data);
                 $data = $this->financialCalculator->calculate($companyId, $data);
@@ -127,14 +136,15 @@ class WaybillService
     }
 
     /** @param array<string, mixed> $data */
-    public function update(int $companyId, int $id, array $data): ServiceResult
+    public function update(int $companyId, int $id, User $user, array $data): ServiceResult
     {
         try {
-            return DB::transaction(function () use ($companyId, $id, $data): ServiceResult {
+            return DB::transaction(function () use ($companyId, $id, $user, $data): ServiceResult {
                 /** @var Waybill $waybill */
                 $waybill = $this->waybillRepository->findOrFailForUpdate($companyId, $id);
                 $this->ensureEditable($waybill);
                 $data = Arr::except($data, self::IMMUTABLE_UPDATE_FIELDS);
+                $this->validateTransportContractAccess($companyId, $user, $data);
                 $status = $this->normalizeStatus($data);
                 $status = $this->preserveReferralStatus($waybill, $status, $data);
                 $cargosWereProvided = array_key_exists('cargos', $data);
@@ -223,6 +233,27 @@ class WaybillService
         }
 
         return $data;
+    }
+
+    /** @param array<string, mixed> $data */
+    private function validateTransportContractAccess(int $companyId, User $user, array $data): void
+    {
+        $transportContractId = $data['transport_contract_id'] ?? null;
+
+        if ($transportContractId === null) {
+            return;
+        }
+
+        if (! $this->transportContractRepository->accessibleExists(
+            $companyId,
+            (int) $transportContractId,
+            (int) $user->getKey(),
+            $this->transportContractAccessService->canViewAll($user),
+        )) {
+            throw ValidationException::withMessages([
+                'transport_contract_id' => __('validation.exists', ['attribute' => 'قرارداد حمل']),
+            ]);
+        }
     }
 
     /** @param array<string, mixed> $data */

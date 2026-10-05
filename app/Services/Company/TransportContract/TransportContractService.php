@@ -5,20 +5,30 @@ namespace App\Services\Company\TransportContract;
 use App\Enums\TransportContractItemType;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\TransportContractRepositoryInterface;
+use App\Interfaces\UserInterface;
+use App\Models\User;
 use App\Services\Company\Waybill\IssuedWaybillDeletionGuard;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class TransportContractService
 {
     public function __construct(
         protected TransportContractRepositoryInterface $transportContractRepository,
         protected IssuedWaybillDeletionGuard $issuedWaybillDeletionGuard,
+        protected TransportContractAccessService $transportContractAccessService,
+        protected UserInterface $userRepository,
     ) {}
 
-    public function index(int $companyId, array $filters): ServiceResult
+    public function index(int $companyId, User $user, array $filters): ServiceResult
     {
-        return ServiceResult::success($this->transportContractRepository->search($companyId, $filters));
+        return ServiceResult::success($this->transportContractRepository->search(
+            $companyId,
+            $filters,
+            $user->id,
+            $this->transportContractAccessService->canViewAll($user),
+        ));
     }
 
     public function store(int $companyId, array $data): ServiceResult
@@ -33,15 +43,27 @@ class TransportContractService
         });
     }
 
-    public function show(int $companyId, int $id): ServiceResult
+    public function show(int $companyId, int $id, User $user): ServiceResult
     {
-        return ServiceResult::success($this->transportContractRepository->findOrFail($companyId, $id));
+        $transportContract = $this->transportContractRepository->findAccessibleOrFail(
+            $companyId,
+            $id,
+            $user->id,
+            $this->transportContractAccessService->canViewAll($user),
+        );
+
+        return ServiceResult::success($transportContract->load('users:id'));
     }
 
-    public function update(int $companyId, int $id, array $data): ServiceResult
+    public function update(int $companyId, int $id, User $user, array $data): ServiceResult
     {
-        return DB::transaction(function () use ($companyId, $id, $data): ServiceResult {
-            $transportContract = $this->transportContractRepository->findOrFail($companyId, $id);
+        return DB::transaction(function () use ($companyId, $id, $user, $data): ServiceResult {
+            $transportContract = $this->transportContractRepository->findAccessibleOrFail(
+                $companyId,
+                $id,
+                $user->id,
+                $this->transportContractAccessService->canViewAll($user),
+            );
             $items = Arr::pull($data, 'items');
             $this->clearDefaultWhenSelected($companyId, $data);
             $transportContract = $this->transportContractRepository->update($transportContract, $data);
@@ -54,18 +76,52 @@ class TransportContractService
         });
     }
 
-    public function destroy(int $companyId, int $id): ServiceResult
+    public function destroy(int $companyId, int $id, User $user): ServiceResult
     {
+        $transportContract = $this->transportContractRepository->findAccessibleOrFail(
+            $companyId,
+            $id,
+            $user->id,
+            $this->transportContractAccessService->canViewAll($user),
+        );
         $this->issuedWaybillDeletionGuard->ensureReferenceCanBeDeleted(
             $companyId,
             ['transport_contract_id'],
             $id,
             'قرارداد حمل',
         );
-        $transportContract = $this->transportContractRepository->findOrFail($companyId, $id);
         $this->transportContractRepository->delete($transportContract);
 
         return ServiceResult::success(__('public.delete_success', ['attribute' => 'قرارداد حمل']));
+    }
+
+    /** @param list<int> $userIds */
+    public function syncUsers(int $companyId, int $id, array $userIds): ServiceResult
+    {
+        return DB::transaction(function () use ($companyId, $id, $userIds): ServiceResult {
+            $transportContract = $this->transportContractRepository->findOrFail($companyId, $id);
+            $eligibleUserIds = $this->userRepository->eligibleTransportContractUserIds(
+                $companyId,
+                $userIds,
+            );
+
+            if (count($eligibleUserIds) !== count($userIds)) {
+                throw ValidationException::withMessages([
+                    'user_ids' => __('public.transport_contract_users_invalid'),
+                ]);
+            }
+
+            $assignedUserIds = $this->transportContractRepository->syncUsers(
+                $transportContract,
+                $eligibleUserIds,
+            );
+
+            return ServiceResult::success([
+                'transport_contract_id' => $transportContract->id,
+                'user_ids' => $assignedUserIds,
+                'is_public' => $assignedUserIds === [],
+            ]);
+        });
     }
 
     /** @param array<string, mixed> $data */

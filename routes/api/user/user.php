@@ -106,7 +106,7 @@ Route::apiResource('shipment-parties.addresses', ShipmentPartyAddressController:
         'addresses' => 'address',
     ]);
 
-// Route::get('waybills/options', [WaybillController::class, 'options'])->name('waybills.options');
+Route::get('waybills/options', [WaybillController::class, 'options'])->name('waybills.options');
 Route::patch('waybills/{waybill}/cancel', [WaybillController::class, 'cancel'])
     ->name('waybills.cancel');
 Route::patch('waybills/{waybill}/referral/cancel', [WaybillController::class, 'cancelReferral'])
@@ -118,6 +118,8 @@ Route::apiResource('product-owners', ProductOwnerController::class)
 
 Route::get('transport-contracts/options', [TransportContractController::class, 'options'])
     ->name('transport-contracts.options');
+Route::put('transport-contracts/{transportContract}/users', [TransportContractController::class, 'syncUsers'])
+    ->name('transport-contracts.syncUsers');
 Route::apiResource('transport-contracts', TransportContractController::class)
     ->parameters(['transport-contracts' => 'transportContract']);
 

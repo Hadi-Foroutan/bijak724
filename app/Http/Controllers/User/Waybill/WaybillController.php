@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Waybill\StoreWaybillRequest;
 use App\Http\Requests\Waybill\UpdateWaybillRequest;
 use App\Http\Resources\WaybillResource;
+use App\Models\User;
 use App\Services\Company\Waybill\WaybillService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,9 @@ class WaybillController extends Controller
 
     public function options(Request $request): JsonResponse
     {
-        $result = $this->waybillService->options($this->companyId($request));
+        /** @var User $user */
+        $user = $request->user();
+        $result = $this->waybillService->options($this->companyId($request), $user);
 
         return ResponseHandler::success($result->data);
     }
@@ -41,6 +44,7 @@ class WaybillController extends Controller
                 'created_by' => (int) $request->user()->getKey(),
                 'issued_by_print_name' => $request->user()->printNameOrFullName(),
             ],
+            $request->user(),
         );
 
         return ResponseHandler::success(
@@ -62,6 +66,7 @@ class WaybillController extends Controller
         $result = $this->waybillService->update(
             $this->companyId($request),
             $waybill,
+            $request->user(),
             [
                 ...$request->validated(),
                 'issued_by_print_name' => $request->user()->printNameOrFullName(),
