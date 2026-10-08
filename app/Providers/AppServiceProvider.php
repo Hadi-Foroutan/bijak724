@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Interfaces\CityRepositoryInterface;
 use App\Interfaces\Company\BijakNumberRepositoryInterface;
+use App\Interfaces\Company\CanceledReferralRepositoryInterface;
 use App\Interfaces\Company\CargoGroupRepositoryInterface;
 use App\Interfaces\Company\CargoRepositoryInterface;
 use App\Interfaces\Company\CompanySettingRepositoryInterface;
@@ -34,6 +35,7 @@ use App\Observers\CompanyObserver;
 use App\Observers\UserObserver;
 use App\Repositories\City\CityRepository;
 use App\Repositories\Company\BijakNumberRepository;
+use App\Repositories\Company\CanceledReferralRepository;
 use App\Repositories\Company\CargoGroupRepository;
 use App\Repositories\Company\CargoRepository;
 use App\Repositories\Company\CompanyRepository;
@@ -80,6 +82,7 @@ class AppServiceProvider extends ServiceProvider
         WaybillCargoRepositoryInterface::class => WaybillCargoRepository::class,
         CargoRepositoryInterface::class => CargoRepository::class,
         BijakNumberRepositoryInterface::class => BijakNumberRepository::class,
+        CanceledReferralRepositoryInterface::class => CanceledReferralRepository::class,
         CompanySettingRepositoryInterface::class => CompanySettingRepository::class,
         DashboardRepositoryInterface::class => DashboardRepository::class,
         CargoGroupRepositoryInterface::class => CargoGroupRepository::class,

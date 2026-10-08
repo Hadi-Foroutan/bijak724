@@ -9,6 +9,7 @@ use App\Http\Requests\ReferralNumber\StoreReferralNumberRequest;
 use App\Http\Requests\ReferralNumber\UpdateReferralNumberRequest;
 use App\Http\Resources\ReferralNumberResource;
 use App\Http\Resources\WaybillResource;
+use App\Models\Company\ReferralNumber;
 use App\Services\Company\ReferralNumber\ReferralNumberService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -38,9 +39,9 @@ class ReferralNumberController extends Controller
         );
     }
 
-    public function show(Request $request, int $referralNumber): JsonResponse
+    public function show(Request $request, ReferralNumber $referralNumber): JsonResponse
     {
-        $result = $this->referralNumberService->show($this->companyId($request), $referralNumber);
+        $result = $this->referralNumberService->show($this->companyId($request), $referralNumber->getKey());
 
         return ResponseHandler::success(ReferralNumberResource::make($result->data)->resolve($request));
     }
@@ -65,11 +66,11 @@ class ReferralNumberController extends Controller
         );
     }
 
-    public function update(UpdateReferralNumberRequest $request, int $referralNumber): JsonResponse
+    public function update(UpdateReferralNumberRequest $request, ReferralNumber $referralNumber): JsonResponse
     {
         $result = $this->referralNumberService->update(
             $this->companyId($request),
-            $referralNumber,
+            $referralNumber->getKey(),
             $request->validated(),
         );
 
@@ -79,9 +80,9 @@ class ReferralNumberController extends Controller
         );
     }
 
-    public function destroy(Request $request, int $referralNumber): JsonResponse
+    public function destroy(Request $request, ReferralNumber $referralNumber): JsonResponse
     {
-        $result = $this->referralNumberService->delete($this->companyId($request), $referralNumber);
+        $result = $this->referralNumberService->delete($this->companyId($request), $referralNumber->getKey());
 
         return ResponseHandler::success([], $result->data);
     }

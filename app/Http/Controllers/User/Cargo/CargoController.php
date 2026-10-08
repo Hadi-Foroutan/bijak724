@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Cargo\StoreCargoRequest;
 use App\Http\Requests\Cargo\UpdateCargoRequest;
 use App\Http\Resources\CompanyCargoResource;
+use App\Models\Company\Cargo;
 use App\Services\Company\Cargo\CargoService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,18 +37,18 @@ class CargoController extends Controller
         );
     }
 
-    public function show(Request $request, int $cargo): JsonResponse
+    public function show(Request $request, Cargo $cargo): JsonResponse
     {
-        $result = $this->cargoService->show($this->companyId($request), $cargo);
+        $result = $this->cargoService->show($this->companyId($request), $cargo->getKey());
 
         return ResponseHandler::success(CompanyCargoResource::make($result->data)->resolve($request));
     }
 
-    public function update(UpdateCargoRequest $request, int $cargo): JsonResponse
+    public function update(UpdateCargoRequest $request, Cargo $cargo): JsonResponse
     {
         $result = $this->cargoService->update(
             $this->companyId($request),
-            $cargo,
+            $cargo->getKey(),
             $request->validated(),
         );
 
@@ -57,9 +58,9 @@ class CargoController extends Controller
         );
     }
 
-    public function destroy(Request $request, int $cargo): JsonResponse
+    public function destroy(Request $request, Cargo $cargo): JsonResponse
     {
-        $result = $this->cargoService->delete($this->companyId($request), $cargo);
+        $result = $this->cargoService->delete($this->companyId($request), $cargo->getKey());
 
         return ResponseHandler::success([], $result->data);
     }

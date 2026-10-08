@@ -3,6 +3,7 @@
 namespace App\Interfaces\Company;
 
 use App\Models\TransportContract;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rules\Exists;
@@ -62,6 +63,9 @@ interface TransportContractRepositoryInterface
      * @return list<int>
      */
     public function syncUsers(TransportContract $transportContract, array $userIds): array;
+
+    /** @return Collection<int, User> */
+    public function users(TransportContract $transportContract): Collection;
 
     public function delete(TransportContract $transportContract): void;
 }

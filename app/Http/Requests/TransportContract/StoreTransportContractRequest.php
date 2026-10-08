@@ -25,14 +25,14 @@ class StoreTransportContractRequest extends BaseRequest
             'default_free' => ['required', 'boolean'],
             'default_unknown' => ['required', 'boolean'],
             'description' => ['nullable', 'string'],
-            'items' => ['required', 'array', 'size:10', new BaseFreightTypesDisabled],
+            'items' => ['required', 'array', 'size:10'/* new BaseFreightTypesDisabled */],
             'items.*.name' => ['required', 'distinct:strict', Rule::enum(TransportContractItemName::class)],
             'items.*.is_owned' => ['required', 'boolean'],
             'items.*.is_rental' => ['required', 'boolean'],
             'items.*.is_free' => ['required', 'boolean'],
             'items.*.is_unknown' => ['required', 'boolean'],
             'items.*.charge_recipient' => ['required', 'boolean'],
-            'items.*.primary_value' => ['nullable', 'numeric', 'between:0,100'],
+            'items.*.primary_value' => ['nullable', 'numeric'],
             'items.*.secondary_value' => ['nullable', 'numeric', 'min:0'],
         ];
     }

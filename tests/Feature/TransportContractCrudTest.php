@@ -285,11 +285,16 @@ test('transport contracts can be limited to selected users while managers always
     $this->getJson('/api/user/waybills/options')
         ->assertSuccessful()
         ->assertJsonFragment(['id' => $contractId]);
+    $this->getJson("/api/user/transport-contracts/{$contractId}/users")
+        ->assertSuccessful()
+        ->assertJsonPath('data.0.id', $assignedUser->id)
+        ->assertJsonPath('data.0.company_id', $this->company->id);
 
     $useCompanyToken($unassignedUser);
     $contracts = $this->getJson('/api/user/transport-contracts')->assertSuccessful();
     expect(collect($contracts->json('data'))->pluck('id'))->not->toContain($contractId);
     $this->getJson("/api/user/transport-contracts/{$contractId}")->assertNotFound();
+    $this->getJson("/api/user/transport-contracts/{$contractId}/users")->assertNotFound();
     $this->putJson("/api/user/transport-contracts/{$contractId}/users", [
         'user_ids' => [$unassignedUser->id],
     ])->assertForbidden();

@@ -99,6 +99,24 @@ test('it creates a company and its configured tables', function () {
         ->and($insurance->tariffs[1]->premium_percentage)->toBe('0.0190');
 });
 
+test('it defaults a null company status to active', function () {
+    $this->postJson('/api/admin/companies', [
+        'parent_type' => 'original',
+        'organization_code' => 'ORG-NULL-STATUS',
+        'name' => 'Company With Default Status',
+        'national_code' => '10000000009',
+        'city_code' => 1101,
+        'status' => null,
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.status', 'active');
+
+    $this->assertDatabaseHas('companies', [
+        'organization_code' => 'ORG-NULL-STATUS',
+        'status' => 'active',
+    ]);
+});
+
 test('it updates a company', function () {
     $company = Company::factory()->create();
 

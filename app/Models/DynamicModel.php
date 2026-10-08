@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Company\CompanyContextService;
 use App\Services\Company\CompanyDataOwnerResolver;
 use App\Traits\AdvancedSearch;
 use Illuminate\Database\Eloquent\Builder;
@@ -100,6 +101,15 @@ abstract class DynamicModel extends Model
         $model = $this->newInstanceForCompany($dataOwnerCompanyId);
 
         return $model->newQuery();
+    }
+
+    public function resolveRouteBinding($value, $field = null): ?static
+    {
+        $companyId = app(CompanyContextService::class)->companyId(request());
+
+        return $this->newQueryForCompany($companyId)
+            ->where($field ?? $this->getRouteKeyName(), $value)
+            ->first();
     }
 
     public function setTableName(string $table): static

@@ -24,7 +24,7 @@ class UpdateDriverRequest extends BaseRequest
                 //                new NationalCodeRule,
                 $driverRepository->uniqueNationalCodeRule(
                     $this->companyId(),
-                    (int) $this->route('driver'),
+                    $this->routeModelId('driver'),
                 ),
             ],
             'first_name' => ['sometimes', 'required', 'string', 'max:255'],

@@ -10,6 +10,7 @@ use App\Http\Requests\TransportContract\StoreTransportContractRequest;
 use App\Http\Requests\TransportContract\SyncTransportContractUsersRequest;
 use App\Http\Requests\TransportContract\UpdateTransportContractRequest;
 use App\Http\Resources\TransportContractResource;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\Company\TransportContract\TransportContractService;
 use Illuminate\Http\JsonResponse;
@@ -131,6 +132,21 @@ class TransportContractController extends Controller
         return ResponseHandler::success(
             $result->data,
             __('public.update_success', ['attribute' => 'کاربران قرارداد حمل']),
+        );
+    }
+
+    public function users(Request $request, int $transportContract): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $result = $this->transportContractService->users(
+            $this->companyId($request),
+            $transportContract,
+            $user,
+        );
+
+        return ResponseHandler::success(
+            $this->resourceCollection($result->data, UserResource::class, $request),
         );
     }
 }

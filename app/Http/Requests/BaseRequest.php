@@ -6,6 +6,7 @@ use App\Helpers\ResponseHandler;
 use App\Models\Company;
 use App\Services\Company\CompanyContextService;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
@@ -33,6 +34,13 @@ class BaseRequest extends FormRequest
     protected function companyId(): int
     {
         return app(CompanyContextService::class)->companyId($this);
+    }
+
+    protected function routeModelId(string $parameter): int
+    {
+        $value = $this->route($parameter);
+
+        return (int) ($value instanceof Model ? $value->getKey() : $value);
     }
 
     /** @param array<int, string> $fields */

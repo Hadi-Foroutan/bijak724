@@ -623,6 +623,21 @@ test('referral inquiry assigns the next number and canceled numbers cannot be re
         ->assertSuccessful()
         ->assertJsonPath('data.referral_number', null);
 
+    $this->assertDatabaseHas("company_{$this->company->id}_canceled_referrals", [
+        'waybill_id' => $waybillId,
+        'canceled_by' => $this->user->id,
+        'canceled_by_print_name' => 'کاربر صادرکننده',
+        'referral_number' => '1',
+        'referral_serial' => 'SERIAL-1',
+    ]);
+
+    $canceledReferral = DB::table("company_{$this->company->id}_canceled_referrals")
+        ->where('waybill_id', $waybillId)
+        ->first();
+
+    expect(json_decode($canceledReferral->waybill_snapshot, true))
+        ->toMatchArray(['id' => $waybillId, 'status' => WaybillStatus::Referral->value]);
+
     $this->getJson("/api/user/referral-numbers/{$this->referralNumberId}")
         ->assertSuccessful()
         ->assertJsonPath('data.last_number', 1);
@@ -653,6 +668,16 @@ test('referral inquiry assigns the next number and canceled numbers cannot be re
         'referral_serial' => 'SERIAL-1',
         'serial_number' => null,
     ]);
+});
+
+test('waybill cancellation returns not found for invalid route ids', function () {
+    $this->patchJson('/api/user/waybills/not-a-number/cancel')
+        ->assertNotFound()
+        ->assertJsonPath('success', false);
+
+    $this->patchJson('/api/user/waybills/999999/cancel')
+        ->assertNotFound()
+        ->assertJsonPath('success', false);
 });
 
 test('a completed waybill does not require referral-only fields', function () {

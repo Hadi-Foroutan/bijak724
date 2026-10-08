@@ -9,6 +9,7 @@ use App\Http\Requests\Driver\FindDriverByNationalCodeRequest;
 use App\Http\Requests\Driver\StoreDriverRequest;
 use App\Http\Requests\Driver\UpdateDriverRequest;
 use App\Http\Resources\DriverResource;
+use App\Models\Company\Driver;
 use App\Services\Company\Driver\DriverService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,9 +41,9 @@ class DriverController extends Controller
         );
     }
 
-    public function show(Request $request, int $driver): JsonResponse
+    public function show(Request $request, Driver $driver): JsonResponse
     {
-        $result = $this->driverService->show($this->companyId($request), $driver);
+        $result = $this->driverService->show($this->companyId($request), $driver->getKey());
 
         return ResponseHandler::success(DriverResource::make($result->data));
     }
@@ -67,11 +68,11 @@ class DriverController extends Controller
 
     public function update(
         UpdateDriverRequest $request,
-        int $driver,
+        Driver $driver,
     ): JsonResponse {
         $result = $this->driverService->update(
             $this->companyId($request),
-            $driver,
+            $driver->getKey(),
             $request->validated(),
         );
 
@@ -81,9 +82,9 @@ class DriverController extends Controller
         );
     }
 
-    public function destroy(Request $request, int $driver): JsonResponse
+    public function destroy(Request $request, Driver $driver): JsonResponse
     {
-        $result = $this->driverService->delete($this->companyId($request), $driver);
+        $result = $this->driverService->delete($this->companyId($request), $driver->getKey());
 
         return ResponseHandler::success([], $result->data);
     }

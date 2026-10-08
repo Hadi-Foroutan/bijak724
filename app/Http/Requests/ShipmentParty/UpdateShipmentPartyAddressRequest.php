@@ -20,8 +20,8 @@ class UpdateShipmentPartyAddressRequest extends BaseRequest
                 'max:20',
                 $addressRepository->uniquePostalCodeForPartyRule(
                     $this->companyId(),
-                    (int) $this->route('shipmentParty'),
-                    (int) $this->route('address'),
+                    $this->routeModelId('shipmentParty'),
+                    $this->routeModelId('address'),
                 ),
             ],
             'phone' => ['nullable', 'string', 'max:11'],

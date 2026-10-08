@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Waybill\StoreWaybillRequest;
 use App\Http\Requests\Waybill\UpdateWaybillRequest;
 use App\Http\Resources\WaybillResource;
+use App\Models\Company\Waybill;
 use App\Models\User;
 use App\Services\Company\Waybill\WaybillService;
 use Illuminate\Http\JsonResponse;
@@ -54,18 +55,18 @@ class WaybillController extends Controller
         );
     }
 
-    public function show(Request $request, int $waybill): JsonResponse
+    public function show(Request $request, Waybill $waybill): JsonResponse
     {
-        $result = $this->waybillService->show($this->companyId($request), $waybill);
+        $result = $this->waybillService->show($this->companyId($request), $waybill->getKey());
 
         return ResponseHandler::success(WaybillResource::make($result->data)->resolve($request));
     }
 
-    public function update(UpdateWaybillRequest $request, int $waybill): JsonResponse
+    public function update(UpdateWaybillRequest $request, Waybill $waybill): JsonResponse
     {
         $result = $this->waybillService->update(
             $this->companyId($request),
-            $waybill,
+            $waybill->getKey(),
             $request->user(),
             [
                 ...$request->validated(),
@@ -79,9 +80,9 @@ class WaybillController extends Controller
         );
     }
 
-    public function cancel(Request $request, int $waybill): JsonResponse
+    public function cancel(Request $request, Waybill $waybill): JsonResponse
     {
-        $result = $this->waybillService->cancel($this->companyId($request), $waybill);
+        $result = $this->waybillService->cancel($this->companyId($request), $waybill->getKey());
 
         return ResponseHandler::success(
             WaybillResource::make($result->data)->resolve($request),
@@ -89,9 +90,13 @@ class WaybillController extends Controller
         );
     }
 
-    public function cancelReferral(Request $request, int $waybill): JsonResponse
+    public function cancelReferral(Request $request, Waybill $waybill): JsonResponse
     {
-        $result = $this->waybillService->cancelReferral($this->companyId($request), $waybill);
+        $result = $this->waybillService->cancelReferral(
+            $this->companyId($request),
+            $waybill->getKey(),
+            $request->user(),
+        );
 
         return ResponseHandler::success(
             WaybillResource::make($result->data)->resolve($request),
@@ -99,9 +104,9 @@ class WaybillController extends Controller
         );
     }
 
-    public function destroy(Request $request, int $waybill): JsonResponse
+    public function destroy(Request $request, Waybill $waybill): JsonResponse
     {
-        $result = $this->waybillService->delete($this->companyId($request), $waybill);
+        $result = $this->waybillService->delete($this->companyId($request), $waybill->getKey());
 
         return ResponseHandler::success([], $result->data);
     }

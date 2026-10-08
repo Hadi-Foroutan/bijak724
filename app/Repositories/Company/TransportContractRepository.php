@@ -5,8 +5,10 @@ namespace App\Repositories\Company;
 use App\Interfaces\Company\TransportContractRepositoryInterface;
 use App\Models\Company;
 use App\Models\TransportContract;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Exists;
@@ -142,6 +144,15 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
             ->pluck('users.id')
             ->map(fn (mixed $userId): int => (int) $userId)
             ->all();
+    }
+
+    /** @return EloquentCollection<int, User> */
+    public function users(TransportContract $transportContract): EloquentCollection
+    {
+        return $transportContract->users()
+            ->with(['roles', 'parent'])
+            ->orderBy('users.id')
+            ->get();
     }
 
     public function delete(TransportContract $transportContract): void

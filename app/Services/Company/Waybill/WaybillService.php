@@ -4,6 +4,7 @@ namespace App\Services\Company\Waybill;
 
 use App\Enums\WaybillStatus;
 use App\Helpers\ServiceResult;
+use App\Interfaces\Company\CanceledReferralRepositoryInterface;
 use App\Interfaces\Company\TransportContractRepositoryInterface;
 use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Interfaces\WaybillRepositoryInterface as SharedWaybillRepositoryInterface;
@@ -45,6 +46,7 @@ class WaybillService
         protected TransportContractRepositoryInterface $transportContractRepository,
         protected SharedWaybillRepositoryInterface $sharedWaybillRepository,
         protected TransportContractAccessService $transportContractAccessService,
+        protected CanceledReferralRepositoryInterface $canceledReferralRepository,
     ) {}
 
     public function index(int $companyId, array $params): ServiceResult
@@ -201,9 +203,9 @@ class WaybillService
         });
     }
 
-    public function cancelReferral(int $companyId, int $id): ServiceResult
+    public function cancelReferral(int $companyId, int $id, User $user): ServiceResult
     {
-        return DB::transaction(function () use ($companyId, $id): ServiceResult {
+        return DB::transaction(function () use ($companyId, $id, $user): ServiceResult {
             /** @var Waybill $waybill */
             $waybill = $this->waybillRepository->findOrFailForUpdate($companyId, $id);
             $this->ensureEditable($waybill);
@@ -214,6 +216,20 @@ class WaybillService
                     Response::HTTP_UNPROCESSABLE_ENTITY,
                 );
             }
+
+            $this->canceledReferralRepository->create($companyId, [
+                'waybill_id' => $waybill->getKey(),
+                'canceled_by' => $user->getKey(),
+                'canceled_by_print_name' => $user->printNameOrFullName(),
+                'referral_number' => $waybill->referral_number,
+                'referral_serial' => $waybill->referral_serial,
+                'waybill_snapshot' => $waybill->attributesToArray(),
+                'cargos_snapshot' => $waybill->cargos
+                    ->map(static fn ($cargo): array => $cargo->toArray())
+                    ->values()
+                    ->all(),
+                'canceled_at' => now(),
+            ]);
 
             $this->waybillRepository->update($companyId, $id, [
                 'referral_number' => null,

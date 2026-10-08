@@ -20,7 +20,7 @@ class UpdateShipmentPartyRequest extends BaseRequest
                 'max:20',
                 $shipmentPartyRepository->uniqueNationalIdentifierRule(
                     $this->companyId(),
-                    (int) $this->route('shipmentParty'),
+                    $this->routeModelId('shipmentParty'),
                 ),
             ],
             'is_sender' => ['sometimes', 'required', 'boolean'],

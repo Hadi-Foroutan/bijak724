@@ -94,6 +94,16 @@ test('it creates shows and lists fleets with shared table resources', function (
         ->assertJsonPath('data.0.fleet_brand.brand_code', 10);
 });
 
+test('it returns a not found response for an invalid dynamic table id', function () {
+    $this->getJson('/api/user/fleets/not-a-number')
+        ->assertNotFound()
+        ->assertJsonPath('success', false);
+
+    $this->getJson('/api/user/fleets/999999')
+        ->assertNotFound()
+        ->assertJsonPath('success', false);
+});
+
 test('it updates and deletes a fleet', function () {
     $fleetId = $this->postJson('/api/user/fleets', fleetPayload($this))
         ->assertCreated()

@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Driver\StoreDriverAccountRequest;
 use App\Http\Requests\Driver\UpdateDriverAccountRequest;
 use App\Http\Resources\DriverAccountResource;
+use App\Models\Company\Driver;
+use App\Models\Company\DriverAccount;
 use App\Services\Company\Driver\DriverAccountService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,11 +18,11 @@ class DriverAccountController extends Controller
 {
     public function __construct(protected DriverAccountService $accountService) {}
 
-    public function index(Request $request, int $driver): JsonResponse
+    public function index(Request $request, Driver $driver): JsonResponse
     {
         $result = $this->accountService->index(
             $this->companyId($request),
-            $driver,
+            $driver->getKey(),
             $request->all(),
         );
 
@@ -29,11 +31,11 @@ class DriverAccountController extends Controller
         );
     }
 
-    public function store(StoreDriverAccountRequest $request, int $driver): JsonResponse
+    public function store(StoreDriverAccountRequest $request, Driver $driver): JsonResponse
     {
         $result = $this->accountService->create(
             $this->companyId($request),
-            $driver,
+            $driver->getKey(),
             $request->validated(),
         );
 
@@ -44,12 +46,12 @@ class DriverAccountController extends Controller
         );
     }
 
-    public function show(Request $request, int $driver, int $account): JsonResponse
+    public function show(Request $request, Driver $driver, DriverAccount $account): JsonResponse
     {
         $result = $this->accountService->show(
             $this->companyId($request),
-            $driver,
-            $account,
+            $driver->getKey(),
+            $account->getKey(),
         );
 
         return ResponseHandler::success(
@@ -59,13 +61,13 @@ class DriverAccountController extends Controller
 
     public function update(
         UpdateDriverAccountRequest $request,
-        int $driver,
-        int $account,
+        Driver $driver,
+        DriverAccount $account,
     ): JsonResponse {
         $result = $this->accountService->update(
             $this->companyId($request),
-            $driver,
-            $account,
+            $driver->getKey(),
+            $account->getKey(),
             $request->validated(),
         );
 
@@ -75,12 +77,12 @@ class DriverAccountController extends Controller
         );
     }
 
-    public function destroy(Request $request, int $driver, int $account): JsonResponse
+    public function destroy(Request $request, Driver $driver, DriverAccount $account): JsonResponse
     {
         $result = $this->accountService->delete(
             $this->companyId($request),
-            $driver,
-            $account,
+            $driver->getKey(),
+            $account->getKey(),
         );
 
         return ResponseHandler::success([], $result->data);

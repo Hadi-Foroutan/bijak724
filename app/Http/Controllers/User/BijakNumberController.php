@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\BijakNumber\StoreBijakNumberRequest;
 use App\Http\Requests\BijakNumber\UpdateBijakNumberRequest;
 use App\Http\Resources\BijakNumberResource;
+use App\Models\Company\BijakNumber;
 use App\Services\Company\BijakNumber\BijakNumberService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -36,9 +37,9 @@ class BijakNumberController extends Controller
         );
     }
 
-    public function show(Request $request, int $bijakNumber): JsonResponse
+    public function show(Request $request, BijakNumber $bijakNumber): JsonResponse
     {
-        $result = $this->bijakNumberService->show($this->companyId($request), $bijakNumber);
+        $result = $this->bijakNumberService->show($this->companyId($request), $bijakNumber->getKey());
 
         return ResponseHandler::success(BijakNumberResource::make($result->data)->resolve($request));
     }
@@ -48,11 +49,11 @@ class BijakNumberController extends Controller
         return ResponseHandler::success($this->bijakNumberService->inquiry($this->companyId($request))->data);
     }
 
-    public function update(UpdateBijakNumberRequest $request, int $bijakNumber): JsonResponse
+    public function update(UpdateBijakNumberRequest $request, BijakNumber $bijakNumber): JsonResponse
     {
         $result = $this->bijakNumberService->update(
             $this->companyId($request),
-            $bijakNumber,
+            $bijakNumber->getKey(),
             $request->validated(),
         );
 
@@ -62,9 +63,9 @@ class BijakNumberController extends Controller
         );
     }
 
-    public function destroy(Request $request, int $bijakNumber): JsonResponse
+    public function destroy(Request $request, BijakNumber $bijakNumber): JsonResponse
     {
-        $result = $this->bijakNumberService->delete($this->companyId($request), $bijakNumber);
+        $result = $this->bijakNumberService->delete($this->companyId($request), $bijakNumber->getKey());
 
         return ResponseHandler::success([], $result->data);
     }

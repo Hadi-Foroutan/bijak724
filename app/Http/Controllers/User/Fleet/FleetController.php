@@ -9,6 +9,7 @@ use App\Http\Requests\Fleet\FindFleetByPlateRequest;
 use App\Http\Requests\Fleet\StoreFleetRequest;
 use App\Http\Requests\Fleet\UpdateFleetRequest;
 use App\Http\Resources\FleetResource;
+use App\Models\Company\Fleet;
 use App\Services\Company\Fleet\FleetService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -43,9 +44,9 @@ class FleetController extends Controller
         );
     }
 
-    public function show(Request $request, int $fleet): JsonResponse
+    public function show(Request $request, Fleet $fleet): JsonResponse
     {
-        $result = $this->fleetService->show($this->companyId($request), $fleet);
+        $result = $this->fleetService->show($this->companyId($request), $fleet->getKey());
 
         return ResponseHandler::success(
             FleetResource::make($result->data)->resolve($request),
@@ -70,11 +71,11 @@ class FleetController extends Controller
         );
     }
 
-    public function update(UpdateFleetRequest $request, int $fleet): JsonResponse
+    public function update(UpdateFleetRequest $request, Fleet $fleet): JsonResponse
     {
         $result = $this->fleetService->update(
             $this->companyId($request),
-            $fleet,
+            $fleet->getKey(),
             $request->validated(),
         );
 
@@ -84,9 +85,9 @@ class FleetController extends Controller
         );
     }
 
-    public function destroy(Request $request, int $fleet): JsonResponse
+    public function destroy(Request $request, Fleet $fleet): JsonResponse
     {
-        $result = $this->fleetService->delete($this->companyId($request), $fleet);
+        $result = $this->fleetService->delete($this->companyId($request), $fleet->getKey());
 
         return ResponseHandler::success([], $result->data);
     }

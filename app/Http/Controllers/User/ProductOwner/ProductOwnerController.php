@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ProductOwner\StoreProductOwnerRequest;
 use App\Http\Requests\ProductOwner\UpdateProductOwnerRequest;
 use App\Http\Resources\ProductOwnerResource;
+use App\Models\Company\ProductOwner;
 use App\Services\Company\ProductOwner\ProductOwnerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -39,18 +40,18 @@ class ProductOwnerController extends Controller
         );
     }
 
-    public function show(Request $request, int $productOwner): JsonResponse
+    public function show(Request $request, ProductOwner $productOwner): JsonResponse
     {
-        $result = $this->productOwnerService->show($this->companyId($request), $productOwner);
+        $result = $this->productOwnerService->show($this->companyId($request), $productOwner->getKey());
 
         return ResponseHandler::success(ProductOwnerResource::make($result->data)->resolve($request));
     }
 
-    public function update(UpdateProductOwnerRequest $request, int $productOwner): JsonResponse
+    public function update(UpdateProductOwnerRequest $request, ProductOwner $productOwner): JsonResponse
     {
         $result = $this->productOwnerService->update(
             $this->companyId($request),
-            $productOwner,
+            $productOwner->getKey(),
             $request->validated(),
         );
 
@@ -60,9 +61,9 @@ class ProductOwnerController extends Controller
         );
     }
 
-    public function destroy(Request $request, int $productOwner): JsonResponse
+    public function destroy(Request $request, ProductOwner $productOwner): JsonResponse
     {
-        $result = $this->productOwnerService->delete($this->companyId($request), $productOwner);
+        $result = $this->productOwnerService->delete($this->companyId($request), $productOwner->getKey());
 
         return ResponseHandler::success([], $result->data);
     }

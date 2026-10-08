@@ -100,13 +100,13 @@ class UserRepository implements UserInterface
         return User::query()
             ->where('company_id', $companyId)
             ->whereKey($userIds)
-            ->whereDoesntHave(
+            /*->whereDoesntHave(
                 'roles',
                 fn (Builder $query): Builder => $query->where(
                     'name',
                     RoleEnum::COMPANY_MANAGER->value,
                 ),
-            )
+            )*/
             ->orderBy('id')
             ->pluck('id')
             ->map(fn (mixed $userId): int => (int) $userId)

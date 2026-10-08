@@ -118,8 +118,13 @@ Route::apiResource('product-owners', ProductOwnerController::class)
 
 Route::get('transport-contracts/options', [TransportContractController::class, 'options'])
     ->name('transport-contracts.options');
-Route::put('transport-contracts/{transportContract}/users', [TransportContractController::class, 'syncUsers'])
-    ->name('transport-contracts.syncUsers');
+
+Route::prefix('transport-contracts')->name('transport-contracts.')->group(function () {
+    Route::get('{transportContract}/users', [TransportContractController::class, 'users'])
+        ->name('users');
+    Route::put('{transportContract}/users', [TransportContractController::class, 'syncUsers'])
+        ->name('syncUsers');
+});
 Route::apiResource('transport-contracts', TransportContractController::class)
     ->parameters(['transport-contracts' => 'transportContract']);
 

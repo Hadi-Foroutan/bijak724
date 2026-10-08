@@ -124,6 +124,18 @@ class TransportContractService
         });
     }
 
+    public function users(int $companyId, int $id, User $user): ServiceResult
+    {
+        $transportContract = $this->transportContractRepository->findAccessibleOrFail(
+            $companyId,
+            $id,
+            $user->id,
+            $this->transportContractAccessService->canViewAll($user),
+        );
+
+        return ServiceResult::success($this->transportContractRepository->users($transportContract));
+    }
+
     /** @param array<string, mixed> $data */
     private function clearDefaultWhenSelected(int $companyId, array $data): void
     {

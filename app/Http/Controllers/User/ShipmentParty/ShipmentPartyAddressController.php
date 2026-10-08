@@ -10,6 +10,8 @@ use App\Http\Requests\ShipmentParty\StoreShipmentPartyAddressRequest;
 use App\Http\Requests\ShipmentParty\UpdateShipmentPartyAddressRequest;
 use App\Http\Resources\ShipmentPartyAddressResource;
 use App\Http\Resources\ShipmentPartyResource;
+use App\Models\Company\ShipmentParty;
+use App\Models\Company\ShipmentPartyAddress;
 use App\Services\Company\ShipmentParty\ShipmentPartyAddressService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -40,11 +42,11 @@ class ShipmentPartyAddressController extends Controller
         );
     }
 
-    public function index(Request $request, int $shipmentParty): JsonResponse
+    public function index(Request $request, ShipmentParty $shipmentParty): JsonResponse
     {
         $result = $this->addressService->index(
             $this->companyId($request),
-            $shipmentParty,
+            $shipmentParty->getKey(),
             $request->all(),
         );
 
@@ -53,11 +55,11 @@ class ShipmentPartyAddressController extends Controller
         );
     }
 
-    public function store(StoreShipmentPartyAddressRequest $request, int $shipmentParty): JsonResponse
+    public function store(StoreShipmentPartyAddressRequest $request, ShipmentParty $shipmentParty): JsonResponse
     {
         $result = $this->addressService->create(
             $this->companyId($request),
-            $shipmentParty,
+            $shipmentParty->getKey(),
             $request->validated(),
         );
 
@@ -68,12 +70,15 @@ class ShipmentPartyAddressController extends Controller
         );
     }
 
-    public function show(Request $request, int $shipmentParty, int $address): JsonResponse
-    {
+    public function show(
+        Request $request,
+        ShipmentParty $shipmentParty,
+        ShipmentPartyAddress $address,
+    ): JsonResponse {
         $result = $this->addressService->show(
             $this->companyId($request),
-            $shipmentParty,
-            $address,
+            $shipmentParty->getKey(),
+            $address->getKey(),
         );
 
         return ResponseHandler::success(
@@ -83,13 +88,13 @@ class ShipmentPartyAddressController extends Controller
 
     public function update(
         UpdateShipmentPartyAddressRequest $request,
-        int $shipmentParty,
-        int $address,
+        ShipmentParty $shipmentParty,
+        ShipmentPartyAddress $address,
     ): JsonResponse {
         $result = $this->addressService->update(
             $this->companyId($request),
-            $shipmentParty,
-            $address,
+            $shipmentParty->getKey(),
+            $address->getKey(),
             $request->validated(),
         );
 
@@ -99,12 +104,15 @@ class ShipmentPartyAddressController extends Controller
         );
     }
 
-    public function destroy(Request $request, int $shipmentParty, int $address): JsonResponse
-    {
+    public function destroy(
+        Request $request,
+        ShipmentParty $shipmentParty,
+        ShipmentPartyAddress $address,
+    ): JsonResponse {
         $result = $this->addressService->delete(
             $this->companyId($request),
-            $shipmentParty,
-            $address,
+            $shipmentParty->getKey(),
+            $address->getKey(),
         );
 
         return ResponseHandler::success([], $result->data);

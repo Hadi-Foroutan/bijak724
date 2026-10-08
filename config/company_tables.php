@@ -281,4 +281,24 @@ return [
         ['name' => 'phone', 'type' => 'string', 'length' => 20],
         ['name' => 'transportation_code', 'type' => 'string'],
     ],
+    'canceled_referrals' => [
+        [
+            'name' => 'waybill_id',
+            'type' => 'unsignedBigInteger',
+            'nullable' => false,
+            'index' => true,
+        ],
+        [
+            'name' => 'canceled_by',
+            'type' => 'unsignedBigInteger',
+            'nullable' => false,
+            'index' => true,
+        ],
+        ['name' => 'canceled_by_print_name', 'type' => 'string'],
+        ['name' => 'referral_number', 'type' => 'string', 'nullable' => false, 'index' => true],
+        ['name' => 'referral_serial', 'type' => 'string', 'nullable' => false, 'index' => true],
+        ['name' => 'waybill_snapshot', 'type' => 'json', 'nullable' => false],
+        ['name' => 'cargos_snapshot', 'type' => 'json', 'nullable' => false],
+        ['name' => 'canceled_at', 'type' => 'dateTime', 'nullable' => false, 'index' => true],
+    ],
 ];

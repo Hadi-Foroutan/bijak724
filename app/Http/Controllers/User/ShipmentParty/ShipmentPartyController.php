@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\User\ShipmentParty;
 
-use App\Enums\StatusEnum;
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ShipmentParty\FindShipmentPartyByNationalIdentifierRequest;
 use App\Http\Requests\ShipmentParty\StoreShipmentPartyRequest;
 use App\Http\Requests\ShipmentParty\UpdateShipmentPartyRequest;
 use App\Http\Resources\ShipmentPartyResource;
+use App\Models\Company\ShipmentParty;
 use App\Services\Company\ShipmentParty\ShipmentPartyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -41,9 +41,9 @@ class ShipmentPartyController extends Controller
         );
     }
 
-    public function show(Request $request, int $shipmentParty): JsonResponse
+    public function show(Request $request, ShipmentParty $shipmentParty): JsonResponse
     {
-        $result = $this->shipmentPartyService->show($this->companyId($request), $shipmentParty);
+        $result = $this->shipmentPartyService->show($this->companyId($request), $shipmentParty->getKey());
 
         return ResponseHandler::success(ShipmentPartyResource::make($result->data)->resolve($request));
     }
@@ -61,11 +61,11 @@ class ShipmentPartyController extends Controller
         );
     }
 
-    public function update(UpdateShipmentPartyRequest $request, int $shipmentParty): JsonResponse
+    public function update(UpdateShipmentPartyRequest $request, ShipmentParty $shipmentParty): JsonResponse
     {
         $result = $this->shipmentPartyService->update(
             $this->companyId($request),
-            $shipmentParty,
+            $shipmentParty->getKey(),
             $request->validated(),
         );
 
@@ -75,9 +75,9 @@ class ShipmentPartyController extends Controller
         );
     }
 
-    public function destroy(Request $request, int $shipmentParty): JsonResponse
+    public function destroy(Request $request, ShipmentParty $shipmentParty): JsonResponse
     {
-        $result = $this->shipmentPartyService->delete($this->companyId($request), $shipmentParty);
+        $result = $this->shipmentPartyService->delete($this->companyId($request), $shipmentParty->getKey());
 
         return ResponseHandler::success([], $result->data);
     }

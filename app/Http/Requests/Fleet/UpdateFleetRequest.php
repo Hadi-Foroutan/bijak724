@@ -30,7 +30,7 @@ class UpdateFleetRequest extends BaseRequest
                 'max:50',
                 $fleetRepository->uniqueSmartCardNumberRule(
                     $this->companyId(),
-                    (int) $this->route('fleet'),
+                    $this->routeModelId('fleet'),
                 ),
             ],
             'status' => ['sometimes', 'nullable', Rule::enum(StatusEnum::class)],

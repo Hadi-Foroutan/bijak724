@@ -2,6 +2,7 @@
 
 namespace App\Services\Company;
 
+use App\Enums\StatusEnum;
 use App\Helpers\ServiceResult;
 use App\Interfaces\CompanyInterface;
 use App\Models\Company;
@@ -29,6 +30,7 @@ class CompanyService
 
     public function create(array $data): ServiceResult
     {
+        $data['status'] ??= StatusEnum::ACTIVE->value;
         $data['panel_code'] = random_int(10000, 99999);
         $company = $this->companyRepository->create($data);
 
