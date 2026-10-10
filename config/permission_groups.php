@@ -17,6 +17,7 @@ return [
         'user.fleets.' => 'مدیریت ناوگان',
         'user.bijak-numbers.' => 'مدیریت شماره بیجک‌ها',
         'user.referral-numbers.' => 'مدیریت شماره حواله‌ها',
+        'user.canceled-referrals.' => 'مشاهده حواله‌های باطل‌شده',
         'user.shipment-parties.' => 'مدیریت فرستندگان و گیرندگان',
         'user.addresses.' => 'مدیریت آدرس‌های فرستندگان و گیرندگان',
         'user.waybills.' => 'مدیریت بارنامه‌ها',

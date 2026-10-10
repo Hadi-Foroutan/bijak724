@@ -15,58 +15,41 @@ use Illuminate\Validation\Rules\Unique;
 
 class FleetRepository implements FleetRepositoryInterface
 {
-    public function __construct(protected Fleet $fleet) {}
-
     public function query(int $companyId): Builder
     {
-        return $this->fleet->newQueryForCompany($companyId);
+        return Fleet::queryForCompany($companyId);
     }
 
     public function search(int $companyId, array $filters): Collection|LengthAwarePaginator
     {
         $filters['itemsPerPage'] ??= $filters['per_page'] ?? 15;
-        $query = $this->query($companyId)
-            ->with($this->fleet->defaultRelations())
-            ->advancedSearch($filters);
 
-        return $query->getModel()->advancedSearchResults($query, $filters);
+        return Fleet::searchRecordsForCompany($companyId, $filters);
     }
 
     public function create(int $companyId, array $data): Fleet
     {
-        $fleet = $this->fleet
-            ->newInstanceForCompany($companyId)
-            ->newQuery()
-            ->create([...$data, 'owner_company_id' => $companyId]);
-
-        return $fleet->loadDefaultRelations();
+        return Fleet::createForCompany($companyId, $data);
     }
 
     public function findOrFail(int $companyId, int $id): Fleet
     {
-        return $this->query($companyId)
-            ->with($this->fleet->defaultRelations())
-            ->findOrFail($id);
+        return Fleet::findForCompanyOrFail($companyId, $id);
     }
 
     public function update(int $companyId, int $id, array $data): Fleet
     {
-        unset($data['owner_company_id']);
-
-        $fleet = $this->findOrFail($companyId, $id);
-        $fleet->update($data);
-
-        return $fleet->refresh()->loadDefaultRelations();
+        return Fleet::updateForCompany($companyId, $id, $data);
     }
 
     public function delete(int $companyId, int $id): void
     {
-        $this->findOrFail($companyId, $id)->delete();
+        Fleet::deleteForCompany($companyId, $id);
     }
 
     public function existsRule(int $companyId, string $column = 'id'): Exists
     {
-        $model = $this->fleet->newInstanceForCompany($companyId);
+        $model = Fleet::modelForCompany($companyId);
         $rule = Rule::exists($model->getTable(), $column);
 
         return $model->companyId() === $companyId
@@ -77,7 +60,7 @@ class FleetRepository implements FleetRepositoryInterface
     public function findByPlate(int $companyId, array $plate): Fleet
     {
         return $this->plateQuery($companyId, $plate)
-            ->with($this->fleet->defaultRelations())
+            ->with(Fleet::defaultRelationsForCompany())
             ->firstOrFail();
     }
 
@@ -94,7 +77,7 @@ class FleetRepository implements FleetRepositoryInterface
 
     public function uniqueSmartCardNumberRule(int $companyId, ?int $ignoreFleetId = null): Unique
     {
-        $table = $this->fleet->newInstanceForCompany($companyId)->getTable();
+        $table = Fleet::modelForCompany($companyId)->getTable();
         $rule = Rule::unique($table, 'smart_card_number');
 
         return $ignoreFleetId === null ? $rule : $rule->ignore($ignoreFleetId);
@@ -127,8 +110,8 @@ class FleetRepository implements FleetRepositoryInterface
     private function plateQuery(int $companyId, array $plate, bool $shared = false): Builder
     {
         $query = $shared
-            ? $this->fleet->newSharedQueryForCompany($companyId)
-            : $this->query($companyId);
+            ? Fleet::sharedQueryForCompany($companyId)
+            : Fleet::queryForCompany($companyId);
 
         return $query
             ->where('plate_first_number', $plate['plate_first_number'])

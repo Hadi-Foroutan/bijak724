@@ -12,58 +12,41 @@ use Illuminate\Validation\Rules\Exists;
 
 class ProductOwnerRepository implements ProductOwnerRepositoryInterface
 {
-    public function __construct(protected ProductOwner $productOwner) {}
-
     public function query(int $companyId): Builder
     {
-        return $this->productOwner->newQueryForCompany($companyId);
+        return ProductOwner::queryForCompany($companyId);
     }
 
     public function search(int $companyId, array $filters): Collection|LengthAwarePaginator
     {
         $filters['itemsPerPage'] ??= $filters['per_page'] ?? 15;
-        $query = $this->query($companyId)
-            ->with($this->productOwner->defaultRelations())
-            ->advancedSearch($filters);
 
-        return $query->getModel()->advancedSearchResults($query, $filters);
+        return ProductOwner::searchRecordsForCompany($companyId, $filters);
     }
 
     public function create(int $companyId, array $data): ProductOwner
     {
-        $productOwner = $this->productOwner
-            ->newInstanceForCompany($companyId)
-            ->newQuery()
-            ->create([...$data, 'owner_company_id' => $companyId]);
-
-        return $productOwner->loadDefaultRelations();
+        return ProductOwner::createForCompany($companyId, $data);
     }
 
     public function findOrFail(int $companyId, int $id): ProductOwner
     {
-        return $this->query($companyId)
-            ->with($this->productOwner->defaultRelations())
-            ->findOrFail($id);
+        return ProductOwner::findForCompanyOrFail($companyId, $id);
     }
 
     public function update(int $companyId, int $id, array $data): ProductOwner
     {
-        unset($data['owner_company_id']);
-
-        $productOwner = $this->findOrFail($companyId, $id);
-        $productOwner->update($data);
-
-        return $productOwner->refresh()->loadDefaultRelations();
+        return ProductOwner::updateForCompany($companyId, $id, $data);
     }
 
     public function delete(int $companyId, int $id): void
     {
-        $this->findOrFail($companyId, $id)->delete();
+        ProductOwner::deleteForCompany($companyId, $id);
     }
 
     public function existsRule(int $companyId, string $column = 'id'): Exists
     {
-        $model = $this->productOwner->newInstanceForCompany($companyId);
+        $model = ProductOwner::modelForCompany($companyId);
         $rule = Rule::exists($model->getTable(), $column);
 
         return $model->companyId() === $companyId

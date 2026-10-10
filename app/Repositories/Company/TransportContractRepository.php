@@ -124,12 +124,19 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
         return $transportContract->load('items');
     }
 
-    public function clearDefaults(int $companyId, array $fields): void
-    {
+    public function clearDefaults(
+        int $companyId,
+        array $fields,
+        ?int $exceptTransportContractId = null,
+    ): void {
         foreach ($fields as $field) {
             TransportContract::query()
                 ->where('company_id', $companyId)
                 ->where($field, true)
+                ->when(
+                    $exceptTransportContractId !== null,
+                    fn (Builder $query): Builder => $query->whereKeyNot($exceptTransportContractId),
+                )
                 ->update([$field => false]);
         }
     }

@@ -14,26 +14,19 @@ use Illuminate\Validation\Rules\Unique;
 
 class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryInterface
 {
-    public function __construct(protected ShipmentPartyAddress $shipmentPartyAddress) {}
-
     public function query(int $companyId): Builder
     {
-        return $this->shipmentPartyAddress->newQueryForCompany($companyId);
+        return ShipmentPartyAddress::queryForCompany($companyId);
     }
 
     public function create(int $companyId, array $data): ShipmentPartyAddress
     {
-        $address = $this->shipmentPartyAddress
-            ->newInstanceForCompany($companyId)
-            ->newQuery()
-            ->create([...$data, 'owner_company_id' => $companyId]);
-
-        return $address->loadDefaultRelations();
+        return ShipmentPartyAddress::createForCompany($companyId, $data);
     }
 
     public function existsRule(int $companyId, string $column = 'id'): Exists
     {
-        $model = $this->shipmentPartyAddress->newInstanceForCompany($companyId);
+        $model = ShipmentPartyAddress::modelForCompany($companyId);
         $rule = Rule::exists($model->getTable(), $column);
 
         return $model->companyId() === $companyId
@@ -43,9 +36,7 @@ class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryIn
 
     public function findOrFail(int $companyId, int $addressId): ShipmentPartyAddress
     {
-        return $this->query($companyId)
-            ->with($this->shipmentPartyAddress->defaultRelations())
-            ->findOrFail($addressId);
+        return ShipmentPartyAddress::findForCompanyOrFail($companyId, $addressId);
     }
 
     public function searchForParty(
@@ -53,13 +44,12 @@ class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryIn
         int $shipmentPartyId,
         array $filters,
     ): Collection|LengthAwarePaginator {
-        $filters['itemsPerPage'] ??= $filters['per_page'] ?? 15;
-        $filters['eq-shipment_party_id'] = $shipmentPartyId;
-        $query = $this->query($companyId)
-            ->with($this->shipmentPartyAddress->defaultRelations())
-            ->advancedSearch($filters);
-
-        return $query->getModel()->advancedSearchResults($query, $filters);
+        return ShipmentPartyAddress::searchRecordsForCompany(
+            $companyId,
+            $filters,
+            fn (Builder $query): Builder => $query
+                ->where('shipment_party_id', $shipmentPartyId),
+        );
     }
 
     public function uniquePostalCodeForPartyRule(
@@ -67,7 +57,7 @@ class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryIn
         int $shipmentPartyId,
         ?int $ignoreAddressId = null,
     ): Unique {
-        $table = $this->shipmentPartyAddress->newInstanceForCompany($companyId)->getTable();
+        $table = ShipmentPartyAddress::modelForCompany($companyId)->getTable();
         $rule = Rule::unique($table, 'postal_code')
             ->where('shipment_party_id', $shipmentPartyId);
 
@@ -79,10 +69,11 @@ class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryIn
         int $shipmentPartyId,
         int $addressId,
     ): ShipmentPartyAddress {
-        return $this->query($companyId)
-            ->with($this->shipmentPartyAddress->defaultRelations())
-            ->where('shipment_party_id', $shipmentPartyId)
-            ->findOrFail($addressId);
+        return ShipmentPartyAddress::findForCompanyOrFail(
+            $companyId,
+            $addressId,
+            fn (Builder $query): Builder => $query->where('shipment_party_id', $shipmentPartyId),
+        );
     }
 
     public function findShipmentPartyByPostalCodeAndType(
@@ -92,8 +83,8 @@ class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryIn
     ): ?ShipmentParty {
         $roleColumn = $type === 'sender' ? 'is_sender' : 'is_receiver';
 
-        $address = $this->query($companyId)
-            ->with($this->shipmentPartyAddress->defaultRelations())
+        $address = ShipmentPartyAddress::queryForCompany($companyId)
+            ->with(ShipmentPartyAddress::defaultRelationsForCompany())
             ->where('postal_code', $postalCode)
             ->whereHas(
                 'shipmentParty',
@@ -110,16 +101,22 @@ class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryIn
         int $addressId,
         array $data,
     ): ShipmentPartyAddress {
-        unset($data['owner_company_id'], $data['shipment_party_id']);
+        unset($data['shipment_party_id']);
 
-        $address = $this->findForPartyOrFail($companyId, $shipmentPartyId, $addressId);
-        $address->update($data);
-
-        return $address->refresh()->loadDefaultRelations();
+        return ShipmentPartyAddress::updateForCompany(
+            $companyId,
+            $addressId,
+            $data,
+            fn (Builder $query): Builder => $query->where('shipment_party_id', $shipmentPartyId),
+        );
     }
 
     public function deleteForParty(int $companyId, int $shipmentPartyId, int $addressId): void
     {
-        $this->findForPartyOrFail($companyId, $shipmentPartyId, $addressId)->delete();
+        ShipmentPartyAddress::deleteForCompany(
+            $companyId,
+            $addressId,
+            fn (Builder $query): Builder => $query->where('shipment_party_id', $shipmentPartyId),
+        );
     }
 }

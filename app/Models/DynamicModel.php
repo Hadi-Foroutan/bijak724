@@ -5,7 +5,10 @@ namespace App\Models;
 use App\Services\Company\CompanyContextService;
 use App\Services\Company\CompanyDataOwnerResolver;
 use App\Traits\AdvancedSearch;
+use Closure;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -103,6 +106,130 @@ abstract class DynamicModel extends Model
         return $model->newQuery();
     }
 
+    /** @return Builder<static> */
+    public static function queryForCompany(int $companyId): Builder
+    {
+        return (new static)->newQueryForCompany($companyId);
+    }
+
+    public static function modelForCompany(int $companyId): static
+    {
+        return (new static)->newInstanceForCompany($companyId);
+    }
+
+    /** @return Builder<static> */
+    public static function sharedQueryForCompany(int $companyId): Builder
+    {
+        return (new static)->newSharedQueryForCompany($companyId);
+    }
+
+    /** @param array<string, mixed> $attributes */
+    public static function createForCompany(
+        int $companyId,
+        array $attributes,
+        bool $loadDefaultRelations = true,
+    ): static {
+        $model = static::modelForCompany($companyId)
+            ->newQuery()
+            ->create([...$attributes, 'owner_company_id' => $companyId]);
+
+        return $loadDefaultRelations ? $model->loadDefaultRelations() : $model;
+    }
+
+    /**
+     * @param  null|Closure(Builder): (Builder|void)  $queryCallback
+     */
+    public static function findForCompanyOrFail(
+        int $companyId,
+        int $id,
+        ?Closure $queryCallback = null,
+    ): static {
+        $model = new static;
+        $query = $model->newQueryForCompany($companyId)
+            ->with($model->defaultRelations());
+
+        if ($queryCallback !== null) {
+            $callbackResult = $queryCallback($query);
+
+            if ($callbackResult instanceof Builder) {
+                $query = $callbackResult;
+            }
+        }
+
+        return $query->findOrFail($id);
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @param  null|Closure(Builder): (Builder|void)  $queryCallback
+     */
+    public static function updateForCompany(
+        int $companyId,
+        int $id,
+        array $attributes,
+        ?Closure $queryCallback = null,
+    ): static {
+        unset($attributes['owner_company_id']);
+
+        $model = static::findForCompanyOrFail($companyId, $id, $queryCallback);
+        $model->fill($attributes);
+
+        if ($model->isDirty()) {
+            $model->save();
+        }
+
+        return $model->refresh()->loadDefaultRelations();
+    }
+
+    /**
+     * @param  null|Closure(Builder): (Builder|void)  $queryCallback
+     */
+    public static function deleteForCompany(
+        int $companyId,
+        int $id,
+        ?Closure $queryCallback = null,
+    ): void {
+        $query = static::queryForCompany($companyId);
+
+        if ($queryCallback !== null) {
+            $callbackResult = $queryCallback($query);
+
+            if ($callbackResult instanceof Builder) {
+                $query = $callbackResult;
+            }
+        }
+
+        $query->findOrFail($id)->delete();
+    }
+
+    /**
+     * Search records in the current company's dynamic table.
+     *
+     * @param  array<string, mixed>  $filters
+     * @param  null|Closure(Builder): (Builder|void)  $queryCallback
+     * @return Collection<int, static>|LengthAwarePaginator
+     */
+    public static function searchRecordsForCompany(
+        int $companyId,
+        array $filters,
+        ?Closure $queryCallback = null,
+    ): Collection|LengthAwarePaginator {
+        $model = new static;
+        $query = $model->newQueryForCompany($companyId)
+            ->with($model->defaultRelations())
+            ->advancedSearch($filters);
+
+        if ($queryCallback !== null) {
+            $callbackResult = $queryCallback($query);
+
+            if ($callbackResult instanceof Builder) {
+                $query = $callbackResult;
+            }
+        }
+
+        return $query->getModel()->advancedSearchResults($query, $filters);
+    }
+
     public function resolveRouteBinding($value, $field = null): ?static
     {
         $companyId = app(CompanyContextService::class)->companyId(request());
@@ -139,6 +266,12 @@ abstract class DynamicModel extends Model
     public function defaultRelations(): array
     {
         return $this->defaultRelations;
+    }
+
+    /** @return list<string> */
+    public static function defaultRelationsForCompany(): array
+    {
+        return (new static)->defaultRelations();
     }
 
     public function loadDefaultRelations(): static

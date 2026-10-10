@@ -52,11 +52,15 @@ class InsuranceRepository implements InsuranceRepositoryInterface
         return $insurance->refresh();
     }
 
-    public function clearDefault(int $companyId): void
+    public function clearDefault(int $companyId, ?int $exceptInsuranceId = null): void
     {
         Insurance::query()
             ->where('company_id', $companyId)
             ->where('is_default', true)
+            ->when(
+                $exceptInsuranceId !== null,
+                fn ($query) => $query->whereKeyNot($exceptInsuranceId),
+            )
             ->update(['is_default' => false]);
     }
 

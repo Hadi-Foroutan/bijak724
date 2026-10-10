@@ -50,6 +50,15 @@ test('insurance crud is company scoped searchable and keeps one default', functi
         ->and(Insurance::query()->findOrFail($secondId)->is_default)->toBeTrue()
         ->and($otherCompanyInsurance->fresh()->is_default)->toBeTrue();
 
+    $this->patchJson("/api/user/insurances/{$secondId}", [
+        'title' => 'بیمه پیش‌فرض ویرایش‌شده',
+        'is_default' => true,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.is_default', true);
+
+    expect(Insurance::query()->findOrFail($secondId)->is_default)->toBeTrue();
+
     $this->getJson('/api/user/insurances?search=INS-101&paginate=true&itemsPerPage=10')
         ->assertSuccessful()
         ->assertJsonPath('data.total', 1)
@@ -119,6 +128,26 @@ test('insurance tariff accepts fixed percentage or both and is company scoped', 
 
     $this->deleteJson("/api/user/insurances/{$insuranceId}/tariffs/{$tariffId}")->assertSuccessful();
     $this->assertDatabaseMissing('insurance_tariffs', ['id' => $tariffId]);
+});
+
+test('invalid insurance route identifiers return not found instead of a server error', function () {
+    $payload = [
+        'cargo_group_id' => $this->cargoGroup->id,
+        'cargo_value_from' => 1000000,
+        'cargo_value_to' => 5000000,
+        'fixed_premium' => 250000,
+        'premium_percentage' => 1.25,
+        'excess_amount' => 5000000,
+    ];
+
+    $this->postJson('/api/user/insurances/undefined/tariffs', $payload)
+        ->assertNotFound();
+
+    $this->postJson('/api/user/insurances/not-a-number/tariffs', $payload)
+        ->assertNotFound();
+
+    $this->postJson('/api/user/insurances/999999999/tariffs', $payload)
+        ->assertNotFound();
 });
 
 test('insurance inquiry calculates and sums cargo fees using company cargo groups', function () {

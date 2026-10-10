@@ -30,11 +30,9 @@ class WaybillCargoRepository implements WaybillCargoRepositoryInterface
         'container_number_2',
     ];
 
-    public function __construct(protected WaybillCargo $waybillCargo) {}
-
     public function query(int $companyId): Builder
     {
-        return $this->waybillCargo->newQueryForCompany($companyId);
+        return WaybillCargo::queryForCompany($companyId);
     }
 
     public function syncForWaybill(Waybill $waybill, int $companyId, array $cargos): void
@@ -45,7 +43,7 @@ class WaybillCargoRepository implements WaybillCargoRepositoryInterface
             return;
         }
 
-        $this->query($companyId)
+        WaybillCargo::queryForCompany($companyId)
             ->where('waybill_id', $waybill->getKey())
             ->delete();
 
@@ -53,14 +51,11 @@ class WaybillCargoRepository implements WaybillCargoRepositoryInterface
             return;
         }
 
-        $model = $this->waybillCargo->newInstanceForCompany($companyId);
-
         foreach ($cargos as $cargo) {
-            $model->newQuery()->create([
+            WaybillCargo::createForCompany($companyId, [
                 ...$cargo,
                 'waybill_id' => $waybill->getKey(),
-                'owner_company_id' => $companyId,
-            ]);
+            ], loadDefaultRelations: false);
         }
     }
 
@@ -86,7 +81,7 @@ class WaybillCargoRepository implements WaybillCargoRepositoryInterface
 
     private function hasSameCargos(Waybill $waybill, int $companyId, array $cargos): bool
     {
-        $currentCargos = $this->query($companyId)
+        $currentCargos = WaybillCargo::queryForCompany($companyId)
             ->where('waybill_id', $waybill->getKey())
             ->get()
             ->map(fn (WaybillCargo $cargo): array => $this->normalize($cargo->only(self::FIELDS)))

@@ -47,6 +47,24 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::prefix('api/user')
                 ->middleware(['api', 'auth:sanctum', 'company.support.scope', 'check.permissions'])
                 ->as('user.')
+                ->where([
+                    'account' => '[0-9]+',
+                    'address' => '[0-9]+',
+                    'bijakNumber' => '[0-9]+',
+                    'cargoGroup' => '[0-9]+',
+                    'driver' => '[0-9]+',
+                    'fleet' => '[0-9]+',
+                    'insurance' => '[0-9]+',
+                    'notification' => '[0-9]+',
+                    'productOwner' => '[0-9]+',
+                    'referralNumber' => '[0-9]+',
+                    'shipmentParty' => '[0-9]+',
+                    'state' => '[0-9]+',
+                    'tariff' => '[0-9]+',
+                    'transportContract' => '[0-9]+',
+                    'user' => '[0-9]+',
+                    'waybill' => '[0-9]+',
+                ])
                 ->group(function () {
                     loadRoutesFromFolder(base_path('routes/api/user'));
                 });

@@ -80,6 +80,20 @@ test('transport contracts are company scoped and replace the company default con
         ->and(TransportContract::query()->where('company_id', $this->company->id)->where('default_owned', true)->count())->toBe(1)
         ->and(TransportContract::query()->where('company_id', $this->company->id)->where('default_free', true)->count())->toBe(1);
 
+    $this->patchJson("/api/user/transport-contracts/{$secondId}", [
+        'is_default' => true,
+        'default_owned' => true,
+        'default_rental' => true,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.is_default', true)
+        ->assertJsonPath('data.default_owned', true)
+        ->assertJsonPath('data.default_rental', true);
+
+    expect(TransportContract::query()->findOrFail($secondId)->is_default)->toBeTrue()
+        ->and(TransportContract::query()->findOrFail($secondId)->default_owned)->toBeTrue()
+        ->and(TransportContract::query()->findOrFail($secondId)->default_rental)->toBeTrue();
+
     $this->getJson('/api/user/transport-contracts?search=TC-101')
         ->assertSuccessful()
         ->assertJsonCount(1, 'data')

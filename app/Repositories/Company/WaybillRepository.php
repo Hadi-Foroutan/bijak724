@@ -11,65 +11,43 @@ use Illuminate\Database\Eloquent\Collection;
 
 class WaybillRepository implements WaybillRepositoryInterface
 {
-    public function __construct(protected Waybill $waybill) {}
-
     public function query(int $companyId): Builder
     {
-        return $this->waybill->newQueryForCompany($companyId);
+        return Waybill::queryForCompany($companyId);
     }
 
     public function search(int $companyId, array $filters): Collection|LengthAwarePaginator
     {
-        $filters['itemsPerPage'] ??= $filters['per_page'] ?? 15;
-        $query = $this->query($companyId)
-            ->with($this->waybill->defaultRelations())
-            ->advancedSearch($filters);
-
-        return $query->getModel()->advancedSearchResults($query, $filters);
+        return Waybill::searchRecordsForCompany($companyId, $filters);
     }
 
     public function create(int $companyId, array $data): Waybill
     {
-        $waybill = $this->waybill
-            ->newInstanceForCompany($companyId)
-            ->newQuery()
-            ->create([...$data, 'owner_company_id' => $companyId]);
-
-        return $waybill->loadDefaultRelations();
+        return Waybill::createForCompany($companyId, $data);
     }
 
     public function findOrFail(int $companyId, int $id): Waybill
     {
-        return $this->query($companyId)
-            ->with($this->waybill->defaultRelations())
-            ->findOrFail($id);
+        return Waybill::findForCompanyOrFail($companyId, $id);
     }
 
     public function findOrFailForUpdate(int $companyId, int $id): Waybill
     {
-        return $this->query($companyId)
-            ->with($this->waybill->defaultRelations())
-            ->lockForUpdate()
-            ->findOrFail($id);
+        return Waybill::findForCompanyOrFail(
+            $companyId,
+            $id,
+            fn (Builder $query): Builder => $query->lockForUpdate(),
+        );
     }
 
     public function update(int $companyId, int $id, array $data): Waybill
     {
-        unset($data['owner_company_id']);
-
-        $waybill = $this->findOrFail($companyId, $id);
-        $waybill->fill($data);
-
-        if ($waybill->isDirty()) {
-            $waybill->save();
-        }
-
-        return $waybill->refresh()->loadDefaultRelations();
+        return Waybill::updateForCompany($companyId, $id, $data);
     }
 
     public function delete(int $companyId, int $id): void
     {
-        $this->findOrFail($companyId, $id)->delete();
+        Waybill::deleteForCompany($companyId, $id);
     }
 
     /** @param list<string> $columns */
@@ -93,8 +71,7 @@ class WaybillRepository implements WaybillRepositoryInterface
 
     public function trackingCodeExists(int $companyId, string $trackingCode): bool
     {
-        return $this->waybill
-            ->newSharedQueryForCompany($companyId)
+        return Waybill::sharedQueryForCompany($companyId)
             ->where('bijak_tracking_code', $trackingCode)
             ->exists();
     }
@@ -105,8 +82,7 @@ class WaybillRepository implements WaybillRepositoryInterface
         string $referralNumber,
         ?int $ignoreWaybillId = null,
     ): bool {
-        return $this->waybill
-            ->newSharedQueryForCompany($companyId)
+        return Waybill::sharedQueryForCompany($companyId)
             ->where('owner_company_id', $companyId)
             ->where('referral_serial', $referralSerial)
             ->where('referral_number', $referralNumber)
@@ -120,8 +96,7 @@ class WaybillRepository implements WaybillRepositoryInterface
         int $fromNumber,
         int $toNumber,
     ): ?int {
-        $highestNumber = $this->waybill
-            ->newSharedQueryForCompany($companyId)
+        $highestNumber = Waybill::sharedQueryForCompany($companyId)
             ->where('owner_company_id', $companyId)
             ->where('referral_serial', $referralSerial)
             ->whereNotNull('referral_number')
@@ -154,8 +129,7 @@ class WaybillRepository implements WaybillRepositoryInterface
         int $toNumber,
     ): ?int {
         $firstAvailableNumber = $fromNumber;
-        $usedNumbers = $this->waybill
-            ->newSharedQueryForCompany($companyId)
+        $usedNumbers = Waybill::sharedQueryForCompany($companyId)
             ->select('bijak_number')
             ->where('owner_company_id', $companyId)
             ->where('serial_number', $serialNumber)
@@ -190,8 +164,7 @@ class WaybillRepository implements WaybillRepositoryInterface
         string $number,
         ?int $ignoreWaybillId,
     ): bool {
-        return $this->waybill
-            ->newSharedQueryForCompany($companyId)
+        return Waybill::sharedQueryForCompany($companyId)
             ->where('owner_company_id', $companyId)
             ->where('serial_number', $serialNumber)
             ->where($numberColumn, $number)
@@ -202,7 +175,7 @@ class WaybillRepository implements WaybillRepositoryInterface
     /** @return Builder<Waybill> */
     private function issuedQuery(int $companyId): Builder
     {
-        return $this->query($companyId)->whereIn('status', [
+        return Waybill::queryForCompany($companyId)->whereIn('status', [
             WaybillStatus::Completed->value,
             WaybillStatus::Canceled->value,
         ]);

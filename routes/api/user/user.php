@@ -1,7 +1,7 @@
 <?php
 
 use App\Http\Controllers\User\BijakNumberController;
-use App\Http\Controllers\User\Cargo\CargoController;
+use App\Http\Controllers\User\CanceledReferralController;
 use App\Http\Controllers\User\CargoGroupController;
 use App\Http\Controllers\User\CompanySettingController;
 use App\Http\Controllers\User\CompanyUserController;
@@ -20,6 +20,7 @@ use App\Http\Controllers\User\TransportContractController;
 use App\Http\Controllers\User\Waybill\WaybillController;
 use Illuminate\Support\Facades\Route;
 
+// Dashboard
 Route::prefix('dashboard')->name('dashboard.')->controller(DashboardController::class)->group(function () {
     Route::get('/', 'index')->name('index');
     Route::get('waybills/daily', 'dailyWaybills')->name('waybills.daily');
@@ -28,32 +29,36 @@ Route::prefix('dashboard')->name('dashboard.')->controller(DashboardController::
     Route::get('drivers/top', 'topDrivers')->name('drivers.top');
 });
 
+// Notifications
 Route::apiResource('notifications', NotificationController::class)
     ->only(['index', 'show']);
 
-Route::get('settings', [CompanySettingController::class, 'show'])
-    ->name('settings.show');
-Route::match(['put', 'patch'], 'settings', [CompanySettingController::class, 'update'])
-    ->name('settings.update');
+// Company Settings
+Route::prefix('settings')->name('settings.')->group(function () {
+    Route::get('/', [CompanySettingController::class, 'show'])->name('show');
+    Route::match(['put', 'patch'], '/', [CompanySettingController::class, 'update'])->name('update');
+});
 
-Route::get('{user}/permissions', [CompanyUserController::class, 'permissions'])
-    ->name('permissions.index');
-Route::put('{user}/permissions', [CompanyUserController::class, 'syncPermissions'])
-    ->name('permissions.update');
+// Company Users
+Route::prefix('{user}/permissions')->name('permissions.')->group(function () {
+    Route::get('/', [CompanyUserController::class, 'permissions'])->name('index');
+    Route::put('/', [CompanyUserController::class, 'syncPermissions'])->name('update');
+});
 
+Route::prefix('users')->name('users.')->group(function () {
+    Route::post('{user}', [CompanyUserController::class, 'update'])->name('update');
+});
 Route::apiResource('users', CompanyUserController::class)
     ->except(['update']);
-Route::post('users/{user}', [CompanyUserController::class, 'update'])
-    ->name('users.update');
 
+// Drivers
 Route::prefix('drivers')->name('drivers.')->group(function () {
     Route::match(['get', 'post'], '/inquiry', [DriverController::class, 'inquiry'])
         ->name('inquiry');
+    Route::post('{driver}', [DriverController::class, 'update'])->name('update');
 });
 Route::apiResource('drivers', DriverController::class)
     ->except(['update']);
-Route::post('drivers/{driver}', [DriverController::class, 'update'])
-    ->name('drivers.update');
 Route::apiResource('drivers.accounts', DriverAccountController::class)
     ->names([
         'index' => 'drivers.accounts.index',
@@ -67,32 +72,40 @@ Route::apiResource('drivers.accounts', DriverAccountController::class)
         'accounts' => 'account',
     ]);
 
+// Fleets
 Route::prefix('fleets')->name('fleets.')->group(function () {
     Route::match(['get', 'post'], '/inquiry', [FleetController::class, 'inquiry'])
         ->name('inquiry');
 });
 Route::apiResource('fleets', FleetController::class);
 
-Route::match(['get', 'post'], 'bijak-numbers/inquiry', [BijakNumberController::class, 'inquiry'])
-    ->name('bijak-numbers.inquiry');
+// Bijak Numbers
+Route::prefix('bijak-numbers')->name('bijak-numbers.')->group(function () {
+    Route::match(['get', 'post'], '/inquiry', [BijakNumberController::class, 'inquiry'])->name('inquiry');
+});
 Route::apiResource('bijak-numbers', BijakNumberController::class)
     ->parameters(['bijak-numbers' => 'bijakNumber']);
 
-Route::post('referral-numbers/inquiry', [ReferralNumberController::class, 'inquiry'])
-    ->name('referral-numbers.inquiry');
+// Referral Numbers
+Route::prefix('referral-numbers')->name('referral-numbers.')->group(function () {
+    Route::post('/inquiry', [ReferralNumberController::class, 'inquiry'])->name('inquiry');
+});
 Route::apiResource('referral-numbers', ReferralNumberController::class)
     ->parameters(['referral-numbers' => 'referralNumber']);
 
+// Canceled Referrals
+Route::prefix('canceled-referrals')->name('canceled-referrals.')->group(function () {
+    Route::get('/', [CanceledReferralController::class, 'index'])->name('index');
+});
+
+// Shipment Parties
 Route::prefix('shipment-parties')->name('shipment-parties.')->group(function () {
     Route::match(['get', 'post'], '/inquiry', [ShipmentPartyController::class, 'inquiry'])->name('inquiry');
+    Route::match(['get', 'post'], '/addresses/inquiry', [ShipmentPartyAddressController::class, 'inquiry'])
+        ->name('addresses-inquiry');
 });
 Route::apiResource('shipment-parties', ShipmentPartyController::class)
     ->parameters(['shipment-parties' => 'shipmentParty']);
-
-Route::prefix('shipment-parties')->name('shipment-parties.')->group(function () {
-    Route::match(['get', 'post'], '/addresses/inquiry', [ShipmentPartyAddressController::class, 'inquiry'])->name('addresses-inquiry');
-    Route::match(['get', 'post'], '/inquiry', [ShipmentPartyController::class, 'inquiry'])->name('inquiry');
-});
 Route::apiResource('shipment-parties.addresses', ShipmentPartyAddressController::class)
     ->names([
         'index' => 'addresses.index',
@@ -106,20 +119,22 @@ Route::apiResource('shipment-parties.addresses', ShipmentPartyAddressController:
         'addresses' => 'address',
     ]);
 
-Route::get('waybills/options', [WaybillController::class, 'options'])->name('waybills.options');
-Route::patch('waybills/{waybill}/cancel', [WaybillController::class, 'cancel'])
-    ->name('waybills.cancel');
-Route::patch('waybills/{waybill}/referral/cancel', [WaybillController::class, 'cancelReferral'])
-    ->name('waybills.referral.cancel');
+// Waybills
+Route::prefix('waybills')->name('waybills.')->group(function () {
+    Route::get('/options', [WaybillController::class, 'options'])->name('options');
+    Route::patch('{waybill}/cancel', [WaybillController::class, 'cancel'])->name('cancel');
+    Route::patch('{waybill}/referral/cancel', [WaybillController::class, 'cancelReferral'])
+        ->name('referral.cancel');
+});
 Route::apiResource('waybills', WaybillController::class);
-// Route::apiResource('cargos', CargoController::class);
+
+// Product Owners
 Route::apiResource('product-owners', ProductOwnerController::class)
     ->parameters(['product-owners' => 'productOwner']);
 
-Route::get('transport-contracts/options', [TransportContractController::class, 'options'])
-    ->name('transport-contracts.options');
-
+// Transport Contracts
 Route::prefix('transport-contracts')->name('transport-contracts.')->group(function () {
+    Route::get('/options', [TransportContractController::class, 'options'])->name('options');
     Route::get('{transportContract}/users', [TransportContractController::class, 'users'])
         ->name('users');
     Route::put('{transportContract}/users', [TransportContractController::class, 'syncUsers'])
@@ -128,6 +143,7 @@ Route::prefix('transport-contracts')->name('transport-contracts.')->group(functi
 Route::apiResource('transport-contracts', TransportContractController::class)
     ->parameters(['transport-contracts' => 'transportContract']);
 
+// Insurances
 Route::prefix('insurances')->name('insurances.')->group(function () {
     Route::match(['get', 'post'], '/inquiry', [InsuranceController::class, 'inquiry'])->name('inquiry');
 });
@@ -135,7 +151,13 @@ Route::apiResource('insurances', InsuranceController::class);
 Route::apiResource('insurances.tariffs', InsuranceTariffController::class)
     ->parameters(['tariffs' => 'tariff']);
 
-Route::get('cargo-groups', [CargoGroupController::class, 'index'])->name('cargo-groups.index');
-Route::get('cargo-groups/{cargoGroup}', [CargoGroupController::class, 'show'])->name('cargo-groups.show');
-Route::put('cargo-groups/{cargoGroup}/cargos', [CargoGroupController::class, 'syncCargos'])
-    ->name('cargo-groups-cargos.update');
+// Cargo Groups
+Route::prefix('cargo-groups')->group(function () {
+    Route::name('cargo-groups.')->group(function () {
+        Route::get('/', [CargoGroupController::class, 'index'])->name('index');
+        Route::get('{cargoGroup}', [CargoGroupController::class, 'show'])->name('show');
+    });
+
+    Route::put('{cargoGroup}/cargos', [CargoGroupController::class, 'syncCargos'])
+        ->name('cargo-groups-cargos.update');
+});

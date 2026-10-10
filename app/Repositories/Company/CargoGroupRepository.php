@@ -13,14 +13,9 @@ class CargoGroupRepository implements CargoGroupRepositoryInterface
 {
     public function search(int $companyId, array $filters): Collection|LengthAwarePaginator
     {
+        $filters['order_field'] = 'id';
+        $filters['order_type'] = 'ASC';
         $groups = CargoGroup::searchRecords($filters);
-
-        if ($groups instanceof LengthAwarePaginator) {
-            $groups->setCollection($this->loadCompanyCargos($companyId, $groups->getCollection()));
-
-            return $groups;
-        }
-
         return $this->loadCompanyCargos($companyId, $groups);
     }
 

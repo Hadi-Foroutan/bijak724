@@ -65,7 +65,7 @@ class TransportContractService
                 $this->transportContractAccessService->canViewAll($user),
             );
             $items = Arr::pull($data, 'items');
-            $this->clearDefaultWhenSelected($companyId, $data);
+            $this->clearDefaultWhenSelected($companyId, $data, $transportContract->getKey());
             $transportContract = $this->transportContractRepository->update($transportContract, $data);
 
             if ($items !== null) {
@@ -137,8 +137,11 @@ class TransportContractService
     }
 
     /** @param array<string, mixed> $data */
-    private function clearDefaultWhenSelected(int $companyId, array $data): void
-    {
+    private function clearDefaultWhenSelected(
+        int $companyId,
+        array $data,
+        ?int $exceptTransportContractId = null,
+    ): void {
         $selectedDefaultFields = array_values(array_filter([
             ($data['is_default'] ?? false) ? 'is_default' : null,
             ...array_map(
@@ -151,7 +154,11 @@ class TransportContractService
 
         if ($selectedDefaultFields !== []) {
             $this->transportContractRepository->lockCompanyForUpdate($companyId);
-            $this->transportContractRepository->clearDefaults($companyId, $selectedDefaultFields);
+            $this->transportContractRepository->clearDefaults(
+                $companyId,
+                $selectedDefaultFields,
+                $exceptTransportContractId,
+            );
         }
     }
 }

@@ -85,6 +85,8 @@ return [
     'user.referral-numbers.inquiry' => 'استعلام شماره حواله آزاد',
     'user.referral-numbers.preview' => 'مشاهده شماره حواله آزاد بعدی',
 
+    'user.canceled-referrals.index' => 'مشاهده فهرست حواله‌های باطل‌شده',
+
     'user.addresses.index' => 'مشاهده لیست آدرس‌های فرستندگان و گیرندگان',
     'user.addresses.store' => 'ایجاد آدرس جدید برای فرستنده یا گیرنده',
     'user.addresses.show' => 'مشاهده آدرس فرستنده یا گیرنده',

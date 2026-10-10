@@ -11,11 +11,9 @@ use Illuminate\Support\Facades\DB;
 
 class DriverAccountRepository implements DriverAccountRepositoryInterface
 {
-    public function __construct(protected DriverAccount $driverAccount) {}
-
     public function query(int $companyId): Builder
     {
-        return $this->driverAccount->newQueryForCompany($companyId);
+        return DriverAccount::queryForCompany($companyId);
     }
 
     public function searchForDriver(
@@ -24,10 +22,12 @@ class DriverAccountRepository implements DriverAccountRepositoryInterface
         array $filters,
     ): Collection|LengthAwarePaginator {
         $filters['itemsPerPage'] ??= $filters['per_page'] ?? 15;
-        $filters['eq-driver_id'] = $driverId;
-        $query = $this->query($companyId)->advancedSearch($filters);
 
-        return $query->getModel()->advancedSearchResults($query, $filters);
+        return DriverAccount::searchRecordsForCompany(
+            $companyId,
+            $filters,
+            fn (Builder $query): Builder => $query->where('driver_id', $driverId),
+        );
     }
 
     public function findForDriverOrFail(
@@ -35,15 +35,17 @@ class DriverAccountRepository implements DriverAccountRepositoryInterface
         int $driverId,
         int $accountId,
     ): DriverAccount {
-        return $this->query($companyId)
-            ->where('driver_id', $driverId)
-            ->findOrFail($accountId);
+        return DriverAccount::findForCompanyOrFail(
+            $companyId,
+            $accountId,
+            fn (Builder $query): Builder => $query->where('driver_id', $driverId),
+        );
     }
 
     public function createForDriver(int $companyId, int $driverId, array $data): DriverAccount
     {
         return DB::transaction(function () use ($companyId, $driverId, $data): DriverAccount {
-            $hasAccounts = $this->query($companyId)
+            $hasAccounts = DriverAccount::queryForCompany($companyId)
                 ->where('driver_id', $driverId)
                 ->exists();
             $data['driver_id'] = $driverId;
@@ -53,12 +55,7 @@ class DriverAccountRepository implements DriverAccountRepositoryInterface
                 $this->clearDefaultAccounts($companyId, $driverId);
             }
 
-            $account = $this->driverAccount
-                ->newInstanceForCompany($companyId)
-                ->newQuery()
-                ->create([...$data, 'owner_company_id' => $companyId]);
-
-            return $account->loadDefaultRelations();
+            return DriverAccount::createForCompany($companyId, $data);
         });
     }
 
@@ -69,8 +66,9 @@ class DriverAccountRepository implements DriverAccountRepositoryInterface
         array $data,
     ): DriverAccount {
         return DB::transaction(function () use ($companyId, $driverId, $accountId, $data): DriverAccount {
-            $account = $this->findForDriverOrFail($companyId, $driverId, $accountId);
             unset($data['driver_id'], $data['owner_company_id']);
+
+            $account = $this->findForDriverOrFail($companyId, $driverId, $accountId);
 
             if (array_key_exists('is_default', $data) && (bool) $data['is_default']) {
                 $this->clearDefaultAccounts($companyId, $driverId, $accountId);
@@ -84,9 +82,12 @@ class DriverAccountRepository implements DriverAccountRepositoryInterface
                 }
             }
 
-            $account->update($data);
-
-            return $account->refresh()->loadDefaultRelations();
+            return DriverAccount::updateForCompany(
+                $companyId,
+                $accountId,
+                $data,
+                fn (Builder $query): Builder => $query->where('driver_id', $driverId),
+            );
         });
     }
 
@@ -95,7 +96,11 @@ class DriverAccountRepository implements DriverAccountRepositoryInterface
         DB::transaction(function () use ($companyId, $driverId, $accountId): void {
             $account = $this->findForDriverOrFail($companyId, $driverId, $accountId);
             $wasDefault = $account->is_default;
-            $account->delete();
+            DriverAccount::deleteForCompany(
+                $companyId,
+                $accountId,
+                fn (Builder $query): Builder => $query->where('driver_id', $driverId),
+            );
 
             if ($wasDefault) {
                 $this->firstAccountExcept($companyId, $driverId, $accountId)
@@ -109,7 +114,7 @@ class DriverAccountRepository implements DriverAccountRepositoryInterface
         int $driverId,
         ?int $exceptAccountId = null,
     ): void {
-        $this->query($companyId)
+        DriverAccount::queryForCompany($companyId)
             ->where('driver_id', $driverId)
             ->where('is_default', true)
             ->when(
@@ -124,7 +129,7 @@ class DriverAccountRepository implements DriverAccountRepositoryInterface
         int $driverId,
         int $exceptAccountId,
     ): ?DriverAccount {
-        return $this->query($companyId)
+        return DriverAccount::queryForCompany($companyId)
             ->where('driver_id', $driverId)
             ->whereKeyNot($exceptAccountId)
             ->oldest('id')

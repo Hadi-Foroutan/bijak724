@@ -13,63 +13,46 @@ use Illuminate\Validation\Rules\Unique;
 
 class DriverRepository implements DriverRepositoryInterface
 {
-    public function __construct(protected Driver $driver) {}
-
     public function query(int $companyId): Builder
     {
-        return $this->driver->newQueryForCompany($companyId);
+        return Driver::queryForCompany($companyId);
     }
 
     public function search(int $companyId, array $filters): Collection|LengthAwarePaginator
     {
         $filters['itemsPerPage'] ??= $filters['per_page'] ?? 15;
-        $query = $this->query($companyId)
-            ->with($this->driver->defaultRelations())
-            ->advancedSearch($filters);
 
-        return $query->getModel()->advancedSearchResults($query, $filters);
+        return Driver::searchRecordsForCompany($companyId, $filters);
     }
 
     public function create(int $companyId, array $data): Driver
     {
-        $driver = $this->driver
-            ->newInstanceForCompany($companyId)
-            ->newQuery()
-            ->create([...$data, 'owner_company_id' => $companyId]);
-
-        return $driver->loadDefaultRelations();
+        return Driver::createForCompany($companyId, $data);
     }
 
     public function findOrFail(int $companyId, int $id): Driver
     {
-        return $this->query($companyId)
-            ->with($this->driver->defaultRelations())
-            ->findOrFail($id);
+        return Driver::findForCompanyOrFail($companyId, $id);
     }
 
     public function update(int $companyId, int $id, array $data): Driver
     {
-        unset($data['owner_company_id']);
-
-        $driver = $this->findOrFail($companyId, $id);
-        $driver->update($data);
-
-        return $driver->refresh()->loadDefaultRelations();
+        return Driver::updateForCompany($companyId, $id, $data);
     }
 
     public function delete(int $companyId, int $id): void
     {
-        $this->findOrFail($companyId, $id)->delete();
+        Driver::deleteForCompany($companyId, $id);
     }
 
     public function exists(int $companyId, int $id): bool
     {
-        return $this->query($companyId)->whereKey($id)->exists();
+        return Driver::queryForCompany($companyId)->whereKey($id)->exists();
     }
 
     public function existsRule(int $companyId, string $column = 'id'): Exists
     {
-        $model = $this->driver->newInstanceForCompany($companyId);
+        $model = Driver::modelForCompany($companyId);
         $rule = Rule::exists($model->getTable(), $column);
 
         return $model->companyId() === $companyId
@@ -79,15 +62,15 @@ class DriverRepository implements DriverRepositoryInterface
 
     public function findByNationalCode(int $companyId, string $nationalCode): Driver
     {
-        return $this->query($companyId)
-            ->with($this->driver->defaultRelations())
+        return Driver::queryForCompany($companyId)
+            ->with(Driver::defaultRelationsForCompany())
             ->where('national_code', $nationalCode)
             ->firstOrFail();
     }
 
     public function uniqueNationalCodeRule(int $companyId, ?int $ignoreDriverId = null): Unique
     {
-        $table = $this->driver->newInstanceForCompany($companyId)->getTable();
+        $table = Driver::modelForCompany($companyId)->getTable();
         $rule = Rule::unique($table, 'national_code');
 
         return $ignoreDriverId === null ? $rule : $rule->ignore($ignoreDriverId);

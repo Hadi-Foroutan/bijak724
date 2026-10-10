@@ -103,7 +103,7 @@ class InsuranceService
 
             if ($data['is_default'] ?? false) {
                 $this->insuranceRepository->lockCompanyForUpdate($companyId);
-                $this->insuranceRepository->clearDefault($companyId);
+                $this->insuranceRepository->clearDefault($companyId, $insurance->getKey());
             }
 
             $this->insuranceRepository->update($insurance, $data);

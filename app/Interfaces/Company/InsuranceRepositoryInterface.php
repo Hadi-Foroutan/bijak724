@@ -22,7 +22,7 @@ interface InsuranceRepositoryInterface
 
     public function update(Insurance $insurance, array $data): Insurance;
 
-    public function clearDefault(int $companyId): void;
+    public function clearDefault(int $companyId, ?int $exceptInsuranceId = null): void;
 
     public function delete(Insurance $insurance): void;
 }

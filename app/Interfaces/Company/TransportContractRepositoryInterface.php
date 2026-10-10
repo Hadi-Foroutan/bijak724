@@ -56,7 +56,11 @@ interface TransportContractRepositoryInterface
     public function syncItems(TransportContract $transportContract, array $items): TransportContract;
 
     /** @param array<int, string> $fields */
-    public function clearDefaults(int $companyId, array $fields): void;
+    public function clearDefaults(
+        int $companyId,
+        array $fields,
+        ?int $exceptTransportContractId = null,
+    ): void;
 
     /**
      * @param  list<int>  $userIds
