@@ -22,13 +22,14 @@ class CargoGroupService
         return ServiceResult::success($this->cargoGroupRepository->findOrFail($companyId, $id));
     }
 
-    public function syncCargos(int $companyId, int $id, array $cargoIds): ServiceResult
+    /** @param list<int> $cargoCodes */
+    public function syncCargos(int $companyId, int $id, array $cargoCodes): ServiceResult
     {
-        return DB::transaction(function () use ($companyId, $id, $cargoIds): ServiceResult {
+        return DB::transaction(function () use ($companyId, $id, $cargoCodes): ServiceResult {
             $cargoGroup = $this->cargoGroupRepository->findOrFail($companyId, $id);
 
             return ServiceResult::success(
-                $this->cargoGroupRepository->syncCargos($companyId, $cargoGroup, $cargoIds),
+                $this->cargoGroupRepository->syncCargos($companyId, $cargoGroup, $cargoCodes),
             );
         });
     }

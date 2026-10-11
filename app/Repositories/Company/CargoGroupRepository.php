@@ -15,8 +15,8 @@ class CargoGroupRepository implements CargoGroupRepositoryInterface
     {
         $filters['order_field'] = 'id';
         $filters['order_type'] = 'ASC';
-        $groups = CargoGroup::searchRecords($filters);
-        return $this->loadCompanyCargos($companyId, $groups);
+
+        return CargoGroup::searchRecords($filters);
     }
 
     public function findOrFail(int $companyId, int $id): CargoGroup
@@ -26,8 +26,14 @@ class CargoGroupRepository implements CargoGroupRepositoryInterface
         return $this->loadCompanyCargos($companyId, collect([$cargoGroup]))->firstOrFail();
     }
 
-    public function syncCargos(int $companyId, CargoGroup $cargoGroup, array $cargoIds): CargoGroup
+    public function syncCargos(int $companyId, CargoGroup $cargoGroup, array $cargoCodes): CargoGroup
     {
+        $cargoIds = Cargo::query()
+            ->whereIn('code', $cargoCodes)
+            ->pluck('id')
+            ->map(static fn (int|string $cargoId): int => (int) $cargoId)
+            ->all();
+
         if ($cargoGroup->group_number === 1) {
             CargoGroupCargo::query()
                 ->where('company_id', $companyId)

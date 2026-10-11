@@ -24,7 +24,7 @@ class SyncCargoGroupCargosRequest extends BaseRequest
     {
         return [
             'cargo_ids' => ['required', 'array'],
-            'cargo_ids.*' => ['required', 'integer', 'distinct:strict', Rule::exists('cargos', 'id')],
+            'cargo_ids.*' => ['required', 'integer', 'distinct:strict', Rule::exists('cargos', 'code')],
         ];
     }
 }

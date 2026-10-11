@@ -34,7 +34,7 @@ test('cargo groups are read only and expose company specific cargo assignments',
         ->assertJsonCount(2, 'data.cargos');
 
     $this->putJson("/api/user/cargo-groups/{$this->group->id}/cargos", [
-        'cargo_ids' => [$this->firstCargo->id, $this->secondCargo->id],
+        'cargo_ids' => [$this->firstCargo->code, $this->secondCargo->code],
     ])
         ->assertSuccessful()
         ->assertJsonCount(2, 'data.cargos')
@@ -48,28 +48,35 @@ test('cargo groups are read only and expose company specific cargo assignments',
     ]);
 
     $this->putJson("/api/user/cargo-groups/{$this->group->id}/cargos", [
-        'cargo_ids' => [$this->secondCargo->id],
+        'cargo_ids' => [$this->secondCargo->code],
     ])->assertSuccessful()->assertJsonCount(1, 'data.cargos');
 
     expect(CargoGroupCargo::query()->where('company_id', $this->company->id)->count())->toBe(1)
+        ->and(CargoGroupCargo::query()
+            ->where('company_id', $this->company->id)
+            ->value('cargo_id'))->toBe($this->secondCargo->id)
         ->and(CargoGroupCargo::query()->where('company_id', $otherCompany->id)->count())->toBe(1);
 
     $this->getJson('/api/user/cargo-groups?search=گروه 2')
         ->assertSuccessful()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.group_number', 2)
-        ->assertJsonPath('data.0.cargos.0.id', $this->secondCargo->id);
+        ->assertJsonMissingPath('data.0.cargos');
+
+    $this->getJson('/api/user/cargo-groups?paginate=1')
+        ->assertSuccessful()
+        ->assertJsonMissingPath('data.data.0.cargos');
 
     $this->postJson('/api/user/cargo-groups', ['name' => 'غیرمجاز'])->assertMethodNotAllowed();
 });
 
 test('moving a cargo to group one removes its explicit company assignment', function () {
     $this->putJson("/api/user/cargo-groups/{$this->group->id}/cargos", [
-        'cargo_ids' => [$this->firstCargo->id],
+        'cargo_ids' => [$this->firstCargo->code],
     ])->assertSuccessful();
 
     $this->putJson("/api/user/cargo-groups/{$this->defaultGroup->id}/cargos", [
-        'cargo_ids' => [$this->firstCargo->id],
+        'cargo_ids' => [$this->firstCargo->code],
     ])->assertSuccessful()
         ->assertJsonPath('data.group_number', 1)
         ->assertJsonFragment(['id' => $this->firstCargo->id]);
@@ -80,9 +87,9 @@ test('moving a cargo to group one removes its explicit company assignment', func
     ]);
 });
 
-test('cargo group sync validates every shared cargo id', function () {
+test('cargo group sync validates every shared cargo code', function () {
     $this->putJson("/api/user/cargo-groups/{$this->group->id}/cargos", [
-        'cargo_ids' => [$this->firstCargo->id, $this->firstCargo->id],
+        'cargo_ids' => [$this->firstCargo->code, $this->firstCargo->code],
     ])->assertUnprocessable()->assertJsonValidationErrors('cargo_ids.1');
 
     $this->putJson("/api/user/cargo-groups/{$this->group->id}/cargos", [

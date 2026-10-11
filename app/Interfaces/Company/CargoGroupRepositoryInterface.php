@@ -13,8 +13,8 @@ interface CargoGroupRepositoryInterface
 
     public function findOrFail(int $companyId, int $id): CargoGroup;
 
-    /** @param list<int> $cargoIds */
-    public function syncCargos(int $companyId, CargoGroup $cargoGroup, array $cargoIds): CargoGroup;
+    /** @param list<int> $cargoCodes */
+    public function syncCargos(int $companyId, CargoGroup $cargoGroup, array $cargoCodes): CargoGroup;
 
     /**
      * @param  list<int>  $cargoCodes
