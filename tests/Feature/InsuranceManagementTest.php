@@ -116,7 +116,7 @@ test('insurance tariff accepts fixed percentage or both and is company scoped', 
     $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [
         'cargo_group_id' => $this->cargoGroup->id,
         'cargo_value_from' => 0,
-    ])->assertUnprocessable()->assertJsonValidationErrors(['cargo_group_id', 'fixed_premium', 'premium_percentage']);
+    ])->assertUnprocessable()->assertJsonValidationErrors(['fixed_premium', 'premium_percentage']);
 
     $otherInsurance = Insurance::factory()->create();
     $this->getJson("/api/user/insurances/{$otherInsurance->id}")->assertNotFound();
@@ -128,6 +128,61 @@ test('insurance tariff accepts fixed percentage or both and is company scoped', 
 
     $this->deleteJson("/api/user/insurances/{$insuranceId}/tariffs/{$tariffId}")->assertSuccessful();
     $this->assertDatabaseMissing('insurance_tariffs', ['id' => $tariffId]);
+});
+
+test('insurance tariff rejects overlapping ranges only within the same cargo group', function () {
+    $insuranceId = $this->postJson('/api/user/insurances', insurancePayload($this->insuranceCompany->id, 'INS-201'))
+        ->assertCreated()
+        ->json('data.id');
+
+    $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [
+        'cargo_group_id' => $this->cargoGroup->id,
+        'cargo_value_from' => 0,
+        'cargo_value_to' => 100,
+        'fixed_premium' => 10,
+    ])->assertCreated();
+
+    $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [
+        'cargo_group_id' => $this->cargoGroup->id,
+        'cargo_value_from' => 50,
+        'cargo_value_to' => 150,
+        'fixed_premium' => 20,
+    ])->assertUnprocessable()
+        ->assertJsonPath('errors.error.0', __('public.insurance_tariff_range_exists'));
+
+    $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [
+        'cargo_group_id' => $this->defaultCargoGroup->id,
+        'cargo_value_from' => 50,
+        'cargo_value_to' => 150,
+        'fixed_premium' => 20,
+    ])->assertCreated();
+
+    $secondRangeId = $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [
+        'cargo_group_id' => $this->cargoGroup->id,
+        'cargo_value_from' => 101,
+        'cargo_value_to' => 200,
+        'fixed_premium' => 30,
+    ])->assertCreated()->json('data.id');
+
+    $this->patchJson("/api/user/insurances/{$insuranceId}/tariffs/{$secondRangeId}", [
+        'cargo_value_from' => 90,
+    ])->assertUnprocessable()
+        ->assertJsonPath('errors.error.0', __('public.insurance_tariff_range_exists'));
+
+    $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [
+        'cargo_group_id' => null,
+        'cargo_value_from' => 0,
+        'cargo_value_to' => 100,
+        'fixed_premium' => 40,
+    ])->assertCreated();
+
+    $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [
+        'cargo_group_id' => null,
+        'cargo_value_from' => 100,
+        'cargo_value_to' => 200,
+        'fixed_premium' => 50,
+    ])->assertUnprocessable()
+        ->assertJsonPath('errors.error.0', __('public.insurance_tariff_range_exists'));
 });
 
 test('invalid insurance route identifiers return not found instead of a server error', function () {
@@ -168,11 +223,18 @@ test('insurance inquiry calculates and sums cargo fees using company cargo group
 
     $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [
         'cargo_group_id' => $this->cargoGroup->id,
-        'cargo_value_from' => 50000,
-        'cargo_value_to' => 60000,
+        'cargo_value_from' => 0,
+        'cargo_value_to' => 20000,
         'fixed_premium' => 250,
         'premium_percentage' => 2,
         'excess_amount' => 1000,
+    ])->assertCreated();
+
+    $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [
+        'cargo_group_id' => $this->cargoGroup->id,
+        'cargo_value_from' => 20001,
+        'cargo_value_to' => 60000,
+        'fixed_premium' => 5000,
     ])->assertCreated();
 
     $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [

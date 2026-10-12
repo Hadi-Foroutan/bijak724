@@ -18,6 +18,14 @@ interface InsuranceTariffRepositoryInterface
 
     public function delete(InsuranceTariff $tariff): void;
 
+    public function overlappingRangeExists(
+        int $insuranceId,
+        ?int $cargoGroupId,
+        float $cargoValueFrom,
+        ?float $cargoValueTo,
+        ?int $ignoreId = null,
+    ): bool;
+
     public function findApplicable(
         int $companyId,
         int $insuranceId,

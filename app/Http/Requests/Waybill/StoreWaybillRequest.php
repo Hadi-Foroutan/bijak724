@@ -219,7 +219,7 @@ class StoreWaybillRequest extends BaseRequest
             'cargos.*.description' => ['nullable', 'string'],
             'cargos.*.title' => ['nullable', 'string', 'max:255'],
             'cargos.*.origin_weight' => ['required', 'numeric', $minimumCargoCount],
-            'cargos.*.value' => [$requiredWhenCompleted, 'nullable', 'integer', 'min:0'],
+            'cargos.*.value' => [$requiredWhenCompleted, 'nullable', 'integer', $minimumCargoCount],
             'cargos.*.quantity' => [$requiredWhenCompleted, 'nullable', 'integer', 'min:1'],
             'cargos.*.is_traffic' => ['nullable', 'boolean'],
             //            'cargos.*.cottage_number' => ['nullable', 'string', 'max:255'],

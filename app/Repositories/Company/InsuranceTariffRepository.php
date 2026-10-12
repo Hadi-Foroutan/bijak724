@@ -49,6 +49,31 @@ class InsuranceTariffRepository implements InsuranceTariffRepositoryInterface
         $tariff->delete();
     }
 
+    public function overlappingRangeExists(
+        int $insuranceId,
+        ?int $cargoGroupId,
+        float $cargoValueFrom,
+        ?float $cargoValueTo,
+        ?int $ignoreId = null,
+    ): bool {
+        return InsuranceTariff::query()
+            ->where('insurance_id', $insuranceId)
+            ->when(
+                $cargoGroupId === null,
+                fn (Builder $query): Builder => $query->whereNull('cargo_group_id'),
+                fn (Builder $query): Builder => $query->where('cargo_group_id', $cargoGroupId),
+            )
+            ->when(
+                $cargoValueTo !== null,
+                fn (Builder $query): Builder => $query->where('cargo_value_from', '<=', $cargoValueTo),
+            )
+            ->where(fn (Builder $query): Builder => $query
+                ->whereNull('cargo_value_to')
+                ->orWhere('cargo_value_to', '>=', $cargoValueFrom))
+            ->when($ignoreId !== null, fn (Builder $query): Builder => $query->whereKeyNot($ignoreId))
+            ->exists();
+    }
+
     public function findApplicable(
         int $companyId,
         int $insuranceId,
@@ -59,21 +84,31 @@ class InsuranceTariffRepository implements InsuranceTariffRepositoryInterface
             ->where('insurance_id', $insuranceId)
             ->whereHas('insurance', fn (Builder $query) => $query->where('company_id', $companyId));
 
-        $groupTariff = (clone $query)
-            ->where('cargo_group_id', $cargoGroupId)
+        $groupTariff = $this->withinCargoValueRange(
+            (clone $query)->where('cargo_group_id', $cargoGroupId),
+            $cargoValue,
+        )
+            ->orderByDesc('cargo_value_from')
             ->first();
 
         if ($groupTariff !== null) {
             return $groupTariff;
         }
 
-        return $query
-            ->whereNull('cargo_group_id')
-            ->where('cargo_value_from', '<=', $cargoValue)
-            ->where(fn (Builder $query) => $query
-                ->whereNull('cargo_value_to')
-                ->orWhere('cargo_value_to', '>=', $cargoValue))
+        return $this->withinCargoValueRange(
+            $query->whereNull('cargo_group_id'),
+            $cargoValue,
+        )
             ->orderByDesc('cargo_value_from')
             ->first();
+    }
+
+    private function withinCargoValueRange(Builder $query, float $cargoValue): Builder
+    {
+        return $query
+            ->where('cargo_value_from', '<=', $cargoValue)
+            ->where(fn (Builder $query): Builder => $query
+                ->whereNull('cargo_value_to')
+                ->orWhere('cargo_value_to', '>=', $cargoValue));
     }
 }

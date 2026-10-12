@@ -27,8 +27,6 @@ class StoreInsuranceTariffRequest extends BaseRequest
                 'nullable',
                 'integer',
                 Rule::exists('cargo_groups', 'id'),
-                Rule::unique('insurance_tariffs', 'cargo_group_id')
-                    ->where('insurance_id', $this->route('insurance')),
             ],
             'cargo_value_from' => ['required', 'numeric', 'min:0'],
             'cargo_value_to' => ['nullable', 'numeric', 'gte:cargo_value_from'],

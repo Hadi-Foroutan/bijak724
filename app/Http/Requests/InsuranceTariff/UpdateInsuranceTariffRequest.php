@@ -30,9 +30,6 @@ class UpdateInsuranceTariffRequest extends BaseRequest
                 'nullable',
                 'integer',
                 Rule::exists('cargo_groups', 'id'),
-                Rule::unique('insurance_tariffs', 'cargo_group_id')
-                    ->where('insurance_id', $this->route('insurance'))
-                    ->ignore($this->route('tariff')),
             ],
             'cargo_value_from' => ['sometimes', 'required', 'numeric', 'min:0'],
             'cargo_value_to' => ['sometimes', 'nullable', 'numeric', 'min:0'],
