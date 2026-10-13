@@ -117,13 +117,40 @@ class BijakNumberService
 
     public function inquiry(int $companyId): ServiceResult
     {
-        $record = $this->bijakNumberRepository->active($companyId);
+        $next = DB::transaction(function () use ($companyId): ?array {
+            $this->lockCompany($companyId);
+            $record = $this->bijakNumberRepository->active($companyId);
 
-        if ($record === null || $this->isExhausted($record)) {
+            if ($record === null || $this->isExhausted($record)) {
+                return null;
+            }
+
+            $nextNumber = (int) $this->nextNumber($record)['bijak_number'];
+            $firstAvailableNumber = $this->waybillRepository->firstAvailableBijakNumber(
+                $companyId,
+                (string) $record->serial_number,
+                $nextNumber,
+                (int) $record->to_number,
+            );
+
+            if ($firstAvailableNumber === null) {
+                $this->complete($record);
+
+                return null;
+            }
+
+            if ($firstAvailableNumber > $nextNumber) {
+                $record->update(['last_number' => $firstAvailableNumber - 1]);
+            }
+
+            return $this->nextNumber($record);
+        }, attempts: 3);
+
+        if ($next === null) {
             return ServiceResult::error(__('public.bijak_not_found'), Response::HTTP_NOT_FOUND);
         }
 
-        return ServiceResult::success($this->nextNumber($record));
+        return ServiceResult::success($next);
     }
 
     /**
@@ -226,13 +253,16 @@ class BijakNumberService
         }
 
         $nextSequenceNumber = (int) $next['bijak_number'];
-        $record->update([
-            'last_number' => $nextSequenceNumber,
-            'status' => $nextSequenceNumber >= $record->to_number
-                ? BijakNumberStatus::Completed->value
-                : BijakNumberStatus::Active->value,
-            'active_slot' => $nextSequenceNumber >= $record->to_number ? null : 1,
-        ]);
+
+        if ($issuedNumber === $nextSequenceNumber) {
+            $record->update([
+                'last_number' => $issuedNumber,
+                'status' => $issuedNumber >= $record->to_number
+                    ? BijakNumberStatus::Completed->value
+                    : BijakNumberStatus::Active->value,
+                'active_slot' => $issuedNumber >= $record->to_number ? null : 1,
+            ]);
+        }
 
         return ServiceResult::success([
             ...$next,
@@ -302,5 +332,14 @@ class BijakNumberService
     {
         return $record->last_number !== null
             && (int) $record->last_number >= (int) $record->to_number;
+    }
+
+    private function complete(BijakNumber $record): void
+    {
+        $record->update([
+            'last_number' => (int) $record->to_number,
+            'status' => BijakNumberStatus::Completed->value,
+            'active_slot' => null,
+        ]);
     }
 }

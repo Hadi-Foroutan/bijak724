@@ -222,11 +222,6 @@ class StoreWaybillRequest extends BaseRequest
             'cargos.*.value' => [$requiredWhenCompleted, 'nullable', 'integer', $minimumCargoCount],
             'cargos.*.quantity' => [$requiredWhenCompleted, 'nullable', 'integer', 'min:1'],
             'cargos.*.is_traffic' => ['nullable', 'boolean'],
-            //            'cargos.*.cottage_number' => ['nullable', 'string', 'max:255'],
-            //            'cargos.*.cottage_number_2' => ['nullable', 'string', 'max:255'],
-            //            'cargos.*.driver_account_number' => ['nullable', 'string', 'max:255'],
-            //            'cargos.*.container_number' => ['nullable', 'string', 'max:255'],
-            //            'cargos.*.container_number_2' => ['nullable', 'string', 'max:255'],
         ];
     }
 

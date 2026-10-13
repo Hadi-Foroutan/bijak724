@@ -1,12 +1,14 @@
 <?php
 
 use App\Enums\BijakNumberStatus;
+use App\Enums\WaybillStatus;
 use App\Http\Middleware\CheckPermission;
 use App\Models\Company;
 use App\Models\User;
 use App\Services\Company\BijakNumber\BijakNumberService;
 use App\Services\Company\ReferralNumber\ReferralNumberService;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 uses(LazilyRefreshDatabase::class);
@@ -81,6 +83,69 @@ test('bijak and referral ranges store and consume numbers independently', functi
     $this->getJson('/api/user/referral-numbers/inquiry')
         ->assertSuccessful()
         ->assertJsonPath('data.referral_number', 701);
+});
+
+test('bijak number inquiry skips every number already assigned to a waybill', function () {
+    removeDefaultBijakNumber($this);
+
+    $rangeId = $this->postJson('/api/user/bijak-numbers', [
+        ...bijakNumberPayload(),
+        'to_number' => 103,
+    ])->assertCreated()->json('data.id');
+
+    $now = now();
+    DB::table("company_{$this->company->id}_waybills")->insert([
+        [
+            'owner_company_id' => $this->company->id,
+            'serial_number' => 'BIJAK-SER-1',
+            'bijak_number' => '100',
+            'status' => WaybillStatus::Completed->value,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ],
+        [
+            'owner_company_id' => $this->company->id,
+            'serial_number' => 'BIJAK-SER-1',
+            'bijak_number' => '101',
+            'status' => WaybillStatus::Canceled->value,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ],
+        [
+            'owner_company_id' => $this->company->id,
+            'serial_number' => 'BIJAK-SER-1',
+            'bijak_number' => '102',
+            'status' => WaybillStatus::Incomplete->value,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ],
+    ]);
+
+    $this->getJson('/api/user/bijak-numbers/inquiry')
+        ->assertSuccessful()
+        ->assertJsonPath('data.bijak_number', 103)
+        ->assertJsonPath('data.serial_number', 'BIJAK-SER-1');
+
+    $this->getJson("/api/user/bijak-numbers/{$rangeId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.last_number', 102)
+        ->assertJsonPath('data.status', BijakNumberStatus::Active->value);
+
+    DB::table("company_{$this->company->id}_waybills")->insert([
+        'owner_company_id' => $this->company->id,
+        'serial_number' => 'BIJAK-SER-1',
+        'bijak_number' => '103',
+        'status' => WaybillStatus::Canceled->value,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    $this->getJson('/api/user/bijak-numbers/inquiry')->assertNotFound();
+
+    $this->getJson("/api/user/bijak-numbers/{$rangeId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.last_number', 103)
+        ->assertJsonPath('data.status', BijakNumberStatus::Completed->value);
 });
 
 test('new companies receive separate default bijak and referral ranges', function () {

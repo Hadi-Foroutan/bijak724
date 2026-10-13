@@ -943,13 +943,27 @@ test('a completed waybill number and serial must belong to the active bijak rang
         ->assertJsonPath('data.last_number', null);
 });
 
-test('disabled first available setting allows any unused number in the active range', function () {
+test('a manually selected available bijak number does not advance the sequential counter', function () {
     $payload = completeWaybillPayload($this);
     $payload['bijak_number'] = 1500;
 
     $this->postJson('/api/user/waybills', $payload)
         ->assertCreated()
         ->assertJsonPath('data.bijak_number', '1500');
+
+    $this->getJson("/api/user/bijak-numbers/{$this->bijakNumberId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.last_number', null);
+
+    $payload['bijak_number'] = 1;
+
+    $this->postJson('/api/user/waybills', $payload)
+        ->assertCreated()
+        ->assertJsonPath('data.bijak_number', '1');
+
+    $this->getJson("/api/user/bijak-numbers/{$this->bijakNumberId}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.last_number', 1);
 });
 
 test('enabled first available setting enforces sequential waybill numbers', function () {
