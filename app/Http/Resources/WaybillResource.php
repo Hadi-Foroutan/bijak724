@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\WaybillStatus;
 use Illuminate\Http\Request;
 
 class WaybillResource extends CompanyDynamicResource
@@ -21,7 +22,11 @@ class WaybillResource extends CompanyDynamicResource
             'second_driver' => DriverResource::make($this->whenLoaded('secondDriver')),
             'referral_driver' => DriverResource::make($this->whenLoaded('referralDriver')),
             'fleet' => FleetResource::make($this->whenLoaded('fleet')),
-            'transport_contract' => TransportContractResource::make($this->whenLoaded('transportContract')),
+            'transport_contract' => TransportContractResource::make($this->whenLoaded('transportContract'))
+                ->includeItems(in_array($this->status, [
+                    WaybillStatus::Incomplete,
+                    WaybillStatus::Referral,
+                ], true)),
             'insurance' => InsuranceResource::make($this->whenLoaded('insurance')),
             'cargos' => WaybillCargoResource::collection($this->whenLoaded('cargos')),
         ];

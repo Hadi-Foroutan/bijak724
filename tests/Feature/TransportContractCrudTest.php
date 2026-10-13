@@ -138,6 +138,49 @@ test('transport contracts are company scoped and replace the company default con
     $this->assertDatabaseMissing('transport_contract_items', ['transport_contract_id' => $firstId]);
 });
 
+test('transport contract list places the four default types before regular contracts', function () {
+    $this->company->transportContracts()->update([
+        'default_owned' => false,
+        'default_rental' => false,
+        'default_free' => false,
+        'default_unknown' => false,
+    ]);
+
+    $defaultFields = [
+        'default_owned',
+        'default_rental',
+        'default_free',
+        'default_unknown',
+    ];
+
+    $defaultIds = collect($defaultFields)->map(fn (string $field): int => TransportContract::factory()
+        ->for($this->company)
+        ->create([$field => true])
+        ->getKey());
+
+    TransportContract::factory()
+        ->count(2)
+        ->for($this->company)
+        ->create();
+
+    $assertDefaultContractsComeFirst = function (array $records) use ($defaultIds): void {
+        $ids = collect($records)->pluck('id');
+
+        expect($ids->take(4)->sort()->values()->all())
+            ->toBe($defaultIds->sort()->values()->all())
+            ->and($ids->skip(4)->intersect($defaultIds)->isEmpty())
+            ->toBeTrue();
+    };
+
+    $response = $this->getJson('/api/user/transport-contracts')->assertSuccessful();
+    $assertDefaultContractsComeFirst($response->json('data'));
+
+    $paginatedResponse = $this->getJson(
+        '/api/user/transport-contracts?paginate=1&itemsPerPage=4',
+    )->assertSuccessful();
+    $assertDefaultContractsComeFirst($paginatedResponse->json('data.data'));
+});
+
 test('transport contract options expose all item names types and dynamic value labels', function () {
     $response = $this->getJson('/api/user/transport-contracts/options')
         ->assertSuccessful()

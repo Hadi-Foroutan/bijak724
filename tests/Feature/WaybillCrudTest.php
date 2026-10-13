@@ -368,6 +368,42 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertJsonPath('errors.error.0', __('public.waybill_edit_forbidden'));
 });
 
+test('waybill index includes contract items only for incomplete and referral statuses', function () {
+    $now = now();
+    $tableName = "company_{$this->company->id}_waybills";
+
+    foreach (WaybillStatus::cases() as $status) {
+        DB::table($tableName)->insert([
+            'owner_company_id' => $this->company->id,
+            'transport_contract_id' => $this->contract->id,
+            'status' => $status->value,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+    }
+
+    $assertContractItems = function (array $records): void {
+        $waybills = collect($records)->keyBy('status');
+
+        foreach ([WaybillStatus::Incomplete, WaybillStatus::Referral] as $status) {
+            expect($waybills[$status->value]['transport_contract']['items'])
+                ->toHaveCount($this->contract->items->count());
+        }
+
+        foreach ([WaybillStatus::Completed, WaybillStatus::Canceled] as $status) {
+            expect($waybills[$status->value]['transport_contract'])
+                ->not->toHaveKey('items');
+        }
+    };
+
+    $response = $this->getJson('/api/user/waybills')->assertSuccessful();
+    $assertContractItems($response->json('data'));
+
+    $paginatedResponse = $this->getJson('/api/user/waybills?paginate=1&itemsPerPage=10')
+        ->assertSuccessful();
+    $assertContractItems($paginatedResponse->json('data.data'));
+});
+
 test('completed and canceled waybills prevent deleting their references', function () {
     $waybillId = $this->postJson('/api/user/waybills', completeWaybillPayload($this))
         ->assertCreated()

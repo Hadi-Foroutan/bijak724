@@ -26,17 +26,17 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
         ?int $userId = null,
         bool $canViewAll = true,
     ): Collection|LengthAwarePaginator {
-        return TransportContract::searchRecords($filters, function (Builder $query) use (
-            $companyId,
+        $query = $this->applyVisibility(
+            TransportContract::query()->where('company_id', $companyId),
             $userId,
             $canViewAll,
-        ): void {
-            $this->applyVisibility(
-                $query->where('company_id', $companyId),
-                $userId,
-                $canViewAll,
-            )->with('items');
-        });
+        );
+
+        $this->prioritizeDefaults($query)
+            ->with('items')
+            ->advancedSearch($filters);
+
+        return $query->getModel()->advancedSearchResults($query, $filters);
     }
 
     public function findOrFail(int $companyId, int $id): TransportContract
@@ -67,11 +67,13 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
         ?int $userId = null,
         bool $canViewAll = true,
     ): Collection {
-        return $this->applyVisibility(
+        $query = $this->applyVisibility(
             TransportContract::query()->where('company_id', $companyId),
             $userId,
             $canViewAll,
-        )
+        );
+
+        return $this->prioritizeDefaults($query)
             ->with('items')
             ->orderBy('title')
             ->get();
@@ -184,5 +186,14 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
                     fn (Builder $userQuery): Builder => $userQuery->whereKey($userId ?? 0),
                 );
         });
+    }
+
+    private function prioritizeDefaults(Builder $query): Builder
+    {
+        return $query
+            ->orderByDesc('default_owned')
+            ->orderByDesc('default_rental')
+            ->orderByDesc('default_free')
+            ->orderByDesc('default_unknown');
     }
 }

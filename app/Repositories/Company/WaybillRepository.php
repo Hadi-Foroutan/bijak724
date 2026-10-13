@@ -18,7 +18,19 @@ class WaybillRepository implements WaybillRepositoryInterface
 
     public function search(int $companyId, array $filters): Collection|LengthAwarePaginator
     {
-        return Waybill::searchRecordsForCompany($companyId, $filters);
+        $result = Waybill::searchRecordsForCompany($companyId, $filters);
+        $waybills = $result instanceof LengthAwarePaginator
+            ? $result->getCollection()
+            : $result;
+
+        $waybills
+            ->filter(fn (Waybill $waybill): bool => in_array($waybill->status, [
+                WaybillStatus::Incomplete,
+                WaybillStatus::Referral,
+            ], true))
+            ->loadMissing('transportContract');
+
+        return $result;
     }
 
     public function create(int $companyId, array $data): Waybill
@@ -28,7 +40,7 @@ class WaybillRepository implements WaybillRepositoryInterface
 
     public function findOrFail(int $companyId, int $id): Waybill
     {
-        return Waybill::findForCompanyOrFail($companyId, $id);
+        return Waybill::findForCompanyOrFail($companyId, $id)->loadMissing('transportContract.items');
     }
 
     public function findOrFailForUpdate(int $companyId, int $id): Waybill

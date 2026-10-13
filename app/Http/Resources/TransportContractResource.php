@@ -7,6 +7,15 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class TransportContractResource extends JsonResource
 {
+    private bool $includeItems = true;
+
+    public function includeItems(bool $includeItems): static
+    {
+        $this->includeItems = $includeItems;
+
+        return $this;
+    }
+
     /**
      * Transform the resource into an array.
      *
@@ -37,7 +46,10 @@ class TransportContractResource extends JsonResource
                     ->values()
                     ->all(),
             ),
-            'items' => TransportContractItemResource::collection($this->whenLoaded('items')),
+            'items' => $this->when(
+                $this->includeItems,
+                fn () => TransportContractItemResource::collection($this->whenLoaded('items')),
+            ),
         ];
     }
 }
