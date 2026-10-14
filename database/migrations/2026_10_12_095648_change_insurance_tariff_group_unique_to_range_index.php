@@ -12,11 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('insurance_tariffs', function (Blueprint $table): void {
-            $table->dropUnique(['insurance_id', 'cargo_group_id']);
             $table->index(
                 ['insurance_id', 'cargo_group_id', 'cargo_value_from'],
                 'insurance_tariffs_range_lookup_index',
             );
+        });
+
+        Schema::table('insurance_tariffs', function (Blueprint $table): void {
+            $table->dropUnique(['insurance_id', 'cargo_group_id']);
         });
     }
 
@@ -26,8 +29,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('insurance_tariffs', function (Blueprint $table): void {
-            $table->dropIndex('insurance_tariffs_range_lookup_index');
             $table->unique(['insurance_id', 'cargo_group_id']);
+        });
+
+        Schema::table('insurance_tariffs', function (Blueprint $table): void {
+            $table->dropIndex('insurance_tariffs_range_lookup_index');
         });
     }
 };
