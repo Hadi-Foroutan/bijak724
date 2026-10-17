@@ -18,6 +18,7 @@ class TransportContractItemResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name->value,
             'name_label' => $this->name->label(),
+            'field_name' => $this->name->fieldName(),
             'is_owned' => $this->is_owned,
             'is_rental' => $this->is_rental,
             'is_free' => $this->is_free,

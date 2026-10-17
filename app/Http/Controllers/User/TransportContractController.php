@@ -23,15 +23,18 @@ class TransportContractController extends Controller
 
     public function options(): JsonResponse
     {
+        $itemNames = TransportContractItemName::cases();
+
         return ResponseHandler::success([
-            'items' => array_map(fn (TransportContractItemName $item, int $index): array => [
+            'items' => array_map(fn (int $index, TransportContractItemName $item): array => [
                 'id' => $index + 1,
                 'value' => $item->value,
                 'label' => $item->label(),
+                'field_name' => $item->fieldName(),
                 'primary_value_label' => $item->primaryValueLabel(),
                 'secondary_value_label' => $item->secondaryValueLabel(),
                 'editable_fields' => $item->editableFields(),
-            ], TransportContractItemName::cases(), array_keys(TransportContractItemName::cases())),
+            ], array_keys($itemNames), $itemNames),
             'types' => array_map(fn (TransportContractItemType $type): array => [
                 'field' => $type->field(),
                 'value' => $type->value,

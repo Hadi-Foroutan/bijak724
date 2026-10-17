@@ -71,6 +71,8 @@ return [
         ['name' => 'weighbridge_amount', 'type' => 'unsignedBigInteger'],
         ['name' => 'loading_amount', 'type' => 'unsignedBigInteger'],
         ['name' => 'warehousing_amount', 'type' => 'unsignedBigInteger'],
+        ['name' => 'unloading_amount', 'type' => 'unsignedBigInteger'],
+        ['name' => 'excess_tonnage_amount', 'type' => 'unsignedBigInteger'],
         ['name' => 'commission_amount', 'type' => 'unsignedBigInteger'],
         ['name' => 'insurance_amount', 'type' => 'unsignedBigInteger'],
         ['name' => 'insurance_tax_amount', 'type' => 'unsignedBigInteger'],

@@ -117,6 +117,7 @@ jobs:
           php artisan down --retry=60 || true
           php artisan optimize:clear
           php artisan migrate --force
+          php artisan company-tables:sync --no-interaction
           php artisan generate-permissions --no-interaction
           php artisan storage:link || true
           php artisan optimize

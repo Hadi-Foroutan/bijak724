@@ -295,6 +295,8 @@ return [
         'weighbridge_amount' => 'مبلغ باسکول',
         'loading_amount' => 'مبلغ بارگیری',
         'warehousing_amount' => 'مبلغ انبارداری',
+        'unloading_amount' => 'مبلغ تخلیه بار',
+        'excess_tonnage_amount' => 'مبلغ اضافه تناژ',
         'commission_amount' => 'مبلغ کمیسیون',
         'insurance_amount' => 'مبلغ بیمه',
         'insurance_tax_amount' => 'مالیات بیمه',

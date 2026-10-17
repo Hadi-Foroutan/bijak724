@@ -305,6 +305,8 @@ test('it creates a complete waybill with snapshots cargos and calculated contrac
         ->assertJsonPath('data.insurance.title', $this->insurance->title)
         ->assertJsonPath('data.advance_freight_amount', 0)
         ->assertJsonPath('data.weighbridge_amount', 5000)
+        ->assertJsonPath('data.unloading_amount', 3000)
+        ->assertJsonPath('data.excess_tonnage_amount', 4000)
         ->assertJsonPath('data.commission_amount', 10000)
         ->assertJsonPath('data.insurance_amount', 2000)
         ->assertJsonPath('data.insurance_tax_amount', 10000)
@@ -518,6 +520,17 @@ test('it stores an incomplete waybill', function () {
         ->assertCreated()
         ->assertJsonPath('data.status', WaybillStatus::Incomplete->value)
         ->assertJsonCount(0, 'data.cargos');
+});
+
+test('it stores unloading and excess tonnage financial amounts', function () {
+    $this->postJson('/api/user/waybills', [
+        'status' => WaybillStatus::Incomplete->value,
+        'unloading_amount' => 3000,
+        'excess_tonnage_amount' => 4000,
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.unloading_amount', 3000)
+        ->assertJsonPath('data.excess_tonnage_amount', 4000);
 });
 
 test('waybill status is required', function () {
@@ -1563,6 +1576,8 @@ function completeWaybillPayload(object $test): array
         'weighbridge_amount' => 0,
         'insurance_amount' => 1000,
         'insurance_tax_amount' => 100,
+        'unloading_amount' => 3000,
+        'excess_tonnage_amount' => 4000,
         'detention_amount' => 5000,
         'payable_amount' => 106100,
         'freight_at_origin' => true,

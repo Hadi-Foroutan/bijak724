@@ -124,7 +124,9 @@ test('sync command creates missing tables and adds newly configured fields', fun
         ->assertSuccessful();
 
     expect(Schema::hasTable($addressTable))->toBeTrue()
-        ->and(Schema::hasColumn($cargoTable, 'description'))->toBeTrue();
+        ->and(Schema::hasColumn($cargoTable, 'description'))->toBeTrue()
+        ->and(Schema::hasColumn("company_{$this->company->id}_waybills", 'unloading_amount'))->toBeTrue()
+        ->and(Schema::hasColumn("company_{$this->company->id}_waybills", 'excess_tonnage_amount'))->toBeTrue();
 
     $cargo = app(CargoRepositoryInterface::class)->create($this->company->id, [
         'name' => 'محموله تست',

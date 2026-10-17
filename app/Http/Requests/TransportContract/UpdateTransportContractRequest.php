@@ -13,6 +13,8 @@ class UpdateTransportContractRequest extends BaseRequest
     /** @return array<string, array<int, mixed>> */
     public function rules(): array
     {
+        $itemsRules = ['array', 'size:'.count(TransportContractItemName::cases()), new BaseFreightTypesDisabled];
+
         return [
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'contract_number' => ['sometimes', 'required', 'string', 'max:255', Rule::unique('transport_contracts')->where('company_id', $this->companyId())->ignore($this->route('transportContract'))],
@@ -26,15 +28,15 @@ class UpdateTransportContractRequest extends BaseRequest
             'default_unknown' => ['sometimes', 'required', 'boolean'],
             'description' => ['sometimes', 'nullable', 'string'],
             'items' => $this->isMethod('PUT')
-                ? ['required', 'array', 'size:10', new BaseFreightTypesDisabled]
-                : ['sometimes', 'required', 'array', 'size:10', new BaseFreightTypesDisabled],
+                ? ['required', ...$itemsRules]
+                : ['sometimes', 'required', ...$itemsRules],
             'items.*.name' => ['required', 'distinct:strict', Rule::enum(TransportContractItemName::class)],
             'items.*.is_owned' => ['required', 'boolean'],
             'items.*.is_rental' => ['required', 'boolean'],
             'items.*.is_free' => ['required', 'boolean'],
             'items.*.is_unknown' => ['required', 'boolean'],
             'items.*.charge_recipient' => ['required', 'boolean'],
-            'items.*.primary_value' => ['nullable', 'numeric', 'between:0,100'],
+            'items.*.primary_value' => ['nullable', 'numeric'],
             'items.*.secondary_value' => ['nullable', 'numeric', 'min:0'],
         ];
     }

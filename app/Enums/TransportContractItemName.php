@@ -2,8 +2,12 @@
 
 namespace App\Enums;
 
+use App\Traits\EnumHelpers;
+
 enum TransportContractItemName: string
 {
+    use EnumHelpers;
+
     case BaseFreight = 'base_freight';
     case LoadingCost = 'loading_cost';
     case WeighbridgeCost = 'weighbridge_cost';
@@ -14,15 +18,39 @@ enum TransportContractItemName: string
     case InsurancePremium = 'insurance_premium';
     case InsuranceVat = 'insurance_vat';
     case AdvanceFreight = 'advance_freight';
+    case Detention = 'detention';
 
     public function label(): string
     {
         return match ($this) {
-            self::BaseFreight => 'کرایه پایه', self::LoadingCost => 'هزینه بارگیری',
-            self::WeighbridgeCost => 'هزینه باسکول', self::Warehousing => 'انبارداری',
-            self::UnloadingCost => 'تخلیه بار', self::Commission => 'کمیسیون',
-            self::ExcessTonnage => 'اضافه تناژ', self::InsurancePremium => 'حق بیمه',
-            self::InsuranceVat => 'ارزش افزوده بیمه', self::AdvanceFreight => 'پیش‌کرایه',
+            self::BaseFreight => 'کرایه پایه',
+            self::LoadingCost => 'هزینه بارگیری',
+            self::WeighbridgeCost => 'هزینه باسکول',
+            self::Warehousing => 'انبارداری',
+            self::UnloadingCost => 'تخلیه بار',
+            self::Commission => 'کمیسیون',
+            self::ExcessTonnage => 'اضافه تناژ',
+            self::InsurancePremium => 'حق بیمه',
+            self::InsuranceVat => 'ارزش افزوده بیمه',
+            self::AdvanceFreight => 'پیش‌کرایه',
+            self::Detention => 'حق توقف',
+        };
+    }
+
+    public function fieldName(): string
+    {
+        return match ($this) {
+            self::BaseFreight => 'base_freight_amount',
+            self::AdvanceFreight => 'advance_freight_amount',
+            self::WeighbridgeCost => 'weighbridge_amount',
+            self::LoadingCost => 'loading_amount',
+            self::Warehousing => 'warehousing_amount',
+            self::Commission => 'commission_amount',
+            self::InsurancePremium => 'insurance_amount',
+            self::InsuranceVat => 'insurance_tax_amount',
+            self::UnloadingCost => 'unloading_amount',
+            self::ExcessTonnage => 'excess_tonnage_amount',
+            self::Detention => 'detention_amount',
         };
     }
 
@@ -56,7 +84,7 @@ enum TransportContractItemName: string
             'is_rental' => $typeFieldsAreEditable,
             'is_free' => $typeFieldsAreEditable,
             'is_unknown' => $typeFieldsAreEditable,
-            'charge_recipient' => true,
+            'charge_recipient' => $typeFieldsAreEditable,
             'primary_value' => true,
             'secondary_value' => true,
         ];

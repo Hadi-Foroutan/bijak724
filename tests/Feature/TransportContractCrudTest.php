@@ -42,6 +42,7 @@ test('transport contracts are company scoped and replace the company default con
         ->assertJsonPath('data.default_owned', true)
         ->assertJsonPath('data.default_free', true)
         ->assertJsonPath('data.items.0.name_label', 'کرایه پایه')
+        ->assertJsonPath('data.items.0.field_name', 'base_freight_amount')
         ->assertJsonPath('data.items.0.editable_fields.is_owned', false)
         ->assertJsonPath('data.items.0.editable_fields.is_rental', false)
         ->assertJsonPath('data.items.0.editable_fields.is_free', false)
@@ -207,7 +208,21 @@ test('transport contract options expose all item names types and dynamic value l
         ->assertJsonPath('data.defaults.2.label', 'پیش‌فرض استیجاری')
         ->assertJsonPath('data.defaults.3.label', 'پیش‌فرض ملکی');
 
-    expect(collect($response->json('data.items'))->pluck('id')->all())->toBe(range(1, 10));
+    expect(collect($response->json('data.items'))->pluck('id')->all())->toBe(range(1, 11));
+
+    expect(collect($response->json('data.items'))->pluck('field_name', 'value')->all())->toBe([
+        'base_freight' => 'base_freight_amount',
+        'loading_cost' => 'loading_amount',
+        'weighbridge_cost' => 'weighbridge_amount',
+        'warehousing' => 'warehousing_amount',
+        'unloading_cost' => 'unloading_amount',
+        'commission' => 'commission_amount',
+        'excess_tonnage' => 'excess_tonnage_amount',
+        'insurance_premium' => 'insurance_amount',
+        'insurance_vat' => 'insurance_tax_amount',
+        'advance_freight' => 'advance_freight_amount',
+        'detention' => 'detention_amount',
+    ]);
 });
 
 test('transport contract validation rejects invalid and duplicate items', function () {
@@ -410,7 +425,7 @@ function transportContractItems(): array
     $names = [
         'base_freight', 'loading_cost', 'weighbridge_cost', 'warehousing',
         'unloading_cost', 'commission', 'excess_tonnage', 'insurance_premium',
-        'insurance_vat', 'advance_freight',
+        'insurance_vat', 'advance_freight', 'detention',
     ];
 
     return array_map(function (string $name): array {

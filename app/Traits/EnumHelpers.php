@@ -14,9 +14,9 @@ trait EnumHelpers
         return array_column(self::cases(), 'name');
     }
 
-    public static function toArray(): array
+    public static function toOptionsArray(): array
     {
-        return array_map(fn($case) => [
+        return array_map(fn ($case) => [
             'name' => $case->name,
             'value' => $case->value,
         ], self::cases());

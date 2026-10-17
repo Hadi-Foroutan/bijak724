@@ -2,6 +2,8 @@
 
 namespace App\Rules;
 
+use App\Enums\TransportContractItemName;
+use App\Enums\TransportContractItemType;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Translation\PotentiallyTranslatedString;
@@ -20,12 +22,12 @@ class BaseFreightTypesDisabled implements ValidationRule
         }
 
         foreach ($value as $item) {
-            if (! is_array($item) || ($item['name'] ?? null) !== 'base_freight') {
+            if (! is_array($item) || ($item['name'] ?? null) !== TransportContractItemName::BaseFreight->value) {
                 continue;
             }
 
-            foreach (['is_owned', 'is_rental', 'is_free', 'is_unknown'] as $field) {
-                if (filter_var($item[$field] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            foreach (TransportContractItemType::cases() as $type) {
+                if (filter_var($item[$type->field()] ?? false, FILTER_VALIDATE_BOOLEAN)) {
                     $fail(__('public.base_freight_type_forbidden'));
 
                     return;

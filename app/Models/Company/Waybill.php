@@ -83,6 +83,8 @@ class Waybill extends DynamicModel
         'weighbridge_amount',
         'loading_amount',
         'warehousing_amount',
+        'unloading_amount',
+        'excess_tonnage_amount',
         'commission_amount',
         'insurance_amount',
         'insurance_tax_amount',

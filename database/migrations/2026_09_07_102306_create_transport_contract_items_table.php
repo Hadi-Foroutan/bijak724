@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TransportContractItemName;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,7 +15,7 @@ return new class extends Migration
         Schema::create('transport_contract_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('transport_contract_id')->constrained()->cascadeOnDelete();
-            $table->enum('name', ['base_freight', 'loading_cost', 'weighbridge_cost', 'warehousing', 'unloading_cost', 'commission', 'excess_tonnage', 'insurance_premium', 'insurance_vat', 'advance_freight']);
+            $table->enum('name', TransportContractItemName::values());
             $table->boolean('is_owned')->default(false);
             $table->boolean('is_rental')->default(false);
             $table->boolean('is_free')->default(false);

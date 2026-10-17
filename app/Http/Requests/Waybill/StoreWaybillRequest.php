@@ -183,6 +183,8 @@ class StoreWaybillRequest extends BaseRequest
             'weighbridge_amount' => ['nullable', 'integer', 'min:0'],
             'loading_amount' => ['nullable', 'integer', 'min:0'],
             'warehousing_amount' => ['nullable', 'integer', 'min:0'],
+            'unloading_amount' => ['nullable', 'integer', 'min:0'],
+            'excess_tonnage_amount' => ['nullable', 'integer', 'min:0'],
             'commission_amount' => ['nullable', 'integer', 'min:0'],
             'insurance_amount' => [$requiredWhenComplete, 'nullable', 'integer', $minimumInsuranceAmount],
             'insurance_tax_amount' => [$requiredWhenComplete, 'nullable', 'integer', 'min:0'],
