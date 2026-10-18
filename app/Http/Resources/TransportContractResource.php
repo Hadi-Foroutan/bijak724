@@ -32,7 +32,6 @@ class TransportContractResource extends JsonResource
             'customer_name' => $this->customer_name,
             'status' => $this->status->value,
             'is_public' => $this->is_public,
-            'is_default' => $this->is_default,
             'default_owned' => $this->default_owned,
             'default_rental' => $this->default_rental,
             'default_free' => $this->default_free,

@@ -18,6 +18,7 @@ class CheckPermission
         '*.login',
         '*.logout',
         '*.checkToken',
+        'profile.*',
     ];
 
     public function __construct(

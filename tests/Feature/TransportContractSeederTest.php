@@ -20,7 +20,7 @@ test('it seeds complete and idempotent transport contracts for company 1000', fu
         ->get();
 
     expect($contracts)->toHaveCount(3)
-        ->and($contracts->pluck('items')->flatten())->toHaveCount(30);
+        ->and($contracts->pluck('items')->flatten())->toHaveCount(3 * count(TransportContractItemName::cases()));
 
     foreach (['default_unknown', 'default_free', 'default_rental', 'default_owned'] as $defaultField) {
         expect($contracts->where($defaultField, true))->toHaveCount(1);

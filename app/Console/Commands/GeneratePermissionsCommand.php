@@ -31,6 +31,7 @@ class GeneratePermissionsCommand extends Command
         '*.login',
         '*.logout',
         '*.checkToken',
+        'profile.*',
     ];
 
     public function handle(): int

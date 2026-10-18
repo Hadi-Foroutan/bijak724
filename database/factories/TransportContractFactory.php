@@ -26,7 +26,6 @@ class TransportContractFactory extends Factory
             'contract_date' => fake()->date(),
             'customer_name' => fake()->name(),
             'status' => StatusEnum::ACTIVE->value,
-            'is_default' => false,
             'default_owned' => false,
             'default_rental' => false,
             'default_free' => false,

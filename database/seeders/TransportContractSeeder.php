@@ -117,6 +117,7 @@ class TransportContractSeeder extends Seeder
             $this->item(TransportContractItemName::InsurancePremium, 2.5, 100_000, $rateMultiplier, $typeFields),
             $this->item(TransportContractItemName::InsuranceVat, 0.9, 10_000, $rateMultiplier, $typeFields),
             $this->item(TransportContractItemName::AdvanceFreight, 5, 500_000, $rateMultiplier, $typeFields),
+            $this->item(TransportContractItemName::Detention, 2, 40_000, $rateMultiplier, $typeFields),
         ];
     }
 

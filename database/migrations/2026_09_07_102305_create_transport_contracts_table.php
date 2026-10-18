@@ -20,7 +20,6 @@ return new class extends Migration
             $table->string('customer_name');
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->boolean('is_public')->default(true);
-            $table->boolean('is_default')->default(false)->index();
             $table->boolean('default_owned')->default(false);
             $table->boolean('default_rental')->default(false);
             $table->boolean('default_free')->default(false);

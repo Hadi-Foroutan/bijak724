@@ -10,7 +10,19 @@ use Illuminate\Validation\Rule;
 
 class UpdateTransportContractRequest extends BaseRequest
 {
-    /** @return array<string, array<int, mixed>> */
+    use TransportContractItemRules;
+
+    protected function prepareForValidation(): void
+    {
+        $this->normalizeBooleanStrings([
+            'default_owned',
+            'default_rental',
+            'default_free',
+            'default_unknown',
+        ]);
+    }
+
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         $itemsRules = ['array', 'size:'.count(TransportContractItemName::cases()), new BaseFreightTypesDisabled];
@@ -21,7 +33,6 @@ class UpdateTransportContractRequest extends BaseRequest
             'contract_date' => ['sometimes', 'required', 'date_format:Y-m-d'],
             'customer_name' => ['sometimes', 'required', 'string', 'max:255'],
             'status' => ['sometimes', 'required', Rule::enum(StatusEnum::class)],
-            'is_default' => ['sometimes', 'required', 'boolean'],
             'default_owned' => ['sometimes', 'required', 'boolean'],
             'default_rental' => ['sometimes', 'required', 'boolean'],
             'default_free' => ['sometimes', 'required', 'boolean'],
@@ -30,14 +41,7 @@ class UpdateTransportContractRequest extends BaseRequest
             'items' => $this->isMethod('PUT')
                 ? ['required', ...$itemsRules]
                 : ['sometimes', 'required', ...$itemsRules],
-            'items.*.name' => ['required', 'distinct:strict', Rule::enum(TransportContractItemName::class)],
-            'items.*.is_owned' => ['required', 'boolean'],
-            'items.*.is_rental' => ['required', 'boolean'],
-            'items.*.is_free' => ['required', 'boolean'],
-            'items.*.is_unknown' => ['required', 'boolean'],
-            'items.*.charge_recipient' => ['required', 'boolean'],
-            'items.*.primary_value' => ['nullable', 'numeric'],
-            'items.*.secondary_value' => ['nullable', 'numeric', 'min:0'],
+            ...$this->itemRules(),
         ];
     }
 }

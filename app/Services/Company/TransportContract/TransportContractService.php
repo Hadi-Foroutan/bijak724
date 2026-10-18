@@ -136,21 +136,24 @@ class TransportContractService
         return ServiceResult::success($this->transportContractRepository->users($transportContract));
     }
 
-    /** @param array<string, mixed> $data */
+    /**
+     * Each default type flag may be held by only one contract per company,
+     * so selecting a flag here clears it on every other contract.
+     *
+     * @param  array<string, mixed>  $data
+     */
     private function clearDefaultWhenSelected(
         int $companyId,
         array $data,
         ?int $exceptTransportContractId = null,
     ): void {
-        $selectedDefaultFields = array_values(array_filter([
-            ($data['is_default'] ?? false) ? 'is_default' : null,
-            ...array_map(
-                fn (TransportContractItemType $type): ?string => ($data[$type->defaultField()] ?? false)
-                    ? $type->defaultField()
-                    : null,
+        $selectedDefaultFields = array_values(array_filter(
+            array_map(
+                fn (TransportContractItemType $type): string => $type->defaultField(),
                 TransportContractItemType::cases(),
             ),
-        ]));
+            fn (string $defaultField): bool => (bool) ($data[$defaultField] ?? false),
+        ));
 
         if ($selectedDefaultFields !== []) {
             $this->transportContractRepository->lockCompanyForUpdate($companyId);

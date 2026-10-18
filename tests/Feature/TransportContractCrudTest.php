@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\RoleEnum;
+use App\Enums\TransportContractItemName;
 use App\Http\Middleware\CheckPermission;
 use App\Models\Company;
 use App\Models\Role;
@@ -24,7 +25,6 @@ beforeEach(function (): void {
 
 test('transport contracts are company scoped and replace the company default contract', function () {
     $otherCompanyDefault = TransportContract::factory()->create([
-        'is_default' => true,
         'default_owned' => true,
         'default_rental' => true,
         'default_free' => true,
@@ -32,13 +32,11 @@ test('transport contracts are company scoped and replace the company default con
     ]);
 
     $firstId = $this->postJson('/api/user/transport-contracts', transportContractPayload('TC-100', [
-        'is_default' => true,
         'default_owned' => true,
         'default_free' => true,
     ]))
         ->assertCreated()
         ->assertJsonPath('data.company_id', $this->company->id)
-        ->assertJsonPath('data.is_default', true)
         ->assertJsonPath('data.default_owned', true)
         ->assertJsonPath('data.default_free', true)
         ->assertJsonPath('data.items.0.name_label', 'کرایه پایه')
@@ -59,16 +57,13 @@ test('transport contracts are company scoped and replace the company default con
         ->json('data.id');
 
     $secondId = $this->postJson('/api/user/transport-contracts', transportContractPayload('TC-101', [
-        'is_default' => true,
         'default_owned' => true,
         'default_rental' => true,
     ]))
         ->assertCreated()
         ->json('data.id');
 
-    expect(TransportContract::query()->findOrFail($firstId)->is_default)->toBeFalse()
-        ->and(TransportContract::query()->findOrFail($secondId)->is_default)->toBeTrue()
-        ->and(TransportContract::query()->findOrFail($firstId)->default_owned)->toBeFalse()
+    expect(TransportContract::query()->findOrFail($firstId)->default_owned)->toBeFalse()
         ->and(TransportContract::query()->findOrFail($firstId)->default_free)->toBeTrue()
         ->and(TransportContract::query()->findOrFail($secondId)->default_owned)->toBeTrue()
         ->and(TransportContract::query()->findOrFail($secondId)->default_rental)->toBeTrue()
@@ -76,24 +71,40 @@ test('transport contracts are company scoped and replace the company default con
         ->and($otherCompanyDefault->fresh()->default_rental)->toBeTrue()
         ->and($otherCompanyDefault->fresh()->default_free)->toBeTrue()
         ->and($otherCompanyDefault->fresh()->default_unknown)->toBeTrue()
-        ->and($otherCompanyDefault->fresh()->is_default)->toBeTrue()
-        ->and(TransportContract::query()->where('company_id', $this->company->id)->where('is_default', true)->count())->toBe(1)
         ->and(TransportContract::query()->where('company_id', $this->company->id)->where('default_owned', true)->count())->toBe(1)
         ->and(TransportContract::query()->where('company_id', $this->company->id)->where('default_free', true)->count())->toBe(1);
 
     $this->patchJson("/api/user/transport-contracts/{$secondId}", [
-        'is_default' => true,
         'default_owned' => true,
         'default_rental' => true,
     ])
         ->assertSuccessful()
-        ->assertJsonPath('data.is_default', true)
         ->assertJsonPath('data.default_owned', true)
         ->assertJsonPath('data.default_rental', true);
 
-    expect(TransportContract::query()->findOrFail($secondId)->is_default)->toBeTrue()
-        ->and(TransportContract::query()->findOrFail($secondId)->default_owned)->toBeTrue()
+    expect(TransportContract::query()->findOrFail($secondId)->default_owned)->toBeTrue()
         ->and(TransportContract::query()->findOrFail($secondId)->default_rental)->toBeTrue();
+
+    $this->patchJson("/api/user/transport-contracts/{$firstId}", [
+        'default_unknown' => 'false',
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.default_unknown', false);
+
+    expect(TransportContract::query()->findOrFail($firstId)->default_unknown)->toBeFalse();
+
+    $this->patchJson("/api/user/transport-contracts/{$secondId}", [
+        'default_unknown' => true,
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.default_unknown', true);
+
+    expect(TransportContract::query()->findOrFail($firstId)->default_unknown)->toBeFalse()
+        ->and(TransportContract::query()->findOrFail($secondId)->default_unknown)->toBeTrue()
+        ->and(TransportContract::query()
+            ->where('company_id', $this->company->id)
+            ->where('default_unknown', true)
+            ->count())->toBe(1);
 
     $this->getJson('/api/user/transport-contracts?search=TC-101')
         ->assertSuccessful()
@@ -118,7 +129,7 @@ test('transport contracts are company scoped and replace the company default con
     ])
         ->assertSuccessful()
         ->assertJsonPath('data.title', 'قرارداد ویرایش‌شده')
-        ->assertJsonCount(10, 'data.items')
+        ->assertJsonCount(count(TransportContractItemName::cases()), 'data.items')
         ->assertJsonPath('data.items.5.name', 'commission')
         ->assertJsonPath('data.items.5.is_owned', true)
         ->assertJsonPath('data.items.5.is_rental', true)
@@ -126,13 +137,19 @@ test('transport contracts are company scoped and replace the company default con
         ->assertJsonPath('data.items.5.is_unknown', true)
         ->assertJsonPath('data.items.5.charge_recipient', true);
 
-    $this->patchJson("/api/user/transport-contracts/{$firstId}", ['is_default' => true])
+    $this->patchJson("/api/user/transport-contracts/{$firstId}", ['default_rental' => true])
         ->assertSuccessful()
-        ->assertJsonPath('data.is_default', true);
+        ->assertJsonPath('data.default_rental', true)
+        ->assertJsonPath('data.default_free', true);
 
-    expect(TransportContract::query()->findOrFail($firstId)->is_default)->toBeTrue()
-        ->and(TransportContract::query()->findOrFail($secondId)->is_default)->toBeFalse()
-        ->and(TransportContract::query()->where('company_id', $this->company->id)->where('is_default', true)->count())->toBe(1);
+    expect(TransportContract::query()->findOrFail($firstId)->default_rental)->toBeTrue()
+        ->and(TransportContract::query()->findOrFail($secondId)->default_rental)->toBeFalse()
+        ->and(TransportContract::query()->findOrFail($secondId)->default_owned)->toBeTrue()
+        ->and($otherCompanyDefault->fresh()->default_rental)->toBeTrue();
+
+    foreach (['default_owned', 'default_rental', 'default_free', 'default_unknown'] as $defaultField) {
+        expect(TransportContract::query()->where('company_id', $this->company->id)->where($defaultField, true)->count())->toBe(1);
+    }
 
     $this->deleteJson("/api/user/transport-contracts/{$firstId}")->assertSuccessful();
     $this->assertDatabaseMissing('transport_contracts', ['id' => $firstId]);
@@ -185,7 +202,7 @@ test('transport contract list places the four default types before regular contr
 test('transport contract options expose all item names types and dynamic value labels', function () {
     $response = $this->getJson('/api/user/transport-contracts/options')
         ->assertSuccessful()
-        ->assertJsonCount(10, 'data.items')
+        ->assertJsonCount(count(TransportContractItemName::cases()), 'data.items')
         ->assertJsonCount(4, 'data.types')
         ->assertJsonCount(4, 'data.defaults')
         ->assertJsonPath('data.items.0.id', 1)
@@ -199,7 +216,7 @@ test('transport contract options expose all item names types and dynamic value l
         ->assertJsonPath('data.items.7.value', 'insurance_premium')
         ->assertJsonPath('data.items.7.primary_value_label', 'درصد از تخفیف')
         ->assertJsonPath('data.items.7.secondary_value_label', 'مقدار ثابت از تخفیف')
-        ->assertJsonPath('data.items.9.id', 10)
+        ->assertJsonPath('data.items.10.id', 11)
         ->assertJsonPath('data.types.0.field', 'is_owned')
         ->assertJsonPath('data.types.3.field', 'is_unknown')
         ->assertJsonPath('data.defaults.0.field', 'default_unknown')
@@ -230,7 +247,6 @@ test('transport contract validation rejects invalid and duplicate items', functi
         ->assertUnprocessable()
         ->assertJsonValidationErrors([
             'title', 'contract_number', 'contract_date', 'customer_name', 'status',
-            'is_default',
             'default_owned', 'default_rental', 'default_free',
             'default_unknown', 'items',
         ]);
@@ -279,6 +295,12 @@ test('transport contract validation rejects invalid and duplicate items', functi
     $this->postJson('/api/user/transport-contracts', $invalidPercentagePayload)
         ->assertUnprocessable()
         ->assertJsonValidationErrors('items.1.primary_value');
+
+    $perTonBaseFreightPayload = transportContractPayload('TC-per-ton-base-freight');
+    $perTonBaseFreightPayload['items'][0]['primary_value'] = 650000;
+    $this->postJson('/api/user/transport-contracts', $perTonBaseFreightPayload)
+        ->assertCreated()
+        ->assertJsonPath('data.items.0.primary_value', 650000);
 });
 
 test('transport contracts cannot be accessed by another company', function () {
@@ -409,7 +431,6 @@ function transportContractPayload(string $contractNumber, array $defaults = []):
         'contract_date' => '2026-09-07',
         'customer_name' => 'شرکت مشتری',
         'status' => 'active',
-        'is_default' => $defaults['is_default'] ?? false,
         'default_owned' => $defaults['default_owned'] ?? false,
         'default_rental' => $defaults['default_rental'] ?? false,
         'default_free' => $defaults['default_free'] ?? false,
