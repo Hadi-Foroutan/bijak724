@@ -28,7 +28,7 @@ class User extends Authenticatable
         'last_name',
         'print_name',
         'phone',
-        'postal_code',
+        'personnel_code',
         'telephone',
         'email',
         'username',

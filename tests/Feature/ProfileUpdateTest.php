@@ -59,7 +59,7 @@ test('user updates own profile fields and profile image without permission', fun
         ->and($user->last_name)->toBe('پاکزاد')
         ->and($user->print_name)->toBe('رضا پاکزاد')
         ->and($user->national_code)->toBe('0987654321')
-        ->and($user->postal_code)->toBe('1234567890')
+        ->and($user->personnel_code)->toBe('EMP-1024')
         ->and($user->telephone)->toBe('02112345678')
         ->and($user->phone)->toBe('09121111111')
         ->and((int) $user->min_commission_percentage)->toBe(5)
@@ -67,7 +67,7 @@ test('user updates own profile fields and profile image without permission', fun
         ->and($user->address)->toBe('تهران')
         ->and($user->profile_image)->toStartWith("users/{$user->id}/profile-images/")
         ->and(Hash::check('old-password', $user->password))->toBeTrue()
-        ->and($response->json('data.postal_code'))->toBe('1234567890')
+        ->and($response->json('data.personnel_code'))->toBe('EMP-1024')
         ->and($response->json('data.telephone'))->toBe('02112345678');
     Storage::disk('public')->assertExists($user->profile_image);
 });
@@ -125,7 +125,7 @@ function profilePayload(): array
         'last_name' => 'پاکزاد',
         'print_name' => 'رضا پاکزاد',
         'national_code' => '0987654321',
-        'postal_code' => '1234567890',
+        'personnel_code' => 'EMP-1024',
         'telephone' => '02112345678',
         'phone' => '09121111111',
         'min_commission_percentage' => 5,

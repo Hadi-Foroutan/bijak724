@@ -29,7 +29,7 @@ class UserResource extends JsonResource
             'print_name' => $this->print_name,
             'national_code' => $this->national_code,
             'phone' => $this->phone,
-            'postal_code' => $this->postal_code,
+            'personnel_code' => $this->personnel_code,
             'telephone' => $this->telephone,
             'email' => $this->email,
             'username' => $this->username,

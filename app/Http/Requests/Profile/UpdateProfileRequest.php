@@ -20,7 +20,7 @@ class UpdateProfileRequest extends BaseRequest
             'last_name' => ['sometimes', 'required', 'string', 'max:255'],
             'print_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'national_code' => ['sometimes', 'required', 'string', Rule::unique('users', 'national_code')->ignore($userId)],
-            'postal_code' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'personnel_code' => ['sometimes', 'nullable', 'string', 'max:20'],
             'telephone' => ['sometimes', 'nullable', 'string', 'max:20'],
             'phone' => ['sometimes', 'nullable', 'string', Rule::unique('users', 'phone')->ignore($userId)],
             'min_commission_percentage' => ['sometimes', 'required', 'numeric', 'min:0', 'max:100'],
