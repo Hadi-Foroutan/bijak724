@@ -19,8 +19,6 @@ abstract class DynamicModel extends Model
 {
     use AdvancedSearch;
 
-    protected $guarded = [];
-
     /** @var list<string> */
     protected array $searchableFields = [];
 

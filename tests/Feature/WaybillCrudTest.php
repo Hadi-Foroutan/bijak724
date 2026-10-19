@@ -668,7 +668,9 @@ test('referral inquiry assigns the next number and canceled numbers cannot be re
         ->assertUnprocessable()
         ->assertJsonPath('errors.error.0', __('public.waybill_referral_already_assigned'));
 
-    $this->patchJson("/api/user/waybills/{$waybillId}/referral/cancel")
+    $this->patchJson("/api/user/waybills/{$waybillId}/referral/cancel", [
+        'reason' => 'اطلاعات راننده اشتباه ثبت شده بود',
+    ])
         ->assertSuccessful()
         ->assertJsonPath('data.referral_number', null);
 
@@ -678,6 +680,7 @@ test('referral inquiry assigns the next number and canceled numbers cannot be re
         'canceled_by_print_name' => 'کاربر صادرکننده',
         'referral_number' => '1',
         'referral_serial' => 'SERIAL-1',
+        'reason' => 'اطلاعات راننده اشتباه ثبت شده بود',
     ]);
 
     $canceledReferral = DB::table("company_{$this->company->id}_canceled_referrals")
@@ -700,6 +703,12 @@ test('referral inquiry assigns the next number and canceled numbers cannot be re
     $this->patchJson("/api/user/waybills/{$waybillId}/referral/cancel")
         ->assertSuccessful()
         ->assertJsonPath('data.referral_number', null);
+
+    $this->assertDatabaseHas("company_{$this->company->id}_canceled_referrals", [
+        'waybill_id' => $waybillId,
+        'referral_number' => '2',
+        'reason' => null,
+    ]);
 
     $referralPayload = referralWaybillPayload($this);
 

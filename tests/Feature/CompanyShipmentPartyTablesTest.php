@@ -130,8 +130,8 @@ test('sync command creates missing tables and adds newly configured fields', fun
 
     $cargo = app(CargoRepositoryInterface::class)->create($this->company->id, [
         'name' => 'محموله تست',
-        'description' => 'فیلد تازه',
     ]);
+    $cargo->forceFill(['description' => 'فیلد تازه'])->save();
 
     expect(CompanyCargoResource::make($cargo)->resolve(request()))
         ->toHaveKey('description', 'فیلد تازه');

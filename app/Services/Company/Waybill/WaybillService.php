@@ -203,9 +203,9 @@ class WaybillService
         });
     }
 
-    public function cancelReferral(int $companyId, int $id, User $user): ServiceResult
+    public function cancelReferral(int $companyId, int $id, User $user, ?string $reason = null): ServiceResult
     {
-        return DB::transaction(function () use ($companyId, $id, $user): ServiceResult {
+        return DB::transaction(function () use ($companyId, $id, $user, $reason): ServiceResult {
             /** @var Waybill $waybill */
             $waybill = $this->waybillRepository->findOrFailForUpdate($companyId, $id);
             $this->ensureEditable($waybill);
@@ -229,6 +229,7 @@ class WaybillService
                     ->values()
                     ->all(),
                 'canceled_at' => now(),
+                'reason' => $reason,
             ]);
 
             $this->waybillRepository->update($companyId, $id, [

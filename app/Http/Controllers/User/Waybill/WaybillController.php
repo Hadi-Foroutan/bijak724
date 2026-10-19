@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User\Waybill;
 
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Waybill\CancelWaybillReferralRequest;
 use App\Http\Requests\Waybill\StoreWaybillRequest;
 use App\Http\Requests\Waybill\UpdateWaybillRequest;
 use App\Http\Resources\WaybillResource;
@@ -90,12 +91,13 @@ class WaybillController extends Controller
         );
     }
 
-    public function cancelReferral(Request $request, Waybill $waybill): JsonResponse
+    public function cancelReferral(CancelWaybillReferralRequest $request, Waybill $waybill): JsonResponse
     {
         $result = $this->waybillService->cancelReferral(
             $this->companyId($request),
             $waybill->getKey(),
             $request->user(),
+            $request->validated('reason'),
         );
 
         return ResponseHandler::success(

@@ -123,7 +123,8 @@ test('company table sync preserves legacy product owner data and can be rerun', 
     app(CompanyTableService::class)->sync(987654);
 
     $this->assertDatabaseHas($tableName, [
-        'id' => 7, 'name' => 'نام قدیمی', 'national_code' => '0009',
+        'id' => 7, 'name' => 'نام قدیمی',
         'owner_company_id' => 987654, 'phone' => null, 'transportation_code' => null,
     ]);
+    expect(Schema::hasColumn($tableName, 'national_code'))->toBeFalse();
 });

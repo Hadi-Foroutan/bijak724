@@ -15,6 +15,24 @@ class Driver extends DynamicModel
 
     protected string $companyTableKey = 'drivers';
 
+    protected $fillable = [
+        'owner_company_id',
+        'national_code',
+        'first_name',
+        'last_name',
+        'full_name',
+        'father_name',
+        'license_number',
+        'license_type',
+        'license_expiry_date',
+        'phone_number_1',
+        'phone_number_2',
+        'phone_number_3',
+        'profile_image_path',
+        'description',
+        'status',
+    ];
+
     protected array $defaultRelations = [
         'licenseType',
         'defaultAccount',

@@ -302,5 +302,6 @@ return [
         ['name' => 'waybill_snapshot', 'type' => 'json', 'nullable' => false],
         ['name' => 'cargos_snapshot', 'type' => 'json', 'nullable' => false],
         ['name' => 'canceled_at', 'type' => 'dateTime', 'nullable' => false, 'index' => true],
+        ['name' => 'reason', 'type' => 'text', 'nullable' => true],
     ],
 ];

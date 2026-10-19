@@ -57,8 +57,8 @@ enum TransportContractItemName: string
     public function primaryValueLabel(): string
     {
         return match ($this) {
-            self::BaseFreight => 'کرایه از هر تن',
-            self::InsurancePremium => 'درصد از تخفیف',
+            self::BaseFreight => 'کرایه هر تن',
+            self::InsurancePremium => 'درصد تخفیف',
             default => 'درصد از کرایه',
         };
     }
@@ -67,7 +67,7 @@ enum TransportContractItemName: string
     {
         return match ($this) {
             self::BaseFreight => 'کرایه ثابت',
-            self::InsurancePremium => 'مقدار ثابت از تخفیف',
+            self::InsurancePremium => 'مقدار ثابت تخفیف',
             default => 'مقدار ثابت',
         };
     }

@@ -11,6 +11,26 @@ class WaybillCargo extends DynamicModel
 {
     protected string $companyTableKey = 'waybill_cargos';
 
+    protected $fillable = [
+        'owner_company_id',
+        'waybill_id',
+        'cargo_id',
+        'packaging_id',
+        'product_owner_id',
+        'description',
+        'title',
+        'origin_weight',
+        'value',
+        'quantity',
+        'is_traffic',
+        'is_returned',
+        'cottage_number',
+        'cottage_number_2',
+        'driver_account_number',
+        'container_number',
+        'container_number_2',
+    ];
+
     protected array $defaultRelations = ['cargo', 'packaging', 'productOwner'];
 
     protected function casts(): array

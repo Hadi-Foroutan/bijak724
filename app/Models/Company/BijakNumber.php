@@ -8,6 +8,17 @@ class BijakNumber extends DynamicModel
 {
     protected string $companyTableKey = 'bijak_numbers';
 
+    protected $fillable = [
+        'owner_company_id',
+        'title',
+        'serial_number',
+        'from_number',
+        'to_number',
+        'last_number',
+        'status',
+        'active_slot',
+    ];
+
     /** @return array<string, string> */
     protected function casts(): array
     {

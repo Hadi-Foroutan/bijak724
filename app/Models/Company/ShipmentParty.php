@@ -12,6 +12,24 @@ class ShipmentParty extends DynamicModel
 
     protected string $companyTableKey = 'shipment_parties';
 
+    protected $fillable = [
+        'owner_company_id',
+        'national_identifier',
+        'is_sender',
+        'is_receiver',
+        'status',
+        'title',
+        'first_name',
+        'last_name',
+        'full_name',
+        'mobile',
+        'landline',
+        'intermediary_code',
+        'transportation_code',
+        'email',
+        'description',
+    ];
+
     protected array $defaultRelations = [
         'addresses.city',
     ];
