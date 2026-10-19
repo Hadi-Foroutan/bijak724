@@ -274,10 +274,6 @@ return [
         ['name' => 'has_violation', 'type' => 'boolean', 'default' => false, 'nullable' => false],
         ['name' => 'description', 'type' => 'text'],
     ],
-    'cargos' => [
-        ['name' => 'name', 'type' => 'string'],
-        ['name' => 'national_code', 'type' => 'string'],
-    ],
     'product_owner' => [
         ['name' => 'name', 'type' => 'string'],
         ['name' => 'phone', 'type' => 'string', 'length' => 20],
@@ -300,8 +296,8 @@ return [
         ['name' => 'referral_number', 'type' => 'string', 'nullable' => false, 'index' => true],
         ['name' => 'referral_serial', 'type' => 'string', 'nullable' => false, 'index' => true],
         ['name' => 'waybill_snapshot', 'type' => 'json', 'nullable' => false],
+        ['name' => 'reason', 'type' => 'text', 'nullable' => true],
         ['name' => 'cargos_snapshot', 'type' => 'json', 'nullable' => false],
         ['name' => 'canceled_at', 'type' => 'dateTime', 'nullable' => false, 'index' => true],
-        ['name' => 'reason', 'type' => 'text', 'nullable' => true],
     ],
 ];
