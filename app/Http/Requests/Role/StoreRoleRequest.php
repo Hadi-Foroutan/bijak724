@@ -27,7 +27,7 @@ class StoreRoleRequest extends BaseRequest
             ],
             'display_name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'status' => ['in:'.implode(',', StatusEnum::values())],
+            'status' => ['in:' . implode(',', StatusEnum::values())],
             'permissions' => ['required', 'array'],
             'permissions.*' => ['exists:permissions,id'],
         ];

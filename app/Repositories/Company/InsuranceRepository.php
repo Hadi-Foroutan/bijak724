@@ -21,7 +21,7 @@ class InsuranceRepository implements InsuranceRepositoryInterface
     {
         return Insurance::searchRecords(
             $filters,
-            fn ($query) => $query->where('company_id', $companyId)
+            fn($query) => $query->where('company_id', $companyId)
                 ->with(['insuranceCompany', 'tariffs.cargoGroup']),
         );
     }
@@ -59,7 +59,7 @@ class InsuranceRepository implements InsuranceRepositoryInterface
             ->where('is_default', true)
             ->when(
                 $exceptInsuranceId !== null,
-                fn ($query) => $query->whereKeyNot($exceptInsuranceId),
+                fn($query) => $query->whereKeyNot($exceptInsuranceId),
             )
             ->update(['is_default' => false]);
     }

@@ -17,21 +17,25 @@ class PermissionController extends Controller
     )
     {
     }
+
     public function index(Request $request)
     {
         $res = $this->permissionService->all($request->all());
         return ResponseHandler::success($res->data);
     }
+
     public function store(StorePermissionRequest $request)
     {
         $res = $this->permissionService->create($request->validated());
         return ResponseHandler::success([], $res->data);
     }
+
     public function update(Permission $permission, StorePermissionRequest $request)
     {
         $res = $this->permissionService->update($permission, $request->validated());
         return ResponseHandler::success([], $res->data);
     }
+
     public function destroy(Permission $permission)
     {
         $res = $this->permissionService->destroy($permission);

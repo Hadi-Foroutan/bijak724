@@ -11,12 +11,12 @@ interface CityRepositoryInterface
     public function all(array $params): Collection|LengthAwarePaginator;
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param array<string, mixed> $data
      */
     public function create(array $data): City;
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param array<string, mixed> $data
      */
     public function update(City $city, array $data): City;
 

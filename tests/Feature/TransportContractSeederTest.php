@@ -32,7 +32,7 @@ test('it seeds complete and idempotent transport contracts for company 1000', fu
             ->toEqualCanonicalizing(array_column(TransportContractItemName::cases(), 'value'));
 
         foreach ($contract->items as $item) {
-            expect((float) $item->primary_value)->toEqual(floor((float) $item->primary_value));
+            expect((float)$item->primary_value)->toEqual(floor((float)$item->primary_value));
         }
 
         $baseFreight = $contract->items->firstWhere('name', TransportContractItemName::BaseFreight);

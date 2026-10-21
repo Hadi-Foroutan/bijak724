@@ -20,7 +20,7 @@ class UserNotificationResource extends JsonResource
             'type_label' => $this->type->label(),
             'should_remove_previous' => $this->should_remove_previous,
             'message' => $this->message,
-            'sender' => $this->whenLoaded('sender', fn (): array => [
+            'sender' => $this->whenLoaded('sender', fn(): array => [
                 'id' => $this->sender->id,
                 'full_name' => $this->sender->full_name,
             ]),

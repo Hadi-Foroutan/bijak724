@@ -28,8 +28,8 @@ interface BijakNumberRepositoryInterface
     public function active(int $companyId, ?int $ignoreId = null): ?BijakNumber;
 
     public function activeContainingBijakNumber(
-        int $companyId,
+        int    $companyId,
         string $serialNumber,
-        int $bijakNumber,
+        int    $bijakNumber,
     ): ?BijakNumber;
 }

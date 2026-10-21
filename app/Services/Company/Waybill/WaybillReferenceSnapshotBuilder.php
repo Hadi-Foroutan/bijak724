@@ -54,10 +54,12 @@ class WaybillReferenceSnapshotBuilder
     ];
 
     public function __construct(
-        protected ShipmentPartyRepositoryInterface $shipmentPartyRepository,
+        protected ShipmentPartyRepositoryInterface        $shipmentPartyRepository,
         protected ShipmentPartyAddressRepositoryInterface $shipmentPartyAddressRepository,
-        protected DriverRepositoryInterface $driverRepository,
-    ) {}
+        protected DriverRepositoryInterface               $driverRepository,
+    )
+    {
+    }
 
     /** @param array<string, mixed> $data */
     public function forCreate(int $companyId, array $data): array
@@ -79,7 +81,7 @@ class WaybillReferenceSnapshotBuilder
         foreach (self::REFERENCES as $idField => [$referenceType, $prefix, $snapshotFields]) {
             $referenceWasProvided = array_key_exists($idField, $data);
 
-            if (! $referenceWasProvided && ! $isFinalizing) {
+            if (!$referenceWasProvided && !$isFinalizing) {
                 continue;
             }
 
@@ -87,13 +89,13 @@ class WaybillReferenceSnapshotBuilder
                 ? $data[$idField]
                 : $currentWaybill?->getAttribute($idField);
 
-            if (! $isFinalizing && $this->referenceIsUnchanged($currentWaybill, $idField, $referenceId)) {
+            if (!$isFinalizing && $this->referenceIsUnchanged($currentWaybill, $idField, $referenceId)) {
                 continue;
             }
 
             $record = $referenceId === null
                 ? null
-                : $this->findReference($companyId, $referenceType, (int) $referenceId);
+                : $this->findReference($companyId, $referenceType, (int)$referenceId);
 
             foreach ($snapshotFields as $snapshotField => $sourceField) {
                 $data["{$prefix}_{$snapshotField}"] = $record?->getAttribute($sourceField);
@@ -106,18 +108,18 @@ class WaybillReferenceSnapshotBuilder
     /** @param array<string, mixed> $data */
     private function isFinalizing(?Waybill $waybill, array $data): bool
     {
-        if ($waybill === null || ! array_key_exists('status', $data)) {
+        if ($waybill === null || !array_key_exists('status', $data)) {
             return false;
         }
 
-        $newStatus = WaybillStatus::tryFrom((string) $data['status']);
+        $newStatus = WaybillStatus::tryFrom((string)$data['status']);
         $currentStatus = $waybill->status instanceof WaybillStatus
             ? $waybill->status
-            : WaybillStatus::tryFrom((string) $waybill->status);
+            : WaybillStatus::tryFrom((string)$waybill->status);
         $finalStatuses = [WaybillStatus::Completed, WaybillStatus::Canceled];
 
         return in_array($newStatus, $finalStatuses, true)
-            && ! in_array($currentStatus, $finalStatuses, true);
+            && !in_array($currentStatus, $finalStatuses, true);
     }
 
     private function referenceIsUnchanged(?Waybill $waybill, string $idField, mixed $newId): bool
@@ -130,7 +132,7 @@ class WaybillReferenceSnapshotBuilder
 
         return $currentId === null || $newId === null
             ? $currentId === $newId
-            : (int) $currentId === (int) $newId;
+            : (int)$currentId === (int)$newId;
     }
 
     private function findReference(int $companyId, string $referenceType, int $id): DynamicModel

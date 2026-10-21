@@ -10,7 +10,9 @@ class CargoGroupService
 {
     public function __construct(
         protected CargoGroupRepositoryInterface $cargoGroupRepository,
-    ) {}
+    )
+    {
+    }
 
     public function index(int $companyId, array $filters): ServiceResult
     {

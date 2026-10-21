@@ -10,17 +10,19 @@ class WaybillTrackingCodeGenerator
 {
     private const TRACKING_CODE_LENGTH = 25;
 
-    public function __construct(protected WaybillRepositoryInterface $waybillRepository) {}
+    public function __construct(protected WaybillRepositoryInterface $waybillRepository)
+    {
+    }
 
     public function generate(int $companyId, string $bijakNumber): string
     {
         $bijakNumber = trim($bijakNumber);
 
-        if (! ctype_digit($bijakNumber)) {
+        if (!ctype_digit($bijakNumber)) {
             throw new InvalidArgumentException('The bijak number must contain only digits.');
         }
 
-        $prefix = $this->jalaliYear(now()).$bijakNumber;
+        $prefix = $this->jalaliYear(now()) . $bijakNumber;
         $randomDigitsCount = self::TRACKING_CODE_LENGTH - strlen($prefix);
 
         if ($randomDigitsCount < 1) {
@@ -28,7 +30,7 @@ class WaybillTrackingCodeGenerator
         }
 
         do {
-            $trackingCode = $prefix.$this->randomDigits($randomDigitsCount);
+            $trackingCode = $prefix . $this->randomDigits($randomDigitsCount);
         } while ($this->waybillRepository->trackingCodeExists($companyId, $trackingCode));
 
         return $trackingCode;
@@ -39,7 +41,7 @@ class WaybillTrackingCodeGenerator
         $digits = '';
 
         for ($index = 0; $index < $length; $index++) {
-            $digits .= (string) random_int(0, 9);
+            $digits .= (string)random_int(0, 9);
         }
 
         return $digits;

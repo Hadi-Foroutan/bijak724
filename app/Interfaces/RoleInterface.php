@@ -4,7 +4,6 @@ namespace App\Interfaces;
 
 use App\Models\Role;
 use App\Models\User;
-use Illuminate\Support\Collection;
 
 interface RoleInterface
 {
@@ -16,7 +15,7 @@ interface RoleInterface
 
     public function findById(int $id): ?Role;
 
-    public function update(Role $role,array $data): ?Role;
+    public function update(Role $role, array $data): ?Role;
 
     public function delete(Role $role): void;
 

@@ -12,9 +12,11 @@ use Symfony\Component\HttpFoundation\Response;
 class InsuranceTariffService
 {
     public function __construct(
-        protected InsuranceRepositoryInterface $insuranceRepository,
+        protected InsuranceRepositoryInterface       $insuranceRepository,
         protected InsuranceTariffRepositoryInterface $insuranceTariffRepository,
-    ) {}
+    )
+    {
+    }
 
     public function index(int $companyId, int $insuranceId): ServiceResult
     {
@@ -66,9 +68,9 @@ class InsuranceTariffService
     {
         if ($this->insuranceTariffRepository->overlappingRangeExists(
             $insuranceId,
-            isset($data['cargo_group_id']) ? (int) $data['cargo_group_id'] : null,
-            (float) $data['cargo_value_from'],
-            isset($data['cargo_value_to']) ? (float) $data['cargo_value_to'] : null,
+            isset($data['cargo_group_id']) ? (int)$data['cargo_group_id'] : null,
+            (float)$data['cargo_value_from'],
+            isset($data['cargo_value_to']) ? (float)$data['cargo_value_to'] : null,
             $ignoreId,
         )) {
             ServiceResult::error(
@@ -79,7 +81,7 @@ class InsuranceTariffService
     }
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param array<string, mixed> $data
      * @return array<string, mixed>
      */
     private function rangeData(InsuranceTariff $tariff, array $data): array

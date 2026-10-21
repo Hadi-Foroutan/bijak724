@@ -18,16 +18,16 @@ class InsuranceTariffResource extends JsonResource
             'id' => $this->id,
             'insurance_id' => $this->insurance_id,
             'cargo_group_id' => $this->cargo_group_id,
-            'cargo_group' => $this->whenLoaded('cargoGroup', fn (): ?array => $this->cargoGroup === null ? null : [
+            'cargo_group' => $this->whenLoaded('cargoGroup', fn(): ?array => $this->cargoGroup === null ? null : [
                 'id' => $this->cargoGroup->id,
                 'name' => $this->cargoGroup->name,
                 'group_number' => $this->cargoGroup->group_number,
             ]),
-            'cargo_value_from' => (float) $this->cargo_value_from,
-            'cargo_value_to' => $this->cargo_value_to === null ? null : (float) $this->cargo_value_to,
-            'fixed_premium' => $this->fixed_premium === null ? null : (float) $this->fixed_premium,
-            'premium_percentage' => $this->premium_percentage === null ? null : (float) $this->premium_percentage,
-            'excess_amount' => $this->excess_amount === null ? null : (float) $this->excess_amount,
+            'cargo_value_from' => (float)$this->cargo_value_from,
+            'cargo_value_to' => $this->cargo_value_to === null ? null : (float)$this->cargo_value_to,
+            'fixed_premium' => $this->fixed_premium === null ? null : (float)$this->fixed_premium,
+            'premium_percentage' => $this->premium_percentage === null ? null : (float)$this->premium_percentage,
+            'excess_amount' => $this->excess_amount === null ? null : (float)$this->excess_amount,
             'description' => $this->description,
         ];
     }

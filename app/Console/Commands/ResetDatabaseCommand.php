@@ -28,7 +28,7 @@ class ResetDatabaseCommand extends Command
     {
         $exitCode = $this->call('migrate:fresh', [
             '--seed' => true,
-            '--force' => (bool) $this->option('force'),
+            '--force' => (bool)$this->option('force'),
         ]);
 
         if ($exitCode !== self::SUCCESS) {

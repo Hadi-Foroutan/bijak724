@@ -11,7 +11,9 @@ class CompanyService
 {
     public function __construct(
         protected CompanyInterface $companyRepository,
-    ) {}
+    )
+    {
+    }
 
     public function index(array $params): ServiceResult
     {

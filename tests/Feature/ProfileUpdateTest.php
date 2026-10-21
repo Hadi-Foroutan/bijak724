@@ -62,8 +62,8 @@ test('user updates own profile fields and profile image without permission', fun
         ->and($user->personnel_code)->toBe('EMP-1024')
         ->and($user->telephone)->toBe('02112345678')
         ->and($user->phone)->toBe('09121111111')
-        ->and((int) $user->min_commission_percentage)->toBe(5)
-        ->and((int) $user->max_commission_percentage)->toBe(15)
+        ->and((int)$user->min_commission_percentage)->toBe(5)
+        ->and((int)$user->max_commission_percentage)->toBe(15)
         ->and($user->address)->toBe('تهران')
         ->and($user->profile_image)->toStartWith("users/{$user->id}/profile-images/")
         ->and(Hash::check('old-password', $user->password))->toBeTrue()
@@ -138,7 +138,7 @@ function profileImage(): UploadedFile
 {
     return UploadedFile::fake()->createWithContent(
         'profile.png',
-        (string) base64_decode(
+        (string)base64_decode(
             'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z1pAAAAAASUVORK5CYII=',
             true,
         ),

@@ -25,7 +25,7 @@ class AdminWaybillResource extends JsonResource
             'id' => $this->id,
             'waybill_id' => $this->waybill_id,
             'company_id' => $this->company_id,
-            'company_name' => $this->whenLoaded('company', fn (): ?string => $this->company?->name),
+            'company_name' => $this->whenLoaded('company', fn(): ?string => $this->company?->name),
             'serial_number' => $companyWaybill?->serial_number,
             'referral_number' => $companyWaybill?->referral_number,
             'bijak_tracking_code' => $companyWaybill?->bijak_tracking_code,

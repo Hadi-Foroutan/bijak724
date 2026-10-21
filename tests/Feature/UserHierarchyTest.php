@@ -156,10 +156,11 @@ function hierarchyCompany(string $panelCode, string $nationalCode): Company
 
 function hierarchyUser(
     Company $company,
-    string $username,
-    string $nationalCode,
-    string $phone,
-): User {
+    string  $username,
+    string  $nationalCode,
+    string  $phone,
+): User
+{
     return User::query()->forceCreate([
         'company_id' => $company->id,
         'national_code' => $nationalCode,

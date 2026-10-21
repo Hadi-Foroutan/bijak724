@@ -32,7 +32,7 @@ interface ShipmentPartyRepositoryInterface
     public function existsRule(int $companyId, string $column = 'id'): Exists;
 
     public function findByNationalIdentifierAndType(
-        int $companyId,
+        int    $companyId,
         string $nationalIdentifier,
         string $type,
     ): ShipmentParty;

@@ -6,8 +6,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -25,7 +24,7 @@ return new class extends Migration
 
         DB::table('cargo_groups')->insert(
             collect(range(1, 5))
-                ->map(fn (int $number): array => [
+                ->map(fn(int $number): array => [
                     'name' => "گروه {$number}",
                     'group_number' => $number,
                     'status' => StatusEnum::ACTIVE->value,

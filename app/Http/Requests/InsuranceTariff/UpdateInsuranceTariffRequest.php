@@ -45,7 +45,7 @@ class UpdateInsuranceTariffRequest extends BaseRequest
         $validator->after(function (Validator $validator): void {
             $tariff = InsuranceTariff::query()
                 ->whereKey($this->route('tariff'))
-                ->whereHas('insurance', fn ($query) => $query
+                ->whereHas('insurance', fn($query) => $query
                     ->whereKey($this->route('insurance'))
                     ->where('company_id', $this->companyId()))
                 ->first();
@@ -62,10 +62,10 @@ class UpdateInsuranceTariffRequest extends BaseRequest
                 $validator->errors()->add('premium_percentage', __('public.insurance_premium_required'));
             }
 
-            $from = (float) $this->input('cargo_value_from', $tariff->cargo_value_from);
+            $from = (float)$this->input('cargo_value_from', $tariff->cargo_value_from);
             $to = $this->exists('cargo_value_to') ? $this->input('cargo_value_to') : $tariff->cargo_value_to;
 
-            if ($to !== null && (float) $to < $from) {
+            if ($to !== null && (float)$to < $from) {
                 $validator->errors()->add('cargo_value_to', __('public.cargo_value_range_invalid'));
             }
         });

@@ -11,7 +11,9 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
-    public function __construct(protected NotificationService $notificationService) {}
+    public function __construct(protected NotificationService $notificationService)
+    {
+    }
 
     public function index(Request $request): JsonResponse
     {

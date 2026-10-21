@@ -12,7 +12,7 @@ class InsuranceTariffRepository implements InsuranceTariffRepositoryInterface
     public function all(int $companyId, int $insuranceId): Collection
     {
         return InsuranceTariff::query()
-            ->whereHas('insurance', fn ($query) => $query
+            ->whereHas('insurance', fn($query) => $query
                 ->whereKey($insuranceId)
                 ->where('company_id', $companyId))
             ->with('cargoGroup')
@@ -24,7 +24,7 @@ class InsuranceTariffRepository implements InsuranceTariffRepositoryInterface
     {
         return InsuranceTariff::query()
             ->whereKey($id)
-            ->whereHas('insurance', fn ($query) => $query
+            ->whereHas('insurance', fn($query) => $query
                 ->whereKey($insuranceId)
                 ->where('company_id', $companyId))
             ->with('cargoGroup')
@@ -50,39 +50,41 @@ class InsuranceTariffRepository implements InsuranceTariffRepositoryInterface
     }
 
     public function overlappingRangeExists(
-        int $insuranceId,
-        ?int $cargoGroupId,
-        float $cargoValueFrom,
+        int    $insuranceId,
+        ?int   $cargoGroupId,
+        float  $cargoValueFrom,
         ?float $cargoValueTo,
-        ?int $ignoreId = null,
-    ): bool {
+        ?int   $ignoreId = null,
+    ): bool
+    {
         return InsuranceTariff::query()
             ->where('insurance_id', $insuranceId)
             ->when(
                 $cargoGroupId === null,
-                fn (Builder $query): Builder => $query->whereNull('cargo_group_id'),
-                fn (Builder $query): Builder => $query->where('cargo_group_id', $cargoGroupId),
+                fn(Builder $query): Builder => $query->whereNull('cargo_group_id'),
+                fn(Builder $query): Builder => $query->where('cargo_group_id', $cargoGroupId),
             )
             ->when(
                 $cargoValueTo !== null,
-                fn (Builder $query): Builder => $query->where('cargo_value_from', '<=', $cargoValueTo),
+                fn(Builder $query): Builder => $query->where('cargo_value_from', '<=', $cargoValueTo),
             )
-            ->where(fn (Builder $query): Builder => $query
+            ->where(fn(Builder $query): Builder => $query
                 ->whereNull('cargo_value_to')
                 ->orWhere('cargo_value_to', '>=', $cargoValueFrom))
-            ->when($ignoreId !== null, fn (Builder $query): Builder => $query->whereKeyNot($ignoreId))
+            ->when($ignoreId !== null, fn(Builder $query): Builder => $query->whereKeyNot($ignoreId))
             ->exists();
     }
 
     public function findApplicable(
-        int $companyId,
-        int $insuranceId,
-        int $cargoGroupId,
+        int   $companyId,
+        int   $insuranceId,
+        int   $cargoGroupId,
         float $cargoValue,
-    ): ?InsuranceTariff {
+    ): ?InsuranceTariff
+    {
         $query = InsuranceTariff::query()
             ->where('insurance_id', $insuranceId)
-            ->whereHas('insurance', fn (Builder $query) => $query->where('company_id', $companyId));
+            ->whereHas('insurance', fn(Builder $query) => $query->where('company_id', $companyId));
 
         $groupTariff = $this->withinCargoValueRange(
             (clone $query)->where('cargo_group_id', $cargoGroupId),
@@ -107,7 +109,7 @@ class InsuranceTariffRepository implements InsuranceTariffRepositoryInterface
     {
         return $query
             ->where('cargo_value_from', '<=', $cargoValue)
-            ->where(fn (Builder $query): Builder => $query
+            ->where(fn(Builder $query): Builder => $query
                 ->whereNull('cargo_value_to')
                 ->orWhere('cargo_value_to', '>=', $cargoValue));
     }

@@ -122,17 +122,18 @@ class TransportContractSeeder extends Seeder
     }
 
     /**
-     * @param  array{is_owned: bool, is_rental: bool, is_free: bool, is_unknown: bool}  $typeFields
+     * @param array{is_owned: bool, is_rental: bool, is_free: bool, is_unknown: bool} $typeFields
      * @return array{name: string, is_owned: bool, is_rental: bool, is_free: bool, is_unknown: bool, charge_recipient: bool, primary_value: float, secondary_value: float}
      */
     private function item(
         TransportContractItemName $name,
-        float $primaryValue,
-        float $secondaryValue,
-        float $rateMultiplier,
-        array $typeFields,
-        bool $chargeRecipient = false,
-    ): array {
+        float                     $primaryValue,
+        float                     $secondaryValue,
+        float                     $rateMultiplier,
+        array                     $typeFields,
+        bool                      $chargeRecipient = false,
+    ): array
+    {
         return [
             'name' => $name->value,
             ...$typeFields,

@@ -9,7 +9,7 @@ class NationalCodeRule implements ValidationRule
 {
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        $value = (string) $value;
+        $value = (string)$value;
 
         // ✅ بررسی فرمت اولیه
         if (!preg_match('/^\d{10}$/', $value)) {
@@ -23,11 +23,11 @@ class NationalCodeRule implements ValidationRule
             return;
         }
 
-        $checkDigit = (int) $value[9];
+        $checkDigit = (int)$value[9];
 
         $sum = 0;
         for ($i = 0; $i < 9; $i++) {
-            $sum += ((int) $value[$i]) * (10 - $i);
+            $sum += ((int)$value[$i]) * (10 - $i);
         }
 
         $remainder = $sum % 11;

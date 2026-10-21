@@ -11,7 +11,9 @@ use Illuminate\Http\Request;
 
 class CanceledReferralController extends Controller
 {
-    public function __construct(protected CanceledReferralService $canceledReferralService) {}
+    public function __construct(protected CanceledReferralService $canceledReferralService)
+    {
+    }
 
     public function index(Request $request): JsonResponse
     {

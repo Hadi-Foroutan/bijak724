@@ -2,27 +2,27 @@
 
 namespace App\Repositories\User;
 
-use App\Enums\RoleEnum;
 use App\Interfaces\UserInterface;
 use App\Models\User;
 use App\Services\Company\CompanyHierarchyService;
 use App\Services\TreeBuilder;
 use Closure;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 class UserRepository implements UserInterface
 {
     public function __construct(
-        protected TreeBuilder $treeBuilder,
+        protected TreeBuilder             $treeBuilder,
         protected CompanyHierarchyService $companyHierarchyService,
-    ) {}
+    )
+    {
+    }
 
     public function all(array $params)
     {
         return User::searchRecords(
             $params,
-            fn ($query) => $query->with(['roles', 'parent']),
+            fn($query) => $query->with(['roles', 'parent']),
         );
     }
 
@@ -32,7 +32,7 @@ class UserRepository implements UserInterface
 
         return User::searchRecords(
             $params,
-            fn ($query) => $query
+            fn($query) => $query
                 ->whereIn('company_id', $visibleCompanyIds)
                 ->with(['roles', 'parent']),
         );
@@ -49,7 +49,7 @@ class UserRepository implements UserInterface
 
         return $this->treeBuilder->build($this->usersForTree(
             $params,
-            fn ($query) => $query->whereIn('company_id', $visibleCompanyIds),
+            fn($query) => $query->whereIn('company_id', $visibleCompanyIds),
         ));
     }
 
@@ -109,7 +109,7 @@ class UserRepository implements UserInterface
             )*/
             ->orderBy('id')
             ->pluck('id')
-            ->map(fn (mixed $userId): int => (int) $userId)
+            ->map(fn(mixed $userId): int => (int)$userId)
             ->all();
     }
 

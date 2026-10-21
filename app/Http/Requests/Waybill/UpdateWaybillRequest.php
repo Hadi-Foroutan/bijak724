@@ -2,4 +2,6 @@
 
 namespace App\Http\Requests\Waybill;
 
-class UpdateWaybillRequest extends StoreWaybillRequest {}
+class UpdateWaybillRequest extends StoreWaybillRequest
+{
+}

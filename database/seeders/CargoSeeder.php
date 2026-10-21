@@ -2145,7 +2145,7 @@ class CargoSeeder extends Seeder
         ];
 
         $cargos = array_map(
-            fn (array $cargo): array => [
+            fn(array $cargo): array => [
                 'id' => $cargo[0],
                 'name' => $cargo[1],
                 'code' => $cargo[2],

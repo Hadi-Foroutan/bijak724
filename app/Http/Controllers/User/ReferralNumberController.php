@@ -17,7 +17,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ReferralNumberController extends Controller
 {
-    public function __construct(protected ReferralNumberService $referralNumberService) {}
+    public function __construct(protected ReferralNumberService $referralNumberService)
+    {
+    }
 
     public function index(Request $request): JsonResponse
     {

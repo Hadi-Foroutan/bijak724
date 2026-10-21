@@ -26,12 +26,12 @@ test('every permission route belongs to a configured group', function () {
     $groupPatterns = array_keys(config('permission_groups.groups', []));
 
     $ungroupedRoutes = collect(Route::getRoutes())
-        ->map(fn ($route) => $route->getName())
-        ->filter(fn (?string $name): bool => filled($name))
-        ->reject(fn (string $name): bool => collect($excludedRoutes)
-            ->contains(fn (string $pattern): bool => Str::is($pattern, $name)))
-        ->reject(fn (string $name): bool => collect($groupPatterns)
-            ->contains(fn (string $pattern): bool => Str::is(
+        ->map(fn($route) => $route->getName())
+        ->filter(fn(?string $name): bool => filled($name))
+        ->reject(fn(string $name): bool => collect($excludedRoutes)
+            ->contains(fn(string $pattern): bool => Str::is($pattern, $name)))
+        ->reject(fn(string $name): bool => collect($groupPatterns)
+            ->contains(fn(string $pattern): bool => Str::is(
                 Str::contains($pattern, '*') ? $pattern : "{$pattern}*",
                 $name,
             )))

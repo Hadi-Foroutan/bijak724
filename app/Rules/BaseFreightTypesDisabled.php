@@ -13,16 +13,16 @@ class BaseFreightTypesDisabled implements ValidationRule
     /**
      * Run the validation rule.
      *
-     * @param  Closure(string, ?string=): PotentiallyTranslatedString  $fail
+     * @param Closure(string, ?string=): PotentiallyTranslatedString $fail
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        if (! is_array($value)) {
+        if (!is_array($value)) {
             return;
         }
 
         foreach ($value as $item) {
-            if (! is_array($item) || ($item['name'] ?? null) !== TransportContractItemName::BaseFreight->value) {
+            if (!is_array($item) || ($item['name'] ?? null) !== TransportContractItemName::BaseFreight->value) {
                 continue;
             }
 

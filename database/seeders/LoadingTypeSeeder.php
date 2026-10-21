@@ -236,7 +236,7 @@ class LoadingTypeSeeder extends Seeder
         ];
 
         $loadingTypes = array_map(
-            fn (array $loadingType): array => [
+            fn(array $loadingType): array => [
                 'status' => StatusEnum::ACTIVE->value,
                 ...$loadingType,
             ],

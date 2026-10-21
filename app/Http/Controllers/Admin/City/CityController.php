@@ -15,7 +15,8 @@ class CityController extends Controller
 {
     public function __construct(
         protected CityService $cityService,
-    ) {
+    )
+    {
     }
 
     public function index(Request $request): JsonResponse

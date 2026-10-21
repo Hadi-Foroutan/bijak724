@@ -11,7 +11,7 @@ interface CompanyInterface
     public function all(array $params);
 
     /**
-     * @param  array<string, mixed>  $params
+     * @param array<string, mixed> $params
      * @return array{active_companies_count: int, total_waybills_count: int, companies: Collection<int, Company>|LengthAwarePaginator}
      */
     public function aggregateReport(array $params): array;
@@ -20,12 +20,12 @@ interface CompanyInterface
     public function tree(array $params): Collection;
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param array<string, mixed> $data
      */
     public function create(array $data): Company;
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param array<string, mixed> $data
      */
     public function update(Company $company, array $data): Company;
 

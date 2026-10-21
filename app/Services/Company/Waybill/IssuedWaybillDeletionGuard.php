@@ -10,16 +10,19 @@ class IssuedWaybillDeletionGuard
 {
     public function __construct(
         protected WaybillRepositoryInterface $waybillRepository,
-    ) {}
+    )
+    {
+    }
 
     /** @param list<string> $columns */
     public function ensureReferenceCanBeDeleted(
-        int $companyId,
-        array $columns,
-        int $referenceId,
+        int    $companyId,
+        array  $columns,
+        int    $referenceId,
         string $attribute,
-    ): void {
-        if (! $this->waybillRepository->hasIssuedReference($companyId, $columns, $referenceId)) {
+    ): void
+    {
+        if (!$this->waybillRepository->hasIssuedReference($companyId, $columns, $referenceId)) {
             return;
         }
 
@@ -27,12 +30,13 @@ class IssuedWaybillDeletionGuard
     }
 
     public function ensureCargoReferenceCanBeDeleted(
-        int $companyId,
+        int    $companyId,
         string $column,
-        int $referenceId,
+        int    $referenceId,
         string $attribute,
-    ): void {
-        if (! $this->waybillRepository->hasIssuedCargoReference($companyId, $column, $referenceId)) {
+    ): void
+    {
+        if (!$this->waybillRepository->hasIssuedCargoReference($companyId, $column, $referenceId)) {
             return;
         }
 

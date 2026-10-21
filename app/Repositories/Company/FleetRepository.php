@@ -89,7 +89,7 @@ class FleetRepository implements FleetRepositoryInterface
             ->where('brand_code', $systemCode)
             ->value('id');
 
-        return $systemId === null ? null : (int) $systemId;
+        return $systemId === null ? null : (int)$systemId;
     }
 
     public function tipExists(int $tipCode): bool
@@ -103,7 +103,7 @@ class FleetRepository implements FleetRepositoryInterface
     {
         return FleetType::query()
             ->where('tip_code', $tipCode)
-            ->whereHas('brand', fn ($query) => $query->whereKey($systemId))
+            ->whereHas('brand', fn($query) => $query->whereKey($systemId))
             ->exists();
     }
 

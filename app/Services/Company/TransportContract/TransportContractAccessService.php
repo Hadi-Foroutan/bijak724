@@ -10,7 +10,9 @@ class TransportContractAccessService
 {
     public function __construct(
         protected CompanySupportTokenService $companySupportTokenService,
-    ) {}
+    )
+    {
+    }
 
     public function canViewAll(User $user): bool
     {

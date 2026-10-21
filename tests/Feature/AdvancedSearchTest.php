@@ -109,8 +109,9 @@ function dynamicDriverPayload(
     string $firstName,
     string $lastName,
     string $status,
-    int $licenseTypeId,
-): array {
+    int    $licenseTypeId,
+): array
+{
     return [
         'national_code' => $nationalCode,
         'first_name' => $firstName,

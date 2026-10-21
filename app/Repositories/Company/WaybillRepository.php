@@ -24,7 +24,7 @@ class WaybillRepository implements WaybillRepositoryInterface
             : $result;
 
         $waybills
-            ->filter(fn (Waybill $waybill): bool => in_array($waybill->status, [
+            ->filter(fn(Waybill $waybill): bool => in_array($waybill->status, [
                 WaybillStatus::Incomplete,
                 WaybillStatus::Referral,
             ], true))
@@ -48,7 +48,7 @@ class WaybillRepository implements WaybillRepositoryInterface
         return Waybill::findForCompanyOrFail(
             $companyId,
             $id,
-            fn (Builder $query): Builder => $query->lockForUpdate(),
+            fn(Builder $query): Builder => $query->lockForUpdate(),
         );
     }
 
@@ -77,7 +77,7 @@ class WaybillRepository implements WaybillRepositoryInterface
     public function hasIssuedCargoReference(int $companyId, string $column, int $referenceId): bool
     {
         return $this->issuedQuery($companyId)
-            ->whereHas('cargos', fn (Builder $query): Builder => $query->where($column, $referenceId))
+            ->whereHas('cargos', fn(Builder $query): Builder => $query->where($column, $referenceId))
             ->exists();
     }
 
@@ -89,25 +89,27 @@ class WaybillRepository implements WaybillRepositoryInterface
     }
 
     public function referralNumberExists(
-        int $companyId,
+        int    $companyId,
         string $referralSerial,
         string $referralNumber,
-        ?int $ignoreWaybillId = null,
-    ): bool {
+        ?int   $ignoreWaybillId = null,
+    ): bool
+    {
         return Waybill::sharedQueryForCompany($companyId)
             ->where('owner_company_id', $companyId)
             ->where('referral_serial', $referralSerial)
             ->where('referral_number', $referralNumber)
-            ->when($ignoreWaybillId !== null, fn (Builder $query): Builder => $query->whereKeyNot($ignoreWaybillId))
+            ->when($ignoreWaybillId !== null, fn(Builder $query): Builder => $query->whereKeyNot($ignoreWaybillId))
             ->exists();
     }
 
     public function highestUsedReferralNumber(
-        int $companyId,
+        int    $companyId,
         string $referralSerial,
-        int $fromNumber,
-        int $toNumber,
-    ): ?int {
+        int    $fromNumber,
+        int    $toNumber,
+    ): ?int
+    {
         $highestNumber = Waybill::sharedQueryForCompany($companyId)
             ->where('owner_company_id', $companyId)
             ->where('referral_serial', $referralSerial)
@@ -116,15 +118,16 @@ class WaybillRepository implements WaybillRepositoryInterface
             ->selectRaw('MAX(CAST(referral_number AS UNSIGNED)) AS highest_number')
             ->value('highest_number');
 
-        return $highestNumber === null ? null : (int) $highestNumber;
+        return $highestNumber === null ? null : (int)$highestNumber;
     }
 
     public function bijakNumberExists(
-        int $companyId,
+        int    $companyId,
         string $serialNumber,
         string $bijakNumber,
-        ?int $ignoreWaybillId = null,
-    ): bool {
+        ?int   $ignoreWaybillId = null,
+    ): bool
+    {
         return $this->numberExists(
             $companyId,
             $serialNumber,
@@ -135,11 +138,12 @@ class WaybillRepository implements WaybillRepositoryInterface
     }
 
     public function firstAvailableBijakNumber(
-        int $companyId,
+        int    $companyId,
         string $serialNumber,
-        int $fromNumber,
-        int $toNumber,
-    ): ?int {
+        int    $fromNumber,
+        int    $toNumber,
+    ): ?int
+    {
         $firstAvailableNumber = $fromNumber;
         $usedNumbers = Waybill::sharedQueryForCompany($companyId)
             ->select('bijak_number')
@@ -151,7 +155,7 @@ class WaybillRepository implements WaybillRepositoryInterface
             ->cursor();
 
         foreach ($usedNumbers as $waybill) {
-            $usedNumber = (int) $waybill->bijak_number;
+            $usedNumber = (int)$waybill->bijak_number;
 
             if ($usedNumber > $firstAvailableNumber) {
                 break;
@@ -166,17 +170,18 @@ class WaybillRepository implements WaybillRepositoryInterface
     }
 
     private function numberExists(
-        int $companyId,
+        int    $companyId,
         string $serialNumber,
         string $numberColumn,
         string $number,
-        ?int $ignoreWaybillId,
-    ): bool {
+        ?int   $ignoreWaybillId,
+    ): bool
+    {
         return Waybill::sharedQueryForCompany($companyId)
             ->where('owner_company_id', $companyId)
             ->where('serial_number', $serialNumber)
             ->where($numberColumn, $number)
-            ->when($ignoreWaybillId !== null, fn ($query) => $query->whereKeyNot($ignoreWaybillId))
+            ->when($ignoreWaybillId !== null, fn($query) => $query->whereKeyNot($ignoreWaybillId))
             ->exists();
     }
 

@@ -9,7 +9,9 @@ class ProfileService
 {
     public function __construct(
         protected UserService $userService,
-    ) {}
+    )
+    {
+    }
 
     public function update(User $user, array $data): ServiceResult
     {

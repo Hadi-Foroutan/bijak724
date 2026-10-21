@@ -11,7 +11,9 @@ use Illuminate\Http\JsonResponse;
 
 class WaybillController extends Controller
 {
-    public function __construct(protected WaybillService $waybillService) {}
+    public function __construct(protected WaybillService $waybillService)
+    {
+    }
 
     public function index(IndexWaybillRequest $request): JsonResponse
     {

@@ -72,7 +72,7 @@ class UserSeeder extends Seeder
 
         foreach ($users as $userData) {
 
-            if (! str_contains($userData['last_name'], 'ادمین')) {
+            if (!str_contains($userData['last_name'], 'ادمین')) {
                 $company = $this->companyRepository->findByNationalCode('1026622603');
 
                 if ($company) {

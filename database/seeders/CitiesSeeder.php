@@ -25,7 +25,7 @@ class CitiesSeeder extends Seeder
             ->chunk(500)
             ->each(function (Collection $rows) use ($stateIdsByCode): void {
                 $cities = $rows
-                    ->map(fn (string $row): array => $this->parseRow($row, $stateIdsByCode))
+                    ->map(fn(string $row): array => $this->parseRow($row, $stateIdsByCode))
                     ->all();
 
                 City::query()->upsert(
@@ -37,7 +37,7 @@ class CitiesSeeder extends Seeder
     }
 
     /**
-     * @param  Collection<int|string, int>  $stateIdsByCode
+     * @param Collection<int|string, int> $stateIdsByCode
      * @return array{id: int, name: string, code: int, state_id: int, tax_id: ?int, tax_ostan: ?int, anbar_code: ?string, created_at: ?string, updated_at: ?string}
      */
     private function parseRow(string $row, Collection $stateIdsByCode): array
@@ -59,11 +59,11 @@ class CitiesSeeder extends Seeder
                     return str_replace("''", "'", $field['string']);
                 }
 
-                return $field['scalar'] === 'NULL' ? null : (int) $field['scalar'];
+                return $field['scalar'] === 'NULL' ? null : (int)$field['scalar'];
             })
             ->all();
 
-        $stateCode = (int) $values[3];
+        $stateCode = (int)$values[3];
         $stateId = $stateIdsByCode->get($stateCode);
 
         if ($stateId === null) {
@@ -71,9 +71,9 @@ class CitiesSeeder extends Seeder
         }
 
         return [
-            'id' => (int) $values[0],
-            'name' => (string) $values[1],
-            'code' => (int) $values[2],
+            'id' => (int)$values[0],
+            'name' => (string)$values[1],
+            'code' => (int)$values[2],
             'state_id' => $stateId,
             'tax_id' => $values[4],
             'tax_ostan' => $values[5],

@@ -16,7 +16,7 @@ class AdminNotificationResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'sender' => $this->whenLoaded('sender', fn (): array => [
+            'sender' => $this->whenLoaded('sender', fn(): array => [
                 'id' => $this->sender->id,
                 'full_name' => $this->sender->full_name,
                 'username' => $this->sender->username,

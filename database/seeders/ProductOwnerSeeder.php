@@ -16,8 +16,10 @@ class ProductOwnerSeeder extends Seeder
 
     public function __construct(
         protected ProductOwnerRepositoryInterface $productOwnerRepository,
-        protected CompanyTableService $companyTableService,
-    ) {}
+        protected CompanyTableService             $companyTableService,
+    )
+    {
+    }
 
     /**
      * Run the database seeds.

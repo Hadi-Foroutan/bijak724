@@ -242,10 +242,11 @@ function permissionManagementPermission(string $name, string $displayName): Perm
 
 function permissionManagementUser(
     Company $company,
-    string $username,
-    string $nationalCode,
-    string $phone,
-): User {
+    string  $username,
+    string  $nationalCode,
+    string  $phone,
+): User
+{
     return User::query()->forceCreate([
         'company_id' => $company->id,
         'national_code' => $nationalCode,

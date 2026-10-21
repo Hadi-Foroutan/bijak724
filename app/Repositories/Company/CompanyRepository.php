@@ -19,17 +19,19 @@ use Illuminate\Support\Facades\Schema;
 class CompanyRepository implements CompanyInterface
 {
     public function __construct(
-        protected TreeBuilder $treeBuilder,
+        protected TreeBuilder          $treeBuilder,
         protected CompanyTableRegistry $companyTableRegistry,
-    ) {}
+    )
+    {
+    }
 
     public function all(array $params)
     {
         return Company::searchRecords(
             $params,
-            fn ($query) => $query->when(
+            fn($query) => $query->when(
                 $this->onlyParentOptions($params),
-                fn ($query) => $query
+                fn($query) => $query
                     ->where('parent_type', CompanyParentEnum::ORIGINAL->value)
                     ->whereNull('parent_id'),
             ),
@@ -37,13 +39,13 @@ class CompanyRepository implements CompanyInterface
     }
 
     /**
-     * @param  array<string, mixed>  $params
+     * @param array<string, mixed> $params
      * @return array{active_companies_count: int, total_waybills_count: int, companies: Collection<int, Company>|LengthAwarePaginator}
      */
     public function aggregateReport(array $params): array
     {
         $waybillStatistics = $this->waybillStatisticsQuery();
-        $totalWaybillsCount = (int) DB::query()
+        $totalWaybillsCount = (int)DB::query()
             ->fromSub(clone $waybillStatistics, 'waybill_totals')
             ->sum('waybills_count');
         $companyFilters = $this->prepareAggregateReportFilters($params);
@@ -72,7 +74,7 @@ class CompanyRepository implements CompanyInterface
         if ($aggregateOrderField !== null) {
             $query->reorder()->orderBy(
                 $aggregateOrderField,
-                strtolower((string) ($params['order_type'] ?? 'desc')),
+                strtolower((string)($params['order_type'] ?? 'desc')),
             );
         }
 
@@ -92,9 +94,9 @@ class CompanyRepository implements CompanyInterface
         /** @var Collection<int, Company> $companies */
         $companies = Company::searchRecords(
             $params,
-            fn ($query) => $query->when(
+            fn($query) => $query->when(
                 $this->onlyParentOptions($params),
-                fn ($query) => $query
+                fn($query) => $query
                     ->where('parent_type', CompanyParentEnum::ORIGINAL->value)
                     ->whereNull('parent_id'),
             ),
@@ -176,39 +178,39 @@ class CompanyRepository implements CompanyInterface
         $query
             ->when(
                 array_key_exists('min-waybills_count', $params),
-                fn (Builder $query): Builder => $query->whereRaw(
+                fn(Builder $query): Builder => $query->whereRaw(
                     'COALESCE(waybill_statistics.waybills_count, 0) >= ?',
-                    [(int) $params['min-waybills_count']],
+                    [(int)$params['min-waybills_count']],
                 ),
             )
             ->when(
                 array_key_exists('max-waybills_count', $params),
-                fn (Builder $query): Builder => $query->whereRaw(
+                fn(Builder $query): Builder => $query->whereRaw(
                     'COALESCE(waybill_statistics.waybills_count, 0) <= ?',
-                    [(int) $params['max-waybills_count']],
+                    [(int)$params['max-waybills_count']],
                 ),
             )
             ->when(
                 array_key_exists('eq-waybills_count', $params),
-                fn (Builder $query): Builder => $query->whereRaw(
+                fn(Builder $query): Builder => $query->whereRaw(
                     'COALESCE(waybill_statistics.waybills_count, 0) = ?',
-                    [(int) $params['eq-waybills_count']],
+                    [(int)$params['eq-waybills_count']],
                 ),
             )
             ->when(
                 isset($params['last_waybill_from']),
-                fn (Builder $query): Builder => $query->where(
+                fn(Builder $query): Builder => $query->where(
                     'waybill_statistics.last_waybill_at',
                     '>=',
-                    $params['last_waybill_from'].' 00:00:00',
+                    $params['last_waybill_from'] . ' 00:00:00',
                 ),
             )
             ->when(
                 isset($params['last_waybill_to']),
-                fn (Builder $query): Builder => $query->where(
+                fn(Builder $query): Builder => $query->where(
                     'waybill_statistics.last_waybill_at',
                     '<=',
-                    $params['last_waybill_to'].' 23:59:59',
+                    $params['last_waybill_to'] . ' 23:59:59',
                 ),
             );
     }
@@ -221,7 +223,7 @@ class CompanyRepository implements CompanyInterface
             ->map(function (int $companyId): ?QueryBuilder {
                 $tableName = $this->companyTableRegistry->tableName($companyId, 'waybills');
 
-                if (! Schema::hasTable($tableName)) {
+                if (!Schema::hasTable($tableName)) {
                     return null;
                 }
 

@@ -16,7 +16,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class DriverAccountController extends Controller
 {
-    public function __construct(protected DriverAccountService $accountService) {}
+    public function __construct(protected DriverAccountService $accountService)
+    {
+    }
 
     public function index(Request $request, Driver $driver): JsonResponse
     {
@@ -61,9 +63,10 @@ class DriverAccountController extends Controller
 
     public function update(
         UpdateDriverAccountRequest $request,
-        Driver $driver,
-        DriverAccount $account,
-    ): JsonResponse {
+        Driver                     $driver,
+        DriverAccount              $account,
+    ): JsonResponse
+    {
         $result = $this->accountService->update(
             $this->companyId($request),
             $driver->getKey(),

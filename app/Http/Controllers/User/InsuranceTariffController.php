@@ -14,7 +14,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class InsuranceTariffController extends Controller
 {
-    public function __construct(protected InsuranceTariffService $insuranceTariffService) {}
+    public function __construct(protected InsuranceTariffService $insuranceTariffService)
+    {
+    }
 
     public function index(Request $request, int $insurance): JsonResponse
     {

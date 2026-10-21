@@ -2,4 +2,6 @@
 
 namespace App\Http\Resources;
 
-class CompanyCargoResource extends CompanyDynamicResource {}
+class CompanyCargoResource extends CompanyDynamicResource
+{
+}

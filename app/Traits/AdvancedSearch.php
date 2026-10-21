@@ -16,8 +16,8 @@ trait AdvancedSearch
     /**
      * Search a regular Eloquent model and return its final result.
      *
-     * @param  array<string, mixed>  $filters
-     * @param  null|Closure(Builder): (Builder|void)  $queryCallback
+     * @param array<string, mixed> $filters
+     * @param null|Closure(Builder): (Builder|void) $queryCallback
      * @return Collection<int, static>|LengthAwarePaginator
      */
     public static function searchRecords(array $filters, ?Closure $queryCallback = null): Collection|LengthAwarePaginator
@@ -41,7 +41,7 @@ trait AdvancedSearch
      *
      * This is the entry point used by both regular and dynamic models.
      *
-     * @param  array<string, mixed>  $filters
+     * @param array<string, mixed> $filters
      */
     public function scopeAdvancedSearch(Builder $query, array $filters): Builder
     {
@@ -58,7 +58,7 @@ trait AdvancedSearch
     /**
      * Resolve an advanced-search builder to a collection or paginator.
      *
-     * @param  array<string, mixed>  $filters
+     * @param array<string, mixed> $filters
      * @return Collection<int, Model>|LengthAwarePaginator
      */
     public function advancedSearchResults(Builder $query, array $filters): Collection|LengthAwarePaginator
@@ -97,7 +97,7 @@ trait AdvancedSearch
             $key = $filterKey;
             $type = $this->getFilterType($key);
 
-            if (! $this->isSearchableField($model, $key)) {
+            if (!$this->isSearchableField($model, $key)) {
                 continue;
             }
 
@@ -136,7 +136,7 @@ trait AdvancedSearch
             'max' => $query->where($column, '<=', $value),
             'equal' => $query->where($column, $value),
             'notEqual' => $query->where($column, '!=', $value),
-            'parent' => $query->when($value, fn (Builder $query) => $query->whereNull(
+            'parent' => $query->when($value, fn(Builder $query) => $query->whereNull(
                 $this->qualifySearchColumn($query, 'parent_id'),
             )),
             default => $query->where($column, 'like', "%{$value}%"),
@@ -148,7 +148,7 @@ trait AdvancedSearch
     {
         $relationFields = $this->sortRelationFields($model);
         $defaultOrderField = $model->getKeyName();
-        $orderField = (string) ($filters['order_field'] ?? $defaultOrderField);
+        $orderField = (string)($filters['order_field'] ?? $defaultOrderField);
 
         if (array_key_exists($orderField, $relationFields)) {
             return;
@@ -158,11 +158,11 @@ trait AdvancedSearch
             $defaultOrderField,
             ...array_filter(
                 $this->searchableFields($model),
-                fn (string $field): bool => ! str_contains($field, '__'),
+                fn(string $field): bool => !str_contains($field, '__'),
             ),
         ]);
 
-        if (! in_array($orderField, $sortableFields, true)) {
+        if (!in_array($orderField, $sortableFields, true)) {
             $orderField = $defaultOrderField;
         }
 
@@ -178,7 +178,7 @@ trait AdvancedSearch
         $relationFields = $this->sortRelationFields($model);
         $orderField = $filters['order_field'] ?? null;
 
-        if (! is_string($orderField) || ! array_key_exists($orderField, $relationFields)) {
+        if (!is_string($orderField) || !array_key_exists($orderField, $relationFields)) {
             return;
         }
 
@@ -186,7 +186,7 @@ trait AdvancedSearch
         $relationName = $relation['relation'] ?? null;
         $field = $relation['field'] ?? null;
 
-        if (! is_string($relationName) || ! is_string($field)) {
+        if (!is_string($relationName) || !is_string($field)) {
             return;
         }
 
@@ -252,7 +252,7 @@ trait AdvancedSearch
             return true;
         }
 
-        if (! str_contains($field, '__')) {
+        if (!str_contains($field, '__')) {
             return false;
         }
 
@@ -276,7 +276,7 @@ trait AdvancedSearch
 
     private function relatedModel(Model $model, string $relationName): ?Model
     {
-        if ($relationName === '' || ! method_exists($model, $relationName)) {
+        if ($relationName === '' || !method_exists($model, $relationName)) {
             return null;
         }
 
@@ -284,10 +284,10 @@ trait AdvancedSearch
         $returnType = $method->getReturnType();
 
         if (
-            ! $method->isPublic()
+            !$method->isPublic()
             || $method->getNumberOfRequiredParameters() > 0
-            || ! $returnType instanceof ReflectionNamedType
-            || ! is_subclass_of($returnType->getName(), Relation::class)
+            || !$returnType instanceof ReflectionNamedType
+            || !is_subclass_of($returnType->getName(), Relation::class)
         ) {
             return null;
         }
@@ -320,7 +320,7 @@ trait AdvancedSearch
     /** @param array<string, mixed> $filters */
     private function orderType(array $filters): string
     {
-        $orderType = strtoupper((string) ($filters['order_type'] ?? 'DESC'));
+        $orderType = strtoupper((string)($filters['order_type'] ?? 'DESC'));
 
         return in_array($orderType, ['ASC', 'DESC'], true) ? $orderType : 'DESC';
     }
@@ -334,12 +334,12 @@ trait AdvancedSearch
     /** @param array<string, mixed> $filters */
     private function itemsPerPage(array $filters): int
     {
-        return min(max((int) ($filters['itemsPerPage'] ?? 10), 1), 100);
+        return min(max((int)($filters['itemsPerPage'] ?? 10), 1), 100);
     }
 
     private function normalizeSearchValue(mixed $value): mixed
     {
-        if (! is_string($value)) {
+        if (!is_string($value)) {
             return $value;
         }
 

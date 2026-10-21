@@ -10,7 +10,9 @@ class WaybillCargoService
 {
     public function __construct(
         protected WaybillCargoRepositoryInterface $waybillCargoRepository,
-    ) {}
+    )
+    {
+    }
 
     /** @param list<array<string, mixed>> $cargos */
     public function sync(Waybill $waybill, int $companyId, array $cargos): ServiceResult

@@ -39,7 +39,7 @@ class UpdateFleetRequest extends BaseRequest
             'plate_second_letter' => ['sometimes', 'required', 'string', 'min:1', 'max:3'],
             'plate_third_number' => ['sometimes', 'required', 'string', 'regex:/^\d{3}$/'],
             'plate_fourth_number' => ['sometimes', 'required', 'string', 'regex:/^\d{2}$/'],
-            'manufacture_year' => ['sometimes', 'nullable', 'integer', 'between:1300,'.(now()->year + 1)],
+            'manufacture_year' => ['sometimes', 'nullable', 'integer', 'between:1300,' . (now()->year + 1)],
             'driver_license_type_id' => ['sometimes', 'nullable', 'integer', Rule::exists(DriverLicenseType::class, 'id')],
             'owner_mobile' => ['sometimes', 'nullable', 'string', 'regex:/^09\d{9}$/'],
             'loading_type_id' => ['sometimes', 'nullable', 'integer', Rule::exists(LoadingType::class, 'id')],
@@ -70,7 +70,7 @@ class UpdateFleetRequest extends BaseRequest
 
         foreach (self::DATE_FIELDS as $dateField) {
             if (array_key_exists($dateField, $this->all())
-                && ! $this->isFormattedDate($this->input($dateField))) {
+                && !$this->isFormattedDate($this->input($dateField))) {
                 $normalized[$dateField] = null;
             }
         }
@@ -86,7 +86,7 @@ class UpdateFleetRequest extends BaseRequest
 
     private function isEmptyFormValue(mixed $value): bool
     {
-        if (! is_string($value)) {
+        if (!is_string($value)) {
             return false;
         }
 

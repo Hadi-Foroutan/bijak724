@@ -9,7 +9,9 @@ class CompanyTableRegistry
 {
     public function __construct(
         protected CompanyDataOwnerResolver $companyDataOwnerResolver,
-    ) {}
+    )
+    {
+    }
 
     public function tableName(int $companyId, string $tableKey): string
     {
@@ -45,7 +47,7 @@ class CompanyTableRegistry
                 break;
             }
 
-            if (! $resolvedTable) {
+            if (!$resolvedTable) {
                 throw new LogicException('Company table dependencies contain a circular reference.');
             }
         }
@@ -62,13 +64,13 @@ class CompanyTableRegistry
             return [];
         }
 
-        if (! is_array($definition)) {
+        if (!is_array($definition)) {
             throw new LogicException("Company table [{$tableKey}] must be configured as an array.");
         }
 
         $columns = Arr::isList($definition) ? $definition : ($definition['columns'] ?? []);
 
-        if (! is_array($columns)) {
+        if (!is_array($columns)) {
             throw new LogicException("Columns for company table [{$tableKey}] must be an array.");
         }
 
@@ -79,8 +81,8 @@ class CompanyTableRegistry
     private function companyTableDependencies(string $tableKey): array
     {
         return collect($this->columns($tableKey))
-            ->map(fn (array $column): mixed => Arr::get($column, 'foreign.company_table'))
-            ->filter(fn (mixed $dependency): bool => is_string($dependency) && $dependency !== '')
+            ->map(fn(array $column): mixed => Arr::get($column, 'foreign.company_table'))
+            ->filter(fn(mixed $dependency): bool => is_string($dependency) && $dependency !== '')
             ->unique()
             ->values()
             ->all();

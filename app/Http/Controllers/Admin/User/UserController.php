@@ -17,9 +17,11 @@ use Illuminate\Http\Request;
 class UserController extends Controller
 {
     public function __construct(
-        protected UserService $userService,
+        protected UserService       $userService,
         protected PermissionService $permissionService
-    ) {}
+    )
+    {
+    }
 
     public function index(Request $request)
     {

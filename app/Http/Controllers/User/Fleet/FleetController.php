@@ -19,7 +19,9 @@ class FleetController extends Controller
 {
     public function __construct(
         protected FleetService $fleetService,
-    ) {}
+    )
+    {
+    }
 
     public function index(Request $request): JsonResponse
     {

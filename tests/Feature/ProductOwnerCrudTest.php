@@ -41,12 +41,12 @@ test('product owner details are persisted searched updated and deleted', functio
         ->json('data.id');
 
     $this->assertDatabaseHas("company_{$this->company->id}_product_owner", $this->payload + [
-        'id' => $id,
-        'owner_company_id' => $this->company->id,
-    ]);
+            'id' => $id,
+            'owner_company_id' => $this->company->id,
+        ]);
 
     foreach (['صاحب کالای شرکت', '02112345678', '00125'] as $search) {
-        $this->getJson('/api/user/product-owners?'.http_build_query(['search' => $search, 'paginate' => 1]))
+        $this->getJson('/api/user/product-owners?' . http_build_query(['search' => $search, 'paginate' => 1]))
             ->assertOk()->assertJsonPath('data.total', 1)->assertJsonPath('data.data.0.id', $id);
     }
 
@@ -72,10 +72,10 @@ test('product owners validate required fields and reject invalid values on creat
 
     $id = $this->postJson('/api/user/product-owners', $this->payload)->assertCreated()->json('data.id');
     foreach ([
-        ['name', null], ['name', ''], ['phone', null], ['transportation_code', null],
-        ['name', str_repeat('a', 256)], ['phone', str_repeat('1', 21)],
-        ['transportation_code', str_repeat('a', 256)], ['transportation_code', []], ['phone', []],
-    ] as [$field, $value]) {
+                 ['name', null], ['name', ''], ['phone', null], ['transportation_code', null],
+                 ['name', str_repeat('a', 256)], ['phone', str_repeat('1', 21)],
+                 ['transportation_code', str_repeat('a', 256)], ['transportation_code', []], ['phone', []],
+             ] as [$field, $value]) {
         $this->postJson('/api/user/product-owners', array_replace($this->payload, [$field => $value]))
             ->assertUnprocessable()->assertJsonValidationErrors($field);
         $this->patchJson("/api/user/product-owners/{$id}", [$field => $value])

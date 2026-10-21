@@ -18,8 +18,8 @@ class CompanyImageUploader
 
     public function __construct(?string $disk = null, ?string $root = null)
     {
-        $this->disk = $disk ?? (string) config('company_uploads.disk', 'public');
-        $this->root = trim($root ?? (string) config('company_uploads.root', 'companies'), '/');
+        $this->disk = $disk ?? (string)config('company_uploads.disk', 'public');
+        $this->root = trim($root ?? (string)config('company_uploads.root', 'companies'), '/');
     }
 
     public function upload(UploadedFile $image, int $companyId, string $collection): string
@@ -40,15 +40,16 @@ class CompanyImageUploader
     /**
      * @template TResult
      *
-     * @param  Closure(string): TResult  $operation
+     * @param Closure(string): TResult $operation
      * @return TResult
      */
     public function uploadWithRollback(
         UploadedFile $image,
-        int $companyId,
-        string $collection,
-        Closure $operation,
-    ): mixed {
+        int          $companyId,
+        string       $collection,
+        Closure      $operation,
+    ): mixed
+    {
         $path = $this->upload($image, $companyId, $collection);
 
         try {
@@ -61,14 +62,15 @@ class CompanyImageUploader
     }
 
     public function replace(
-        ?string $currentPath,
+        ?string      $currentPath,
         UploadedFile $image,
-        int $companyId,
-        string $collection,
-    ): string {
+        int          $companyId,
+        string       $collection,
+    ): string
+    {
         $newPath = $this->upload($image, $companyId, $collection);
 
-        if (! $this->delete($currentPath)) {
+        if (!$this->delete($currentPath)) {
             $this->delete($newPath);
         }
 
@@ -83,7 +85,7 @@ class CompanyImageUploader
 
         $this->ensureManagedPath($path);
 
-        if (! $this->filesystem()->exists($path)) {
+        if (!$this->filesystem()->exists($path)) {
             return true;
         }
 
@@ -129,7 +131,7 @@ class CompanyImageUploader
 
     private function ensureManagedPath(string $path): void
     {
-        if (! str_starts_with($path, $this->root.'/')) {
+        if (!str_starts_with($path, $this->root . '/')) {
             throw new InvalidArgumentException('Only managed company images may be accessed.');
         }
     }

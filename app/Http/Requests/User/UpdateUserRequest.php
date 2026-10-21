@@ -23,7 +23,7 @@ class UpdateUserRequest extends BaseRequest
             'address' => ['nullable', 'string'],
             'signature' => ['nullable', 'image', 'mimes:jpeg,jpg,png'],
             'description' => ['nullable', 'string'],
-            'status' => ['required', 'string', 'in:'.implode(',', UserStatusEnum::values())],
+            'status' => ['required', 'string', 'in:' . implode(',', UserStatusEnum::values())],
         ];
     }
 }

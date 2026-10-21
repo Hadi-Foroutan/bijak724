@@ -20,7 +20,7 @@ class CompanyDataOwnerResolver
             ->select(['id', 'parent_id'])
             ->find($companyId);
 
-        if (! $company instanceof Company) {
+        if (!$company instanceof Company) {
             return $companyId;
         }
 
@@ -37,7 +37,7 @@ class CompanyDataOwnerResolver
                 ->findOrFail($company->parent_id);
         }
 
-        $dataOwnerCompanyId = (int) $company->getKey();
+        $dataOwnerCompanyId = (int)$company->getKey();
 
         foreach (array_keys($visitedCompanyIds) as $visitedCompanyId) {
             $this->resolvedCompanyIds[$visitedCompanyId] = $dataOwnerCompanyId;

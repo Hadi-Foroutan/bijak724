@@ -40,23 +40,25 @@ class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryIn
     }
 
     public function searchForParty(
-        int $companyId,
-        int $shipmentPartyId,
+        int   $companyId,
+        int   $shipmentPartyId,
         array $filters,
-    ): Collection|LengthAwarePaginator {
+    ): Collection|LengthAwarePaginator
+    {
         return ShipmentPartyAddress::searchRecordsForCompany(
             $companyId,
             $filters,
-            fn (Builder $query): Builder => $query
+            fn(Builder $query): Builder => $query
                 ->where('shipment_party_id', $shipmentPartyId),
         );
     }
 
     public function uniquePostalCodeForPartyRule(
-        int $companyId,
-        int $shipmentPartyId,
+        int  $companyId,
+        int  $shipmentPartyId,
         ?int $ignoreAddressId = null,
-    ): Unique {
+    ): Unique
+    {
         $table = ShipmentPartyAddress::modelForCompany($companyId)->getTable();
         $rule = Rule::unique($table, 'postal_code')
             ->where('shipment_party_id', $shipmentPartyId);
@@ -68,19 +70,21 @@ class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryIn
         int $companyId,
         int $shipmentPartyId,
         int $addressId,
-    ): ShipmentPartyAddress {
+    ): ShipmentPartyAddress
+    {
         return ShipmentPartyAddress::findForCompanyOrFail(
             $companyId,
             $addressId,
-            fn (Builder $query): Builder => $query->where('shipment_party_id', $shipmentPartyId),
+            fn(Builder $query): Builder => $query->where('shipment_party_id', $shipmentPartyId),
         );
     }
 
     public function findShipmentPartyByPostalCodeAndType(
-        int $companyId,
+        int    $companyId,
         string $postalCode,
         string $type,
-    ): ?ShipmentParty {
+    ): ?ShipmentParty
+    {
         $roleColumn = $type === 'sender' ? 'is_sender' : 'is_receiver';
 
         $address = ShipmentPartyAddress::queryForCompany($companyId)
@@ -88,7 +92,7 @@ class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryIn
             ->where('postal_code', $postalCode)
             ->whereHas(
                 'shipmentParty',
-                fn (Builder $query): Builder => $query->where($roleColumn, true),
+                fn(Builder $query): Builder => $query->where($roleColumn, true),
             )
             ->first();
 
@@ -96,18 +100,19 @@ class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryIn
     }
 
     public function updateForParty(
-        int $companyId,
-        int $shipmentPartyId,
-        int $addressId,
+        int   $companyId,
+        int   $shipmentPartyId,
+        int   $addressId,
         array $data,
-    ): ShipmentPartyAddress {
+    ): ShipmentPartyAddress
+    {
         unset($data['shipment_party_id']);
 
         return ShipmentPartyAddress::updateForCompany(
             $companyId,
             $addressId,
             $data,
-            fn (Builder $query): Builder => $query->where('shipment_party_id', $shipmentPartyId),
+            fn(Builder $query): Builder => $query->where('shipment_party_id', $shipmentPartyId),
         );
     }
 
@@ -116,7 +121,7 @@ class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryIn
         ShipmentPartyAddress::deleteForCompany(
             $companyId,
             $addressId,
-            fn (Builder $query): Builder => $query->where('shipment_party_id', $shipmentPartyId),
+            fn(Builder $query): Builder => $query->where('shipment_party_id', $shipmentPartyId),
         );
     }
 }

@@ -48,16 +48,17 @@ class BijakNumberRepository implements BijakNumberRepositoryInterface
         return BijakNumber::sharedQueryForCompany($companyId)
             ->where('owner_company_id', $companyId)
             ->where('status', BijakNumberStatus::Active->value)
-            ->when($ignoreId !== null, fn ($query) => $query->whereKeyNot($ignoreId))
+            ->when($ignoreId !== null, fn($query) => $query->whereKeyNot($ignoreId))
             ->lockForUpdate()
             ->first();
     }
 
     public function activeContainingBijakNumber(
-        int $companyId,
+        int    $companyId,
         string $serialNumber,
-        int $bijakNumber,
-    ): ?BijakNumber {
+        int    $bijakNumber,
+    ): ?BijakNumber
+    {
         return BijakNumber::sharedQueryForCompany($companyId)
             ->where('owner_company_id', $companyId)
             ->where('status', BijakNumberStatus::Active->value)

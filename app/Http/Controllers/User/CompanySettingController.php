@@ -11,7 +11,9 @@ use Illuminate\Http\Request;
 
 class CompanySettingController extends Controller
 {
-    public function __construct(protected CompanySettingService $companySettingService) {}
+    public function __construct(protected CompanySettingService $companySettingService)
+    {
+    }
 
     public function show(Request $request): JsonResponse
     {
@@ -24,7 +26,7 @@ class CompanySettingController extends Controller
     {
         $result = $this->companySettingService->update(
             $this->companyId($request),
-            (int) $request->user()->getKey(),
+            (int)$request->user()->getKey(),
             $request->validated(),
         );
 

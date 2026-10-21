@@ -9,7 +9,9 @@ use Illuminate\Database\Eloquent\Collection;
 
 class CompanySettingRepository implements CompanySettingRepositoryInterface
 {
-    public function __construct(protected CompanySetting $companySetting) {}
+    public function __construct(protected CompanySetting $companySetting)
+    {
+    }
 
     public function all(int $companyId): Collection
     {
@@ -34,11 +36,12 @@ class CompanySettingRepository implements CompanySettingRepositoryInterface
     }
 
     public function upsert(
-        int $companyId,
-        CompanySettingKey $key,
+        int                        $companyId,
+        CompanySettingKey          $key,
         bool|int|float|string|null $value,
-        int $updatedBy,
-    ): CompanySetting {
+        int                        $updatedBy,
+    ): CompanySetting
+    {
         return $this->companySetting->newQuery()->updateOrCreate(
             [
                 'company_id' => $companyId,

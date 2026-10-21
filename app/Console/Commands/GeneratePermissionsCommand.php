@@ -39,7 +39,7 @@ class GeneratePermissionsCommand extends Command
         $routeNames = $this->routeNames();
         $expectedPermissions = $this->expectedPermissions($routeNames);
 
-        if (! $this->option('force') && $this->permissionsAreCurrent($expectedPermissions)) {
+        if (!$this->option('force') && $this->permissionsAreCurrent($expectedPermissions)) {
             $this->info('Permissions already match the application routes. Skipping regeneration.');
 
             return self::SUCCESS;
@@ -79,9 +79,9 @@ class GeneratePermissionsCommand extends Command
     private function routeNames(): Collection
     {
         return collect(Route::getRoutes())
-            ->map(fn ($route) => $route->getName())
-            ->filter(fn (?string $name): bool => filled($name))
-            ->reject(fn (string $name): bool => $this->isExcludedRoute($name))
+            ->map(fn($route) => $route->getName())
+            ->filter(fn(?string $name): bool => filled($name))
+            ->reject(fn(string $name): bool => $this->isExcludedRoute($name))
             ->unique()
             ->sort()
             ->values();
@@ -90,11 +90,11 @@ class GeneratePermissionsCommand extends Command
     private function isExcludedRoute(string $name): bool
     {
         return collect($this->excludedRoutes)
-            ->contains(fn (string $pattern): bool => Str::is($pattern, $name));
+            ->contains(fn(string $pattern): bool => Str::is($pattern, $name));
     }
 
     /**
-     * @param  Collection<int, string>  $routeNames
+     * @param Collection<int, string> $routeNames
      * @return Collection<int, array{name: string, display_name: string, description: string, is_default: bool}>
      */
     private function expectedPermissions(Collection $routeNames): Collection
@@ -112,7 +112,7 @@ class GeneratePermissionsCommand extends Command
     }
 
     /**
-     * @param  Collection<int, array{name: string, display_name: string, description: string, is_default: bool}>  $expectedPermissions
+     * @param Collection<int, array{name: string, display_name: string, description: string, is_default: bool}> $expectedPermissions
      */
     private function permissionsAreCurrent(Collection $expectedPermissions): bool
     {
@@ -120,18 +120,18 @@ class GeneratePermissionsCommand extends Command
             ->withTrashed()
             ->orderBy('name')
             ->get(['name', 'display_name', 'description', 'is_default', 'deleted_at'])
-            ->map(fn (Permission $permission): array => [
+            ->map(fn(Permission $permission): array => [
                 'name' => $permission->name,
                 'display_name' => $permission->display_name,
                 'description' => $permission->description,
-                'is_default' => (bool) $permission->is_default,
+                'is_default' => (bool)$permission->is_default,
                 'is_deleted' => $permission->trashed(),
             ]);
 
         $expected = $expectedPermissions
             ->sortBy('name')
             ->values()
-            ->map(fn (array $permission): array => [
+            ->map(fn(array $permission): array => [
                 ...$permission,
                 'is_deleted' => false,
             ]);
@@ -162,7 +162,7 @@ class GeneratePermissionsCommand extends Command
         return User::query()
             ->with('permissions:id,name')
             ->get()
-            ->mapWithKeys(fn (User $user): array => [
+            ->mapWithKeys(fn(User $user): array => [
                 $user->id => $user->permissions->pluck('name')->all(),
             ]);
     }
@@ -182,7 +182,7 @@ class GeneratePermissionsCommand extends Command
     }
 
     /**
-     * @param  Collection<int, array{name: string, display_name: string, description: string, is_default: bool}>  $expectedPermissions
+     * @param Collection<int, array{name: string, display_name: string, description: string, is_default: bool}> $expectedPermissions
      * @return Collection<string, Permission>
      */
     private function createPermissions(Collection $expectedPermissions): Collection
@@ -208,7 +208,7 @@ class GeneratePermissionsCommand extends Command
 
     private function isDefaultPermission(string $name): bool
     {
-        return ! Str::is($this->nonDefaultPermissionPatterns(), $name);
+        return !Str::is($this->nonDefaultPermissionPatterns(), $name);
     }
 
     /**
@@ -220,7 +220,7 @@ class GeneratePermissionsCommand extends Command
     }
 
     /**
-     * @param  Collection<string, Permission>  $permissions
+     * @param Collection<string, Permission> $permissions
      * @return Collection<int, array{name: string, permissions_count: int}>
      */
     private function createPermissionGroups(Collection $permissions): Collection
@@ -258,7 +258,7 @@ class GeneratePermissionsCommand extends Command
     }
 
     /**
-     * @param  Collection<string, Permission>  $permissions
+     * @param Collection<string, Permission> $permissions
      * @return Collection<string, Permission>
      */
     private function permissionsMatchingPattern(Collection $permissions, string $pattern): Collection
@@ -266,12 +266,12 @@ class GeneratePermissionsCommand extends Command
         $normalizedPattern = Str::contains($pattern, '*') ? $pattern : "{$pattern}*";
 
         return $permissions->filter(
-            fn (Permission $permission, string $name): bool => Str::is($normalizedPattern, $name)
+            fn(Permission $permission, string $name): bool => Str::is($normalizedPattern, $name)
         );
     }
 
     /**
-     * @param  Collection<string, Permission>  $permissions
+     * @param Collection<string, Permission> $permissions
      */
     private function attachPermissionsToGroup(PermissionGroup $group, Collection $permissions): void
     {
@@ -281,7 +281,7 @@ class GeneratePermissionsCommand extends Command
     }
 
     /**
-     * @param  Collection<int, array{name: string, permissions_count: int}>  $groups
+     * @param Collection<int, array{name: string, permissions_count: int}> $groups
      */
     private function displayPermissionGroups(Collection $groups): void
     {
@@ -302,7 +302,7 @@ class GeneratePermissionsCommand extends Command
     }
 
     /**
-     * @param  Collection<string, Permission>  $permissions
+     * @param Collection<string, Permission> $permissions
      */
     private function syncRolePermissions(Collection $permissions): void
     {
@@ -311,7 +311,7 @@ class GeneratePermissionsCommand extends Command
         foreach ($this->rolePermissionPatterns() as $roleName => $patterns) {
             $role = Role::query()->where('name', $roleName)->first();
 
-            if (! $role) {
+            if (!$role) {
                 $this->warn("Role [{$roleName}] not found, skipping role permissions.");
 
                 continue;
@@ -324,19 +324,19 @@ class GeneratePermissionsCommand extends Command
             }
 
             $permissionIds = collect($patterns)
-                ->flatMap(fn (string $pattern): Collection => $this->permissionsMatchingPattern($rolePermissions, $pattern)->pluck('id'))
+                ->flatMap(fn(string $pattern): Collection => $this->permissionsMatchingPattern($rolePermissions, $pattern)->pluck('id'))
                 ->unique()
                 ->values()
                 ->all();
 
             $role->permissions()->sync($permissionIds);
-            $this->line('Synced '.count($permissionIds)." permissions to role: {$role->name}");
+            $this->line('Synced ' . count($permissionIds) . " permissions to role: {$role->name}");
         }
     }
 
     /**
-     * @param  Collection<string, Permission>  $permissions
-     * @param  Collection<int, array<int, string>>  $existingUserPermissions
+     * @param Collection<string, Permission> $permissions
+     * @param Collection<int, array<int, string>> $existingUserPermissions
      */
     private function syncUserPermissions(Collection $permissions, Collection $existingUserPermissions): void
     {
@@ -347,7 +347,7 @@ class GeneratePermissionsCommand extends Command
             ->get()
             ->each(function (User $user) use ($permissions, $existingUserPermissions, $defaultOnlyRoles): void {
                 $hasDefaultOnlyRole = $user->roles->contains(
-                    fn (Role $role): bool => in_array($role->name, $defaultOnlyRoles, true)
+                    fn(Role $role): bool => in_array($role->name, $defaultOnlyRoles, true)
                 );
 
                 $rolePermissionIds = $user->roles->flatMap(function (Role $role) use ($defaultOnlyRoles): Collection {

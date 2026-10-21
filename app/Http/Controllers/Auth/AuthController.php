@@ -26,12 +26,14 @@ class AuthController extends Controller
         return ResponseHandler::success($result->data);
     }
 
-    public function logout(){
+    public function logout()
+    {
         $result = $this->authService->logout();
-        return ResponseHandler::success([],$result->data);
+        return ResponseHandler::success([], $result->data);
     }
 
-    public function checkToken(){
+    public function checkToken()
+    {
         $result = $this->authService->checkToken();
         return ResponseHandler::success($result->data);
     }

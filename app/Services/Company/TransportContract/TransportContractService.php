@@ -16,10 +16,12 @@ class TransportContractService
 {
     public function __construct(
         protected TransportContractRepositoryInterface $transportContractRepository,
-        protected IssuedWaybillDeletionGuard $issuedWaybillDeletionGuard,
-        protected TransportContractAccessService $transportContractAccessService,
-        protected UserInterface $userRepository,
-    ) {}
+        protected IssuedWaybillDeletionGuard           $issuedWaybillDeletionGuard,
+        protected TransportContractAccessService       $transportContractAccessService,
+        protected UserInterface                        $userRepository,
+    )
+    {
+    }
 
     public function index(int $companyId, User $user, array $filters): ServiceResult
     {
@@ -140,19 +142,20 @@ class TransportContractService
      * Each default type flag may be held by only one contract per company,
      * so selecting a flag here clears it on every other contract.
      *
-     * @param  array<string, mixed>  $data
+     * @param array<string, mixed> $data
      */
     private function clearDefaultWhenSelected(
-        int $companyId,
+        int   $companyId,
         array $data,
-        ?int $exceptTransportContractId = null,
-    ): void {
+        ?int  $exceptTransportContractId = null,
+    ): void
+    {
         $selectedDefaultFields = array_values(array_filter(
             array_map(
-                fn (TransportContractItemType $type): string => $type->defaultField(),
+                fn(TransportContractItemType $type): string => $type->defaultField(),
                 TransportContractItemType::cases(),
             ),
-            fn (string $defaultField): bool => (bool) ($data[$defaultField] ?? false),
+            fn(string $defaultField): bool => (bool)($data[$defaultField] ?? false),
         ));
 
         if ($selectedDefaultFields !== []) {

@@ -4,13 +4,12 @@ namespace Database\Seeders;
 
 use App\Services\Company\CompanyService;
 use App\Services\Company\CompanyTableService;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class CompanySeeder extends Seeder
 {
     public function __construct(
-        protected CompanyService $companyService,
+        protected CompanyService      $companyService,
         protected CompanyTableService $companyTableService,
     )
     {

@@ -23,14 +23,16 @@ class CheckPermission
 
     public function __construct(
         protected CompanySupportTokenService $supportTokenService,
-    ) {}
+    )
+    {
+    }
 
     public function handle(Request $request, Closure $next): Response
     {
         // ۱. دریافت کاربر جاری (می‌تواند User یا Admin باشد)
         $currentUser = $request->user();
 
-        if (! $currentUser) {
+        if (!$currentUser) {
             return response()->json([
                 'message' => 'Unauthorized.',
             ], Response::HTTP_UNAUTHORIZED);
@@ -38,7 +40,7 @@ class CheckPermission
 
         $routeName = Route::currentRouteName();
 
-        if (! $routeName || $this->isExcluded($routeName)) {
+        if (!$routeName || $this->isExcluded($routeName)) {
             return $next($request);
         }
 
@@ -47,7 +49,7 @@ class CheckPermission
             $token = $currentUser->currentAccessToken();
 
             return $token instanceof PersonalAccessToken
-                && $this->supportTokenService->canAccessSupportPermission($token, $routeName)
+            && $this->supportTokenService->canAccessSupportPermission($token, $routeName)
                 ? $next($request)
                 : response()->json([
                     'message' => __('public.access_denied', ['attribute' => 'صفحه']),

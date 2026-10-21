@@ -7,7 +7,9 @@ use App\Interfaces\Company\CargoRepositoryInterface;
 
 class CargoService
 {
-    public function __construct(protected CargoRepositoryInterface $cargoRepository) {}
+    public function __construct(protected CargoRepositoryInterface $cargoRepository)
+    {
+    }
 
     public function index(int $companyId, array $params): ServiceResult
     {

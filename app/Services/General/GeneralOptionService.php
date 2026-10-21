@@ -10,7 +10,9 @@ class GeneralOptionService
 {
     public function __construct(
         protected GeneralOptionRepositoryInterface $generalOptionRepository,
-    ) {}
+    )
+    {
+    }
 
     /** @param array<string, mixed> $filters */
     public function cargos(array $filters): ServiceResult

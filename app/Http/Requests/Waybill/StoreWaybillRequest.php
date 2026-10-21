@@ -20,7 +20,7 @@ class StoreWaybillRequest extends BaseRequest
     protected function prepareForValidation(): void
     {
         $this->normalizeBooleanStrings(['freight_at_origin', 'is_fixed']);
-        $waybillStatus = WaybillStatus::tryFrom((string) $this->input('status'));
+        $waybillStatus = WaybillStatus::tryFrom((string)$this->input('status'));
 
         if ($waybillStatus === WaybillStatus::Completed) {
             return;
@@ -39,23 +39,24 @@ class StoreWaybillRequest extends BaseRequest
 
     /** @return array<string, array<int, mixed>> */
     public function rules(
-        ShipmentPartyRepositoryInterface $shipmentPartyRepository,
+        ShipmentPartyRepositoryInterface        $shipmentPartyRepository,
         ShipmentPartyAddressRepositoryInterface $shipmentPartyAddressRepository,
-        DriverRepositoryInterface $driverRepository,
-        FleetRepositoryInterface $fleetRepository,
-        InsuranceRepositoryInterface $insuranceRepository,
-        TransportContractRepositoryInterface $transportContractRepository,
-        ProductOwnerRepositoryInterface $productOwnerRepository,
-    ): array {
+        DriverRepositoryInterface               $driverRepository,
+        FleetRepositoryInterface                $fleetRepository,
+        InsuranceRepositoryInterface            $insuranceRepository,
+        TransportContractRepositoryInterface    $transportContractRepository,
+        ProductOwnerRepositoryInterface         $productOwnerRepository,
+    ): array
+    {
         $companyId = $this->companyId();
         $requiredWhenCompleted = Rule::requiredIf(
-            fn (): bool => $this->hasStatus(WaybillStatus::Completed),
+            fn(): bool => $this->hasStatus(WaybillStatus::Completed),
         );
         $requiredWhenReferral = Rule::requiredIf(
-            fn (): bool => $this->hasStatus(WaybillStatus::Referral),
+            fn(): bool => $this->hasStatus(WaybillStatus::Referral),
         );
         $requiredWhenCompletedOrReferral = Rule::requiredIf(
-            fn (): bool => $this->hasStatus(WaybillStatus::Completed)
+            fn(): bool => $this->hasStatus(WaybillStatus::Completed)
                 || $this->hasStatus(WaybillStatus::Referral),
         );
 
@@ -90,13 +91,14 @@ class StoreWaybillRequest extends BaseRequest
 
     /** @return array<string, array<int, mixed>> */
     private function referenceRules(
-        ShipmentPartyRepositoryInterface $shipmentPartyRepository,
+        ShipmentPartyRepositoryInterface        $shipmentPartyRepository,
         ShipmentPartyAddressRepositoryInterface $shipmentPartyAddressRepository,
-        DriverRepositoryInterface $driverRepository,
-        FleetRepositoryInterface $fleetRepository,
-        int $companyId,
-        mixed $requiredWhenCompletedOrReferral,
-    ): array {
+        DriverRepositoryInterface               $driverRepository,
+        FleetRepositoryInterface                $fleetRepository,
+        int                                     $companyId,
+        mixed                                   $requiredWhenCompletedOrReferral,
+    ): array
+    {
         return [
             'sender_id' => [
                 $requiredWhenCompletedOrReferral,
@@ -134,10 +136,11 @@ class StoreWaybillRequest extends BaseRequest
     /** @return array<string, array<int, mixed>> */
     private function documentRules(
         InsuranceRepositoryInterface $insuranceRepository,
-        int $companyId,
-        mixed $requiredWhenCompleted,
-        mixed $requiredWhenReferral,
-    ): array {
+        int                          $companyId,
+        mixed                        $requiredWhenCompleted,
+        mixed                        $requiredWhenReferral,
+    ): array
+    {
         return [
             'status' => ['required', Rule::enum(WaybillStatus::class)],
             'referral_weight' => ['nullable', 'numeric', 'min:0'],
@@ -146,7 +149,7 @@ class StoreWaybillRequest extends BaseRequest
             'loading_ended_at' => [$requiredWhenReferral, 'nullable', 'date', 'after_or_equal:loading_started_at'],
             'bijak_number' => [$requiredWhenCompleted, 'nullable', 'integer'],
             'serial_number' => [
-                'exclude_unless:status,'.WaybillStatus::Completed->value,
+                'exclude_unless:status,' . WaybillStatus::Completed->value,
                 $requiredWhenCompleted,
                 'nullable',
                 'string',
@@ -166,9 +169,10 @@ class StoreWaybillRequest extends BaseRequest
     /** @return array<string, array<int, mixed>> */
     private function financialRules(
         TransportContractRepositoryInterface $transportContractRepository,
-        int $companyId,
-        mixed $requiredWhenComplete,
-    ): array {
+        int                                  $companyId,
+        mixed                                $requiredWhenComplete,
+    ): array
+    {
         $minimumInsuranceAmount = $this->hasStatus(WaybillStatus::Completed) ? 'min:1' : 'min:0';
 
         return [
@@ -204,14 +208,15 @@ class StoreWaybillRequest extends BaseRequest
     /** @return array<string, array<int, mixed>> */
     private function cargoRules(
         ProductOwnerRepositoryInterface $productOwnerRepository,
-        int $companyId,
-        mixed $requiredWhenCompleted,
-        mixed $requiredWhenCompletedOrReferral,
-    ): array {
+        int                             $companyId,
+        mixed                           $requiredWhenCompleted,
+        mixed                           $requiredWhenCompletedOrReferral,
+    ): array
+    {
         $minimumCargoCount = $this->hasStatus(WaybillStatus::Completed)
-            || $this->hasStatus(WaybillStatus::Referral)
-                ? 'min:1'
-                : 'min:0';
+        || $this->hasStatus(WaybillStatus::Referral)
+            ? 'min:1'
+            : 'min:0';
 
         return [
             'cargos' => [$requiredWhenCompletedOrReferral, 'nullable', 'array', $minimumCargoCount, 'max:10'],

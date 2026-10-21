@@ -19,14 +19,16 @@ use Symfony\Component\HttpFoundation\Response;
 
 class TransportContractController extends Controller
 {
-    public function __construct(protected TransportContractService $transportContractService) {}
+    public function __construct(protected TransportContractService $transportContractService)
+    {
+    }
 
     public function options(): JsonResponse
     {
         $itemNames = TransportContractItemName::cases();
 
         return ResponseHandler::success([
-            'items' => array_map(fn (int $index, TransportContractItemName $item): array => [
+            'items' => array_map(fn(int $index, TransportContractItemName $item): array => [
                 'id' => $index + 1,
                 'value' => $item->value,
                 'label' => $item->label(),
@@ -35,12 +37,12 @@ class TransportContractController extends Controller
                 'secondary_value_label' => $item->secondaryValueLabel(),
                 'editable_fields' => $item->editableFields(),
             ], array_keys($itemNames), $itemNames),
-            'types' => array_map(fn (TransportContractItemType $type): array => [
+            'types' => array_map(fn(TransportContractItemType $type): array => [
                 'field' => $type->field(),
                 'value' => $type->value,
                 'label' => $type->label(),
             ], TransportContractItemType::cases()),
-            'defaults' => array_map(fn (TransportContractItemType $type): array => [
+            'defaults' => array_map(fn(TransportContractItemType $type): array => [
                 'field' => $type->defaultField(),
                 'value' => $type->value,
                 'label' => $type->defaultLabel(),
@@ -124,8 +126,9 @@ class TransportContractController extends Controller
 
     public function syncUsers(
         SyncTransportContractUsersRequest $request,
-        int $transportContract,
-    ): JsonResponse {
+        int                               $transportContract,
+    ): JsonResponse
+    {
         $result = $this->transportContractService->syncUsers(
             $this->companyId($request),
             $transportContract,

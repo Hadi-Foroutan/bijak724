@@ -11,15 +11,18 @@ class ShipmentPartyAddressService
 {
     public function __construct(
         protected ShipmentPartyAddressRepositoryInterface $addressRepository,
-        protected ShipmentPartyRepositoryInterface $shipmentPartyRepository,
-        protected IssuedWaybillDeletionGuard $issuedWaybillDeletionGuard,
-    ) {}
+        protected ShipmentPartyRepositoryInterface        $shipmentPartyRepository,
+        protected IssuedWaybillDeletionGuard              $issuedWaybillDeletionGuard,
+    )
+    {
+    }
 
     public function findShipmentPartyByPostalCodeAndType(
-        int $companyId,
+        int    $companyId,
         string $postalCode,
         string $type,
-    ): ServiceResult {
+    ): ServiceResult
+    {
         $shipmentParty = $this->addressRepository->findShipmentPartyByPostalCodeAndType(
             $companyId,
             $postalCode,
@@ -35,11 +38,12 @@ class ShipmentPartyAddressService
 
     /** @param array<string, mixed> $params */
     public function index(
-        int $companyId,
-        int $shipmentPartyId,
+        int   $companyId,
+        int   $shipmentPartyId,
         array $params,
-    ): ServiceResult {
-        if (! $this->shipmentPartyRepository->exists($companyId, $shipmentPartyId)) {
+    ): ServiceResult
+    {
+        if (!$this->shipmentPartyRepository->exists($companyId, $shipmentPartyId)) {
             return ServiceResult::error(__('public.not_found', ['attribute' => 'دریافتی پرداختی']));
         }
 
@@ -50,11 +54,12 @@ class ShipmentPartyAddressService
 
     /** @param array<string, mixed> $data */
     public function create(
-        int $companyId,
-        int $shipmentPartyId,
+        int   $companyId,
+        int   $shipmentPartyId,
         array $data,
-    ): ServiceResult {
-        if (! $this->shipmentPartyRepository->exists($companyId, $shipmentPartyId)) {
+    ): ServiceResult
+    {
+        if (!$this->shipmentPartyRepository->exists($companyId, $shipmentPartyId)) {
             return ServiceResult::error(__('public.not_found', ['attribute' => 'دریافتی پرداختی']), 404);
         }
 
@@ -72,11 +77,12 @@ class ShipmentPartyAddressService
 
     /** @param array<string, mixed> $data */
     public function update(
-        int $companyId,
-        int $shipmentPartyId,
-        int $addressId,
+        int   $companyId,
+        int   $shipmentPartyId,
+        int   $addressId,
         array $data,
-    ): ServiceResult {
+    ): ServiceResult
+    {
         unset($data['shipment_party_id']);
 
         return ServiceResult::success(

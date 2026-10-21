@@ -15,7 +15,9 @@ class CompanyContextService
 
     public function __construct(
         protected CompanySupportTokenService $supportTokenService,
-    ) {}
+    )
+    {
+    }
 
     public function company(Request $request): Company
     {
@@ -27,7 +29,7 @@ class CompanyContextService
 
         $user = $request->user();
 
-        if (! $user instanceof User) {
+        if (!$user instanceof User) {
             $this->denyAccess();
         }
 
@@ -37,14 +39,14 @@ class CompanyContextService
             $this->denyAccess();
         }
 
-        if (! $this->supportTokenService->isSupportToken($user)
-            && (int) $user->company_id !== $companyId) {
+        if (!$this->supportTokenService->isSupportToken($user)
+            && (int)$user->company_id !== $companyId) {
             $this->denyAccess();
         }
 
         $company = Company::query()->find($companyId);
 
-        if (! $company instanceof Company) {
+        if (!$company instanceof Company) {
             $this->denyAccess();
         }
 
@@ -55,7 +57,7 @@ class CompanyContextService
 
     public function companyId(Request $request): int
     {
-        return (int) $this->company($request)->getKey();
+        return (int)$this->company($request)->getKey();
     }
 
     private function denyAccess(): never

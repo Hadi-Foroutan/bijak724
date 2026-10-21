@@ -21,7 +21,7 @@ class GeneralOptionRepository implements GeneralOptionRepositoryInterface
     {
         return Cargo::searchRecords(
             $filters,
-            fn (Builder $query): Builder => $query->select(['id', 'name', 'code', 'description']),
+            fn(Builder $query): Builder => $query->select(['id', 'name', 'code', 'description']),
         );
     }
 
@@ -44,20 +44,20 @@ class GeneralOptionRepository implements GeneralOptionRepositoryInterface
     {
         return State::searchRecords(
             $filters,
-            fn (Builder $query): Builder => $query->select(['id', 'name', 'code']),
+            fn(Builder $query): Builder => $query->select(['id', 'name', 'code']),
         );
     }
 
     public function cities(array $filters, State $state): Collection|LengthAwarePaginator
     {
-        return City::searchRecords($filters, fn (Builder $query): Builder => $query->where('state_id', $state->id));
+        return City::searchRecords($filters, fn(Builder $query): Builder => $query->where('state_id', $state->id));
     }
 
     public function insuranceCompanies(array $filters): Collection|LengthAwarePaginator
     {
         return InsuranceCompany::searchRecords(
             $filters,
-            fn (Builder $query): Builder => $query
+            fn(Builder $query): Builder => $query
                 ->where('status', StatusEnum::ACTIVE->value),
         );
     }

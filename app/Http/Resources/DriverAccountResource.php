@@ -2,4 +2,6 @@
 
 namespace App\Http\Resources;
 
-class DriverAccountResource extends CompanyDynamicResource {}
+class DriverAccountResource extends CompanyDynamicResource
+{
+}

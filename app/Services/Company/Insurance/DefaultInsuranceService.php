@@ -16,9 +16,11 @@ class DefaultInsuranceService
 
     public function __construct(
         protected InsuranceCompanyRepositoryInterface $insuranceCompanyRepository,
-        protected InsuranceRepositoryInterface $insuranceRepository,
-        protected InsuranceTariffRepositoryInterface $insuranceTariffRepository,
-    ) {}
+        protected InsuranceRepositoryInterface        $insuranceRepository,
+        protected InsuranceTariffRepositoryInterface  $insuranceTariffRepository,
+    )
+    {
+    }
 
     public function createForCompany(Company $company): ServiceResult
     {

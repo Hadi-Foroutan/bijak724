@@ -14,9 +14,9 @@ interface CompanySettingRepositoryInterface
     public function ensureDefault(int $companyId, CompanySettingKey $key): CompanySetting;
 
     public function upsert(
-        int $companyId,
-        CompanySettingKey $key,
+        int                        $companyId,
+        CompanySettingKey          $key,
         bool|int|float|string|null $value,
-        int $updatedBy,
+        int                        $updatedBy,
     ): CompanySetting;
 }

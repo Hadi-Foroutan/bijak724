@@ -39,15 +39,15 @@ class TransportContractResource extends JsonResource
             'description' => $this->description,
             'user_ids' => $this->whenLoaded(
                 'users',
-                fn (): array => $this->users
+                fn(): array => $this->users
                     ->pluck('id')
-                    ->map(fn (mixed $userId): int => (int) $userId)
+                    ->map(fn(mixed $userId): int => (int)$userId)
                     ->values()
                     ->all(),
             ),
             'items' => $this->when(
                 $this->includeItems,
-                fn () => TransportContractItemResource::collection($this->whenLoaded('items')),
+                fn() => TransportContractItemResource::collection($this->whenLoaded('items')),
             ),
         ];
     }

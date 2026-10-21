@@ -17,7 +17,9 @@ class CompanySettingService
 
     public function __construct(
         protected CompanySettingRepositoryInterface $companySettingRepository,
-    ) {}
+    )
+    {
+    }
 
     public function show(int $companyId): ServiceResult
     {
@@ -35,7 +37,7 @@ class CompanySettingService
     {
         DB::transaction(function () use ($companyId, $updatedBy, $data): void {
             foreach (CompanySettingKey::cases() as $key) {
-                if (! Arr::has($data, $key->value)) {
+                if (!Arr::has($data, $key->value)) {
                     continue;
                 }
 
@@ -66,28 +68,28 @@ class CompanySettingService
     {
         $this->ensureType($key, SettingValueType::Boolean);
 
-        return (bool) $this->value($companyId, $key);
+        return (bool)$this->value($companyId, $key);
     }
 
     public function integer(int $companyId, CompanySettingKey $key): int
     {
         $this->ensureType($key, SettingValueType::Integer);
 
-        return (int) $this->value($companyId, $key);
+        return (int)$this->value($companyId, $key);
     }
 
     public function decimal(int $companyId, CompanySettingKey $key): float
     {
         $this->ensureType($key, SettingValueType::Decimal);
 
-        return (float) $this->value($companyId, $key);
+        return (float)$this->value($companyId, $key);
     }
 
     public function string(int $companyId, CompanySettingKey $key): string
     {
         $this->ensureType($key, SettingValueType::String);
 
-        return (string) $this->value($companyId, $key);
+        return (string)$this->value($companyId, $key);
     }
 
     public function value(int $companyId, CompanySettingKey $key): bool|int|float|string|null

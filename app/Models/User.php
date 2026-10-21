@@ -137,13 +137,13 @@ class User extends Authenticatable
 
     public function printNameOrFullName(): ?string
     {
-        $printName = trim((string) $this->print_name);
+        $printName = trim((string)$this->print_name);
 
         if ($printName !== '') {
             return $printName;
         }
 
-        $fullName = trim((string) $this->full_name);
+        $fullName = trim((string)$this->full_name);
 
         return $fullName === '' ? $this->makeFullName() : $fullName;
     }

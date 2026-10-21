@@ -17,16 +17,17 @@ class DriverAccountRepository implements DriverAccountRepositoryInterface
     }
 
     public function searchForDriver(
-        int $companyId,
-        int $driverId,
+        int   $companyId,
+        int   $driverId,
         array $filters,
-    ): Collection|LengthAwarePaginator {
+    ): Collection|LengthAwarePaginator
+    {
         $filters['itemsPerPage'] ??= $filters['per_page'] ?? 15;
 
         return DriverAccount::searchRecordsForCompany(
             $companyId,
             $filters,
-            fn (Builder $query): Builder => $query->where('driver_id', $driverId),
+            fn(Builder $query): Builder => $query->where('driver_id', $driverId),
         );
     }
 
@@ -34,11 +35,12 @@ class DriverAccountRepository implements DriverAccountRepositoryInterface
         int $companyId,
         int $driverId,
         int $accountId,
-    ): DriverAccount {
+    ): DriverAccount
+    {
         return DriverAccount::findForCompanyOrFail(
             $companyId,
             $accountId,
-            fn (Builder $query): Builder => $query->where('driver_id', $driverId),
+            fn(Builder $query): Builder => $query->where('driver_id', $driverId),
         );
     }
 
@@ -49,7 +51,7 @@ class DriverAccountRepository implements DriverAccountRepositoryInterface
                 ->where('driver_id', $driverId)
                 ->exists();
             $data['driver_id'] = $driverId;
-            $data['is_default'] = ! $hasAccounts || (bool) ($data['is_default'] ?? false);
+            $data['is_default'] = !$hasAccounts || (bool)($data['is_default'] ?? false);
 
             if ($data['is_default']) {
                 $this->clearDefaultAccounts($companyId, $driverId);
@@ -60,17 +62,18 @@ class DriverAccountRepository implements DriverAccountRepositoryInterface
     }
 
     public function updateForDriver(
-        int $companyId,
-        int $driverId,
-        int $accountId,
+        int   $companyId,
+        int   $driverId,
+        int   $accountId,
         array $data,
-    ): DriverAccount {
+    ): DriverAccount
+    {
         return DB::transaction(function () use ($companyId, $driverId, $accountId, $data): DriverAccount {
             unset($data['driver_id'], $data['owner_company_id']);
 
             $account = $this->findForDriverOrFail($companyId, $driverId, $accountId);
 
-            if (array_key_exists('is_default', $data) && (bool) $data['is_default']) {
+            if (array_key_exists('is_default', $data) && (bool)$data['is_default']) {
                 $this->clearDefaultAccounts($companyId, $driverId, $accountId);
             } elseif ($account->is_default && array_key_exists('is_default', $data)) {
                 $replacement = $this->firstAccountExcept($companyId, $driverId, $accountId);
@@ -86,7 +89,7 @@ class DriverAccountRepository implements DriverAccountRepositoryInterface
                 $companyId,
                 $accountId,
                 $data,
-                fn (Builder $query): Builder => $query->where('driver_id', $driverId),
+                fn(Builder $query): Builder => $query->where('driver_id', $driverId),
             );
         });
     }
@@ -99,7 +102,7 @@ class DriverAccountRepository implements DriverAccountRepositoryInterface
             DriverAccount::deleteForCompany(
                 $companyId,
                 $accountId,
-                fn (Builder $query): Builder => $query->where('driver_id', $driverId),
+                fn(Builder $query): Builder => $query->where('driver_id', $driverId),
             );
 
             if ($wasDefault) {
@@ -110,16 +113,17 @@ class DriverAccountRepository implements DriverAccountRepositoryInterface
     }
 
     private function clearDefaultAccounts(
-        int $companyId,
-        int $driverId,
+        int  $companyId,
+        int  $driverId,
         ?int $exceptAccountId = null,
-    ): void {
+    ): void
+    {
         DriverAccount::queryForCompany($companyId)
             ->where('driver_id', $driverId)
             ->where('is_default', true)
             ->when(
                 $exceptAccountId !== null,
-                fn ($query) => $query->whereKeyNot($exceptAccountId),
+                fn($query) => $query->whereKeyNot($exceptAccountId),
             )
             ->update(['is_default' => false]);
     }
@@ -128,7 +132,8 @@ class DriverAccountRepository implements DriverAccountRepositoryInterface
         int $companyId,
         int $driverId,
         int $exceptAccountId,
-    ): ?DriverAccount {
+    ): ?DriverAccount
+    {
         return DriverAccount::queryForCompany($companyId)
             ->where('driver_id', $driverId)
             ->whereKeyNot($exceptAccountId)

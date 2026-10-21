@@ -167,7 +167,7 @@ test('original company sees users of all branches while a branch only sees its o
         ->assertJsonFragment(['id' => $branchUser->id])
         ->assertJsonPath(
             'data',
-            fn (array $users): bool => ! in_array(
+            fn(array $users): bool => !in_array(
                 $this->manager->id,
                 array_column($users, 'id'),
                 true,
@@ -194,10 +194,11 @@ function companyForUserManagement(string $panelCode, string $nationalCode): Comp
 
 function companyPanelUser(
     Company $company,
-    string $username,
-    string $nationalCode,
-    string $phone,
-): User {
+    string  $username,
+    string  $nationalCode,
+    string  $phone,
+): User
+{
     return User::query()->forceCreate([
         'company_id' => $company->id,
         'national_code' => $nationalCode,

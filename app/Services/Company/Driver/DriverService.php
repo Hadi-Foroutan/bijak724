@@ -14,10 +14,12 @@ class DriverService
     private const PROFILE_IMAGE_COLLECTION = 'drivers';
 
     public function __construct(
-        protected DriverRepositoryInterface $driverRepository,
-        protected CompanyImageUploader $imageUploader,
+        protected DriverRepositoryInterface  $driverRepository,
+        protected CompanyImageUploader       $imageUploader,
         protected IssuedWaybillDeletionGuard $issuedWaybillDeletionGuard,
-    ) {}
+    )
+    {
+    }
 
     public function index(int $companyId, array $params): ServiceResult
     {
@@ -37,7 +39,7 @@ class DriverService
             $image,
             $companyId,
             self::PROFILE_IMAGE_COLLECTION,
-            fn (string $path) => $this->driverRepository->create($companyId, [
+            fn(string $path) => $this->driverRepository->create($companyId, [
                 ...$data,
                 'profile_image_path' => $path,
             ]),
@@ -114,8 +116,8 @@ class DriverService
 
     private function pullProfileImageRemoval(array &$data): bool
     {
-        $shouldRemove = (bool) ($data['remove_profile_image'] ?? false)
-            || (bool) ($data['is_profile_delete'] ?? false);
+        $shouldRemove = (bool)($data['remove_profile_image'] ?? false)
+            || (bool)($data['is_profile_delete'] ?? false);
 
         unset($data['remove_profile_image'], $data['is_profile_delete']);
 
@@ -123,17 +125,18 @@ class DriverService
     }
 
     private function updateWithProfileImage(
-        int $companyId,
-        int $id,
-        array $data,
+        int          $companyId,
+        int          $id,
+        array        $data,
         UploadedFile $image,
-        ?string $currentPath,
-    ): ServiceResult {
+        ?string      $currentPath,
+    ): ServiceResult
+    {
         $driver = $this->imageUploader->uploadWithRollback(
             $image,
             $companyId,
             self::PROFILE_IMAGE_COLLECTION,
-            fn (string $path) => $this->driverRepository->update($companyId, $id, [
+            fn(string $path) => $this->driverRepository->update($companyId, $id, [
                 ...$data,
                 'profile_image_path' => $path,
             ]),
@@ -145,11 +148,12 @@ class DriverService
     }
 
     private function updateWithoutProfileImage(
-        int $companyId,
-        int $id,
-        array $data,
+        int     $companyId,
+        int     $id,
+        array   $data,
         ?string $currentPath,
-    ): ServiceResult {
+    ): ServiceResult
+    {
         $driver = $this->driverRepository->update($companyId, $id, [
             ...$data,
             'profile_image_path' => null,

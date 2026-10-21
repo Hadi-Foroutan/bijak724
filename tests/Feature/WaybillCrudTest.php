@@ -501,16 +501,16 @@ test('it filters waybills by searchable fields on related models', function () {
         ->assertSuccessful()
         ->assertJsonCount(0, 'data');
 
-    $this->getJson('/api/user/waybills?'.http_build_query([
-        'senderAddress__city__name' => 'تهران',
-    ]))
+    $this->getJson('/api/user/waybills?' . http_build_query([
+            'senderAddress__city__name' => 'تهران',
+        ]))
         ->assertSuccessful()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.id', $waybillId);
 
-    $this->getJson('/api/user/waybills?'.http_build_query([
-        'senderAddress__city__name' => 'شیراز',
-    ]))
+    $this->getJson('/api/user/waybills?' . http_build_query([
+            'senderAddress__city__name' => 'شیراز',
+        ]))
         ->assertSuccessful()
         ->assertJsonCount(0, 'data');
 });
@@ -1235,7 +1235,7 @@ test('non unique database errors are not reported as duplicate waybill numbers',
     $payload = completeWaybillPayload($this);
     $payload['created_by'] = 999999999;
 
-    expect(fn () => app(WaybillService::class)->create($this->company->id, $payload))
+    expect(fn() => app(WaybillService::class)->create($this->company->id, $payload))
         ->toThrow(QueryException::class);
 });
 
@@ -1255,14 +1255,14 @@ test('database rejects duplicate referral numbers and bijak numbers in the same 
         'bijak_number' => '8001',
     ]);
 
-    expect(fn () => DB::table($tableName)->insert([
+    expect(fn() => DB::table($tableName)->insert([
         ...$base,
         'serial_number' => 'OTHER-SERIAL',
         'referral_number' => '7001',
         'bijak_number' => '8002',
     ]))->toThrow(QueryException::class);
 
-    expect(fn () => DB::table($tableName)->insert([
+    expect(fn() => DB::table($tableName)->insert([
         ...$base,
         'referral_number' => '7002',
         'bijak_number' => '8001',

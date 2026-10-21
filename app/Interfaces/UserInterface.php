@@ -30,7 +30,7 @@ interface UserInterface
     public function findVisibleForCompany(int $companyId, int $userId): User;
 
     /**
-     * @param  list<int>  $userIds
+     * @param list<int> $userIds
      * @return list<int>
      */
     public function eligibleTransportContractUserIds(int $companyId, array $userIds): array;

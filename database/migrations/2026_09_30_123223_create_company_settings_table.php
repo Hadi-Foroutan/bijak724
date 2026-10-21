@@ -5,8 +5,7 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -31,8 +30,8 @@ return new class extends Migration
             ->select('id')
             ->orderBy('id')
             ->chunkById(500, function ($companies) use ($now): void {
-                $rows = $companies->map(fn ($company): array => [
-                    'company_id' => (int) $company->id,
+                $rows = $companies->map(fn($company): array => [
+                    'company_id' => (int)$company->id,
                     'group_name' => 'general',
                     'key' => 'general.assign_first_available_waybill_number',
                     'value_type' => 'boolean',

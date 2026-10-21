@@ -2,4 +2,6 @@
 
 namespace App\Http\Resources;
 
-class BijakNumberResource extends CompanyDynamicResource {}
+class BijakNumberResource extends CompanyDynamicResource
+{
+}

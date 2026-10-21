@@ -22,20 +22,24 @@ class RoleController extends Controller
         $res = $this->roleService->index($request->all());
         return ResponseHandler::success($res->data);
     }
+
     public function store(StoreRoleRequest $request)
     {
         $res = $this->roleService->store($request->validated());
         return ResponseHandler::success($res->data);
     }
+
     public function show(Role $role)
     {
         return ResponseHandler::success($role);
     }
+
     public function update(StoreRoleRequest $request, Role $role)
     {
         $res = $this->roleService->update($role, $request->validated());
         return ResponseHandler::success($res->data);
     }
+
     public function destroy(Role $role)
     {
         $res = $this->roleService->delete($role);

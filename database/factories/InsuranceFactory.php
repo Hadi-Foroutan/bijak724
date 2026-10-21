@@ -24,7 +24,7 @@ class InsuranceFactory extends Factory
     {
         return [
             'company_id' => Company::factory(),
-            'insurance_company_id' => fn (): int => InsuranceCompany::query()->value('id')
+            'insurance_company_id' => fn(): int => InsuranceCompany::query()->value('id')
                 ?? InsuranceCompany::query()->forceCreate([
                     'name' => fake()->company(),
                     'org_code' => fake()->unique()->numberBetween(1000, 999999),

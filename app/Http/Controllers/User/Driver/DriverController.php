@@ -19,7 +19,9 @@ class DriverController extends Controller
 {
     public function __construct(
         protected DriverService $driverService,
-    ) {}
+    )
+    {
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -68,8 +70,9 @@ class DriverController extends Controller
 
     public function update(
         UpdateDriverRequest $request,
-        Driver $driver,
-    ): JsonResponse {
+        Driver              $driver,
+    ): JsonResponse
+    {
         $result = $this->driverService->update(
             $this->companyId($request),
             $driver->getKey(),

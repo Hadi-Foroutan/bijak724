@@ -21,11 +21,12 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
     }
 
     public function search(
-        int $companyId,
+        int   $companyId,
         array $filters,
-        ?int $userId = null,
-        bool $canViewAll = true,
-    ): Collection|LengthAwarePaginator {
+        ?int  $userId = null,
+        bool  $canViewAll = true,
+    ): Collection|LengthAwarePaginator
+    {
         $query = $this->applyVisibility(
             TransportContract::query()->where('company_id', $companyId),
             $userId,
@@ -48,11 +49,12 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
     }
 
     public function findAccessibleOrFail(
-        int $companyId,
-        int $id,
-        int $userId,
+        int  $companyId,
+        int  $id,
+        int  $userId,
         bool $canViewAll,
-    ): TransportContract {
+    ): TransportContract
+    {
         return $this->applyVisibility(
             TransportContract::query()->where('company_id', $companyId),
             $userId,
@@ -63,10 +65,11 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
     }
 
     public function options(
-        int $companyId,
+        int  $companyId,
         ?int $userId = null,
         bool $canViewAll = true,
-    ): Collection {
+    ): Collection
+    {
         $query = $this->applyVisibility(
             TransportContract::query()->where('company_id', $companyId),
             $userId,
@@ -80,11 +83,12 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
     }
 
     public function accessibleExists(
-        int $companyId,
-        int $id,
-        int $userId,
+        int  $companyId,
+        int  $id,
+        int  $userId,
         bool $canViewAll,
-    ): bool {
+    ): bool
+    {
         return $this->applyVisibility(
             TransportContract::query()->where('company_id', $companyId),
             $userId,
@@ -127,17 +131,18 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
     }
 
     public function clearDefaults(
-        int $companyId,
+        int   $companyId,
         array $fields,
-        ?int $exceptTransportContractId = null,
-    ): void {
+        ?int  $exceptTransportContractId = null,
+    ): void
+    {
         foreach ($fields as $field) {
             TransportContract::query()
                 ->where('company_id', $companyId)
                 ->where($field, true)
                 ->when(
                     $exceptTransportContractId !== null,
-                    fn (Builder $query): Builder => $query->whereKeyNot($exceptTransportContractId),
+                    fn(Builder $query): Builder => $query->whereKeyNot($exceptTransportContractId),
                 )
                 ->update([$field => false]);
         }
@@ -151,7 +156,7 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
         return $transportContract->users()
             ->orderBy('users.id')
             ->pluck('users.id')
-            ->map(fn (mixed $userId): int => (int) $userId)
+            ->map(fn(mixed $userId): int => (int)$userId)
             ->all();
     }
 
@@ -171,9 +176,10 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
 
     private function applyVisibility(
         Builder $query,
-        ?int $userId,
-        bool $canViewAll,
-    ): Builder {
+        ?int    $userId,
+        bool    $canViewAll,
+    ): Builder
+    {
         if ($canViewAll) {
             return $query;
         }
@@ -183,7 +189,7 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
                 ->where('is_public', true)
                 ->orWhereHas(
                     'users',
-                    fn (Builder $userQuery): Builder => $userQuery->whereKey($userId ?? 0),
+                    fn(Builder $userQuery): Builder => $userQuery->whereKey($userId ?? 0),
                 );
         });
     }

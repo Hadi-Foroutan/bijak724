@@ -32,7 +32,7 @@ class UpdateProfileRequest extends BaseRequest
                 'nullable',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:'.config('company_uploads.image_max_size_kb', 5120),
+                'max:' . config('company_uploads.image_max_size_kb', 5120),
             ],
             'remove_profile_image' => ['sometimes', 'boolean'],
         ];

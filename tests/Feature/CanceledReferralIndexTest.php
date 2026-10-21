@@ -48,7 +48,7 @@ test('dynamic models support company search with additional repository constrain
     $records = CanceledReferral::searchRecordsForCompany(
         $this->company->id,
         [],
-        fn (Builder $query): Builder => $query->where('referral_number', '654321'),
+        fn(Builder $query): Builder => $query->where('referral_number', '654321'),
     );
 
     expect($records)->toHaveCount(1)
@@ -83,11 +83,12 @@ function canceledReferralRecord(
     object $test,
     string $referralNumber,
     string $senderFullName,
-    array $cargos,
-): array {
+    array  $cargos,
+): array
+{
     return [
         'owner_company_id' => $test->company->id,
-        'waybill_id' => (int) $referralNumber,
+        'waybill_id' => (int)$referralNumber,
         'canceled_by' => $test->user->id,
         'canceled_by_print_name' => 'کاربر تست',
         'referral_number' => $referralNumber,

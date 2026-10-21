@@ -13,7 +13,7 @@ class NotificationRepository implements NotificationRepositoryInterface
     {
         return Notification::searchRecords(
             $filters,
-            fn ($query) => $query->with('sender'),
+            fn($query) => $query->with('sender'),
         );
     }
 

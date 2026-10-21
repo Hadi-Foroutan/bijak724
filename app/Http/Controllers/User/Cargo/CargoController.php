@@ -15,7 +15,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CargoController extends Controller
 {
-    public function __construct(protected CargoService $cargoService) {}
+    public function __construct(protected CargoService $cargoService)
+    {
+    }
 
     public function index(Request $request): JsonResponse
     {

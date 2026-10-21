@@ -40,7 +40,7 @@ class BaseRequest extends FormRequest
     {
         $value = $this->route($parameter);
 
-        return (int) ($value instanceof Model ? $value->getKey() : $value);
+        return (int)($value instanceof Model ? $value->getKey() : $value);
     }
 
     /** @param array<int, string> $fields */
@@ -51,7 +51,7 @@ class BaseRequest extends FormRequest
         foreach ($fields as $field) {
             $value = $this->input($field);
 
-            if (! is_string($value)) {
+            if (!is_string($value)) {
                 continue;
             }
 

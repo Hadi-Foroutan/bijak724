@@ -61,10 +61,11 @@ class ShipmentPartyRepository implements ShipmentPartyRepositoryInterface
     }
 
     public function findByNationalIdentifierAndType(
-        int $companyId,
+        int    $companyId,
         string $nationalIdentifier,
         string $type,
-    ): ShipmentParty {
+    ): ShipmentParty
+    {
         $roleColumn = $type === 'sender' ? 'is_sender' : 'is_receiver';
 
         return ShipmentParty::queryForCompany($companyId)
@@ -75,9 +76,10 @@ class ShipmentPartyRepository implements ShipmentPartyRepositoryInterface
     }
 
     public function uniqueNationalIdentifierRule(
-        int $companyId,
+        int  $companyId,
         ?int $ignoreShipmentPartyId = null,
-    ): Unique {
+    ): Unique
+    {
         $table = ShipmentParty::modelForCompany($companyId)->getTable();
         $rule = Rule::unique($table, 'national_identifier');
 

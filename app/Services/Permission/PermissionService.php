@@ -14,7 +14,9 @@ class PermissionService
 {
     public function __construct(
         protected PermissionInterface $permissionRepository,
-    ) {}
+    )
+    {
+    }
 
     public function all(array $params): ServiceResult
     {
@@ -67,7 +69,7 @@ class PermissionService
     }
 
     /**
-     * @param  Collection<int, Permission>  $availablePermissions
+     * @param Collection<int, Permission> $availablePermissions
      * @return array{user_id: int, permission_ids: array<int, int>, permission_groups: array<int, array<string, mixed>>}
      */
     private function permissionData(User $user, Collection $availablePermissions): array
@@ -75,18 +77,18 @@ class PermissionService
         $selectedPermissionIds = $user->permissions()
             ->whereIn('permissions.id', $availablePermissions->modelKeys())
             ->pluck('permissions.id')
-            ->map(fn (int $permissionId): int => $permissionId)
+            ->map(fn(int $permissionId): int => $permissionId)
             ->values();
         $selectedPermissionLookup = $selectedPermissionIds->flip();
         $groups = $availablePermissions
-            ->flatMap(fn (Permission $permission): Collection => $permission->groups)
+            ->flatMap(fn(Permission $permission): Collection => $permission->groups)
             ->unique('id')
             ->sortBy('id')
             ->values()
             ->map(function (PermissionGroup $group) use ($availablePermissions, $selectedPermissionLookup): array {
                 $permissions = $availablePermissions
-                    ->filter(fn (Permission $permission): bool => $permission->groups->contains('id', $group->id))
-                    ->map(fn (Permission $permission): array => $this->permissionItem(
+                    ->filter(fn(Permission $permission): bool => $permission->groups->contains('id', $group->id))
+                    ->map(fn(Permission $permission): array => $this->permissionItem(
                         $permission,
                         $selectedPermissionLookup->has($permission->id),
                     ))
@@ -100,10 +102,10 @@ class PermissionService
                 ];
             });
         $groupedPermissionIds = $groups
-            ->flatMap(fn (array $group): array => array_column($group['permissions'], 'id'));
+            ->flatMap(fn(array $group): array => array_column($group['permissions'], 'id'));
         $ungroupedPermissions = $availablePermissions
             ->whereNotIn('id', $groupedPermissionIds)
-            ->map(fn (Permission $permission): array => $this->permissionItem(
+            ->map(fn(Permission $permission): array => $this->permissionItem(
                 $permission,
                 $selectedPermissionLookup->has($permission->id),
             ))

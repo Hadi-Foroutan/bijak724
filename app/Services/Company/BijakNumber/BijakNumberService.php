@@ -23,10 +23,12 @@ class BijakNumberService
 
     public function __construct(
         protected BijakNumberRepositoryInterface $bijakNumberRepository,
-        protected CompanyDataOwnerResolver $companyDataOwnerResolver,
-        protected WaybillRepositoryInterface $waybillRepository,
-        protected CompanySettingService $companySettingService,
-    ) {}
+        protected CompanyDataOwnerResolver       $companyDataOwnerResolver,
+        protected WaybillRepositoryInterface     $waybillRepository,
+        protected CompanySettingService          $companySettingService,
+    )
+    {
+    }
 
     public function index(int $companyId, array $params): ServiceResult
     {
@@ -125,12 +127,12 @@ class BijakNumberService
                 return null;
             }
 
-            $nextNumber = (int) $this->nextNumber($record)['bijak_number'];
+            $nextNumber = (int)$this->nextNumber($record)['bijak_number'];
             $firstAvailableNumber = $this->waybillRepository->firstAvailableBijakNumber(
                 $companyId,
-                (string) $record->serial_number,
+                (string)$record->serial_number,
                 $nextNumber,
-                (int) $record->to_number,
+                (int)$record->to_number,
             );
 
             if ($firstAvailableNumber === null) {
@@ -175,10 +177,11 @@ class BijakNumberService
      * Must be called inside the waybill issuance transaction.
      */
     public function reserveNextForBijak(
-        int $companyId,
+        int    $companyId,
         string $serialNumber,
-        int $bijakNumber,
-    ): ServiceResult {
+        int    $bijakNumber,
+    ): ServiceResult
+    {
         $this->lockCompany($companyId);
         $activeRecord = $this->bijakNumberRepository->active($companyId);
 
@@ -209,8 +212,8 @@ class BijakNumberService
             $firstAvailableNumber = $this->waybillRepository->firstAvailableBijakNumber(
                 $companyId,
                 $serialNumber,
-                (int) $record->from_number,
-                (int) $record->to_number,
+                (int)$record->from_number,
+                (int)$record->to_number,
             );
 
             if ($firstAvailableNumber === null) {
@@ -236,12 +239,12 @@ class BijakNumberService
     private function reserve(int $companyId, BijakNumber $record, ?int $requestedNumber = null): ServiceResult
     {
         $next = $this->nextNumber($record);
-        $issuedNumber = $requestedNumber ?? (int) $next['bijak_number'];
+        $issuedNumber = $requestedNumber ?? (int)$next['bijak_number'];
 
         if ($this->waybillRepository->bijakNumberExists(
             $companyId,
-            (string) $record->serial_number,
-            (string) $issuedNumber,
+            (string)$record->serial_number,
+            (string)$issuedNumber,
         )) {
             return ServiceResult::error(
                 __('public.waybill_bijak_number_used', [
@@ -252,7 +255,7 @@ class BijakNumberService
             );
         }
 
-        $nextSequenceNumber = (int) $next['bijak_number'];
+        $nextSequenceNumber = (int)$next['bijak_number'];
 
         if ($issuedNumber === $nextSequenceNumber) {
             $record->update([
@@ -273,9 +276,9 @@ class BijakNumberService
     /** @param array<string, mixed> $data */
     private function validateRange(array $data): void
     {
-        $from = (int) $data['from_number'];
-        $to = (int) $data['to_number'];
-        $last = $data['last_number'] === null ? null : (int) $data['last_number'];
+        $from = (int)$data['from_number'];
+        $to = (int)$data['to_number'];
+        $last = $data['last_number'] === null ? null : (int)$data['last_number'];
 
         if ($from > $to || $last !== null && ($last < $from || $last > $to)) {
             ServiceResult::error(
@@ -288,7 +291,7 @@ class BijakNumberService
     /** @param array<string, mixed> $data */
     private function normalizeStatus(array &$data): void
     {
-        if ($data['last_number'] !== null && (int) $data['last_number'] >= (int) $data['to_number']) {
+        if ($data['last_number'] !== null && (int)$data['last_number'] >= (int)$data['to_number']) {
             $data['status'] = BijakNumberStatus::Completed->value;
         }
 
@@ -319,11 +322,11 @@ class BijakNumberService
     private function nextNumber(BijakNumber $record): array
     {
         return [
-            'id' => (int) $record->id,
+            'id' => (int)$record->id,
             'serial_number' => $record->serial_number,
             'bijak_number' => $record->last_number === null
-                ? (int) $record->from_number
-                : (int) $record->last_number + 1,
+                ? (int)$record->from_number
+                : (int)$record->last_number + 1,
             'date' => Carbon::now(),
         ];
     }
@@ -331,13 +334,13 @@ class BijakNumberService
     private function isExhausted(BijakNumber $record): bool
     {
         return $record->last_number !== null
-            && (int) $record->last_number >= (int) $record->to_number;
+            && (int)$record->last_number >= (int)$record->to_number;
     }
 
     private function complete(BijakNumber $record): void
     {
         $record->update([
-            'last_number' => (int) $record->to_number,
+            'last_number' => (int)$record->to_number,
             'status' => BijakNumberStatus::Completed->value,
             'active_slot' => null,
         ]);

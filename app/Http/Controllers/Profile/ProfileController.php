@@ -13,7 +13,9 @@ class ProfileController extends Controller
 {
     public function __construct(
         protected ProfileService $profileService,
-    ) {}
+    )
+    {
+    }
 
     public function update(UpdateProfileRequest $request): JsonResponse
     {

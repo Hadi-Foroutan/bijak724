@@ -13,7 +13,9 @@ class DefaultTransportContractService
 {
     public function __construct(
         protected TransportContractRepositoryInterface $transportContractRepository,
-    ) {}
+    )
+    {
+    }
 
     public function createForCompany(Company $company): ServiceResult
     {

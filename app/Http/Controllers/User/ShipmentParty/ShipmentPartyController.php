@@ -16,7 +16,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ShipmentPartyController extends Controller
 {
-    public function __construct(protected ShipmentPartyService $shipmentPartyService) {}
+    public function __construct(protected ShipmentPartyService $shipmentPartyService)
+    {
+    }
 
     public function index(Request $request): JsonResponse
     {

@@ -11,13 +11,14 @@ use Illuminate\Support\Facades\App;
 class CompanyRequiredForRole implements ValidationRule
 {
     public function validate(
-        string $attribute,
-        mixed $value,
+        string  $attribute,
+        mixed   $value,
         Closure $fail
-    ): void {
+    ): void
+    {
         $roleId = request()->input('role_id');
 
-        if (! $roleId) {
+        if (!$roleId) {
             return;
         }
 
@@ -25,7 +26,7 @@ class CompanyRequiredForRole implements ValidationRule
 
         $role = $roleRepository->findById($roleId);
 
-        if (! $role) {
+        if (!$role) {
             return;
         }
 

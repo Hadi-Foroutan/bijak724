@@ -14,13 +14,15 @@ use App\Services\Company\TransportContract\DefaultTransportContractService;
 class CompanyObserver
 {
     public function __construct(
-        protected CompanyTableService $companyTableService,
+        protected CompanyTableService             $companyTableService,
         protected DefaultTransportContractService $defaultTransportContractService,
-        protected DefaultInsuranceService $defaultInsuranceService,
-        protected BijakNumberService $bijakNumberService,
-        protected ReferralNumberService $referralNumberService,
-        protected CompanySettingService $companySettingService,
-    ) {}
+        protected DefaultInsuranceService         $defaultInsuranceService,
+        protected BijakNumberService              $bijakNumberService,
+        protected ReferralNumberService           $referralNumberService,
+        protected CompanySettingService           $companySettingService,
+    )
+    {
+    }
 
     /**
      * Handle the Company "created" event.

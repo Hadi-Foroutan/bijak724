@@ -27,7 +27,7 @@ class PackagingSeeder extends Seeder
         ];
 
         Packaging::query()->upsert(
-            array_map(fn (array $packaging): array => [
+            array_map(fn(array $packaging): array => [
                 'id' => $packaging[0],
                 'unit_name' => $packaging[1],
                 'code' => $packaging[2],

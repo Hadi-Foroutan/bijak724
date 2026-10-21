@@ -5,6 +5,6 @@ use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel(
     'notifications',
-    fn (User $user): bool => $user->exists,
+    fn(User $user): bool => $user->exists,
     ['guards' => ['sanctum']],
 );

@@ -13,7 +13,9 @@ class GeneralOptionController extends Controller
 {
     public function __construct(
         protected GeneralOptionService $generalOptionService,
-    ) {}
+    )
+    {
+    }
 
     public function cargos(Request $request): JsonResponse
     {

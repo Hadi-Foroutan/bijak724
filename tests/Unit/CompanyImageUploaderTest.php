@@ -21,7 +21,7 @@ test('it uploads replaces deletes and generates urls for company images', functi
 
     expect($firstPath)->toStartWith('companies/17/drivers/')
         ->and($uploader->exists($firstPath))->toBeTrue()
-        ->and($uploader->url($firstPath))->toContain('/storage/'.$firstPath);
+        ->and($uploader->url($firstPath))->toContain('/storage/' . $firstPath);
 
     $secondImage = UploadedFile::fake()->createWithContent('second.png', validPngContent());
     $secondPath = $uploader->replace($firstPath, $secondImage, 17, 'drivers');
@@ -39,7 +39,7 @@ test('it refuses to access files outside managed company folders', function () {
 
 function validPngContent(): string
 {
-    return (string) base64_decode(
+    return (string)base64_decode(
         'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z1pAAAAAASUVORK5CYII=',
         true,
     );

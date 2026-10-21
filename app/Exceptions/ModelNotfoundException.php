@@ -12,6 +12,6 @@ class ModelNotfoundException extends Exception
 {
     public function render(Request $request): JsonResponse
     {
-        return ResponseHandler::error(__('public.not_found', ['attribute' => 'رکورد مورد نظر']),status: Response::HTTP_NOT_FOUND);
+        return ResponseHandler::error(__('public.not_found', ['attribute' => 'رکورد مورد نظر']), status: Response::HTTP_NOT_FOUND);
     }
 }

@@ -12,7 +12,9 @@ use Illuminate\Http\Request;
 
 class CargoGroupController extends Controller
 {
-    public function __construct(protected CargoGroupService $cargoGroupService) {}
+    public function __construct(protected CargoGroupService $cargoGroupService)
+    {
+    }
 
     public function index(Request $request): JsonResponse
     {

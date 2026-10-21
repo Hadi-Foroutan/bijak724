@@ -10,8 +10,10 @@ class DriverAccountService
 {
     public function __construct(
         protected DriverAccountRepositoryInterface $accountRepository,
-        protected DriverRepositoryInterface $driverRepository,
-    ) {}
+        protected DriverRepositoryInterface        $driverRepository,
+    )
+    {
+    }
 
     /** @param array<string, mixed> $params */
     public function index(int $companyId, int $driverId, array $params): ServiceResult
@@ -42,11 +44,12 @@ class DriverAccountService
 
     /** @param array<string, mixed> $data */
     public function update(
-        int $companyId,
-        int $driverId,
-        int $accountId,
+        int   $companyId,
+        int   $driverId,
+        int   $accountId,
         array $data,
-    ): ServiceResult {
+    ): ServiceResult
+    {
         return ServiceResult::success(
             $this->accountRepository->updateForDriver(
                 $companyId,
@@ -68,7 +71,7 @@ class DriverAccountService
 
     private function ensureDriverExists(int $companyId, int $driverId): void
     {
-        if (! $this->driverRepository->exists($companyId, $driverId)) {
+        if (!$this->driverRepository->exists($companyId, $driverId)) {
             ServiceResult::error(__('public.not_found', ['attribute' => 'راننده']), 404);
         }
     }

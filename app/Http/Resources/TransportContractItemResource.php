@@ -38,14 +38,14 @@ class TransportContractItemResource extends JsonResource
             return null;
         }
 
-        $normalizedValue = (string) $value;
+        $normalizedValue = (string)$value;
 
         if (str_contains($normalizedValue, '.')) {
             $normalizedValue = rtrim(rtrim($normalizedValue, '0'), '.');
         }
 
         return str_contains($normalizedValue, '.')
-            ? (float) $normalizedValue
-            : (int) $normalizedValue;
+            ? (float)$normalizedValue
+            : (int)$normalizedValue;
     }
 }

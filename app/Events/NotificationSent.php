@@ -14,7 +14,9 @@ class NotificationSent implements ShouldBroadcastNow
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public function __construct(public Notification $notification) {}
+    public function __construct(public Notification $notification)
+    {
+    }
 
     /**
      * Get the channels the event should broadcast on.

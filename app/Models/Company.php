@@ -194,7 +194,7 @@ class Company extends Model
             }
 
             // اگر branch بود ولی parent نداشت → جلوگیری (fail safe)
-            if ($company->isBranch() && ! $company->parent_id) {
+            if ($company->isBranch() && !$company->parent_id) {
                 throw new \InvalidArgumentException('Branch company must have a parent_id');
             }
         });

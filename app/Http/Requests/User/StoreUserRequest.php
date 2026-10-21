@@ -5,7 +5,6 @@ namespace App\Http\Requests\User;
 use App\Enums\UserStatusEnum;
 use App\Http\Requests\BaseRequest;
 use App\Rules\CompanyRequiredForRole;
-use App\Rules\NationalCodeRule;
 use Illuminate\Validation\Rule;
 
 class StoreUserRequest extends BaseRequest
@@ -102,7 +101,7 @@ class StoreUserRequest extends BaseRequest
                 'nullable',
                 'image',
                 'mimes:jpeg,jpg,png,webp',
-                'max:'.config('company_uploads.image_max_size_kb', 5120),
+                'max:' . config('company_uploads.image_max_size_kb', 5120),
             ],
 
             'profile_image' => [
@@ -110,7 +109,7 @@ class StoreUserRequest extends BaseRequest
                 'nullable',
                 'image',
                 'mimes:jpeg,jpg,png,webp',
-                'max:'.config('company_uploads.image_max_size_kb', 5120),
+                'max:' . config('company_uploads.image_max_size_kb', 5120),
             ],
 
             'remove_profile_image' => ['sometimes', 'boolean'],
@@ -127,7 +126,7 @@ class StoreUserRequest extends BaseRequest
             'status' => [
                 'required',
                 'string',
-                'in:'.implode(',', UserStatusEnum::values()),
+                'in:' . implode(',', UserStatusEnum::values()),
             ],
         ];
     }

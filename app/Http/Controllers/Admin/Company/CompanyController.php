@@ -21,7 +21,9 @@ class CompanyController extends Controller
 {
     public function __construct(
         protected CompanyService $companyService,
-    ) {}
+    )
+    {
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -84,7 +86,7 @@ class CompanyController extends Controller
     {
         if ($companies instanceof LengthAwarePaginator) {
             return $companies->through(
-                fn (Company $company): array => CompanyResource::make($company)->resolve($request),
+                fn(Company $company): array => CompanyResource::make($company)->resolve($request),
             );
         }
 
@@ -95,7 +97,7 @@ class CompanyController extends Controller
     {
         if ($companies instanceof LengthAwarePaginator) {
             return $companies->through(
-                fn (Company $company): array => AdminCompanyWaybillReportResource::make($company)->resolve($request),
+                fn(Company $company): array => AdminCompanyWaybillReportResource::make($company)->resolve($request),
             );
         }
 

@@ -2,4 +2,6 @@
 
 namespace App\Http\Resources;
 
-class ProductOwnerResource extends CompanyDynamicResource {}
+class ProductOwnerResource extends CompanyDynamicResource
+{
+}

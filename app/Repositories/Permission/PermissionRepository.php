@@ -14,7 +14,7 @@ class PermissionRepository implements PermissionInterface
     public function all(array $params): Collection
     {
         return PermissionGroup::query()
-            ->with(['permissions' => fn ($query) => $query->orderBy('permissions.id')])
+            ->with(['permissions' => fn($query) => $query->orderBy('permissions.id')])
             ->orderBy('id')
             ->get()
             ->each(function (PermissionGroup $permissionGroup): void {

@@ -75,9 +75,9 @@ test('aggregate report supports advanced search aggregate filters and pagination
         ->assertJsonCount(1, 'data.companies')
         ->assertJsonPath('data.companies.0.id', $this->inactiveCompany->id);
 
-    $this->getJson('/api/admin/companies/aggregate-report?'.http_build_query([
-        'eq-name' => 'شرکت بتا',
-    ]))
+    $this->getJson('/api/admin/companies/aggregate-report?' . http_build_query([
+            'eq-name' => 'شرکت بتا',
+        ]))
         ->assertSuccessful()
         ->assertJsonCount(1, 'data.companies')
         ->assertJsonPath('data.companies.0.id', $this->betaCompany->id);

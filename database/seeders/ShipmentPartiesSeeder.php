@@ -8,7 +8,9 @@ use Illuminate\Database\Seeder;
 
 class ShipmentPartiesSeeder extends Seeder
 {
-    public function __construct(protected ShipmentPartyService $shipmentPartyService) {}
+    public function __construct(protected ShipmentPartyService $shipmentPartyService)
+    {
+    }
 
     public function run(): void
     {

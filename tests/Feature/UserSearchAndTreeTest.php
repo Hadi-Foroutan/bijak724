@@ -46,7 +46,7 @@ test('company full name filter trims whitespace and keeps the filter in paginati
         ->assertJsonCount(1, 'data.data')
         ->assertJsonPath('data.data.0.id', $target->id)
         ->assertJsonPath('data.data.0.full_name', 'رضا پاکزاد')
-        ->assertJsonPath('data.first_page_url', fn (string $url): bool => str_contains($url, 'full_name='));
+        ->assertJsonPath('data.first_page_url', fn(string $url): bool => str_contains($url, 'full_name='));
 });
 
 test('company and admin can receive recursively nested user trees scoped by company', function () {
@@ -94,13 +94,14 @@ function searchTreeCompany(string $panelCode, string $nationalCode): Company
 
 function searchTreeUser(
     Company $company,
-    ?User $parent,
-    string $firstName,
-    string $lastName,
-    string $username,
-    string $nationalCode,
-    string $phone,
-): User {
+    ?User   $parent,
+    string  $firstName,
+    string  $lastName,
+    string  $username,
+    string  $nationalCode,
+    string  $phone,
+): User
+{
     return User::query()->forceCreate([
         'company_id' => $company->id,
         'parent_id' => $parent?->id,

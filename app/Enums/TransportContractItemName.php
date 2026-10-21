@@ -31,7 +31,7 @@ enum TransportContractItemName: string
             self::Commission => 'کمیسیون',
             self::ExcessTonnage => 'اضافه تناژ',
             self::InsurancePremium => 'حق بیمه',
-            self::InsuranceVat => 'ارزش افزوده بیمه',
+            self::InsuranceVat => 'مالیات بیمه',
             self::AdvanceFreight => 'پیش‌کرایه',
             self::Detention => 'حق توقف',
         };
@@ -59,6 +59,7 @@ enum TransportContractItemName: string
         return match ($this) {
             self::BaseFreight => 'کرایه هر تن',
             self::InsurancePremium => 'درصد تخفیف',
+            self::InsuranceVat => 'درصد از حق بیمه',
             default => 'درصد از کرایه',
         };
     }
@@ -77,16 +78,17 @@ enum TransportContractItemName: string
      */
     public function editableFields(): array
     {
-        $typeFieldsAreEditable = $this !== self::BaseFreight;
+        $isBaseFreight = $this === self::BaseFreight;
+        $isInsuranceVat = $this === self::InsuranceVat;
 
         return [
-            'is_owned' => $typeFieldsAreEditable,
-            'is_rental' => $typeFieldsAreEditable,
-            'is_free' => $typeFieldsAreEditable,
-            'is_unknown' => $typeFieldsAreEditable,
-            'charge_recipient' => $typeFieldsAreEditable,
-            'primary_value' => true,
-            'secondary_value' => true,
+            'is_owned' => !$isBaseFreight /*&& !$isInsuranceVat*/,
+            'is_rental' => !$isBaseFreight /*&& !$isInsuranceVat*/,
+            'is_free' => !$isBaseFreight /*&& !$isInsuranceVat*/,
+            'is_unknown' => !$isBaseFreight /*&& !$isInsuranceVat*/,
+            'charge_recipient' => true,
+            'primary_value' => !$isInsuranceVat,
+            'secondary_value' => !$isInsuranceVat,
         ];
     }
 }

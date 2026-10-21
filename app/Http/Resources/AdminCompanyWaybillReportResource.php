@@ -23,7 +23,7 @@ class AdminCompanyWaybillReportResource extends JsonResource
             'name' => $this->name,
             'national_code' => $this->national_code,
             'status' => $this->status,
-            'waybills_count' => (int) $this->waybills_count,
+            'waybills_count' => (int)$this->waybills_count,
             'last_waybill_at' => $this->last_waybill_at,
         ];
     }

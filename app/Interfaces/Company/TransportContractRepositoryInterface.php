@@ -14,32 +14,32 @@ interface TransportContractRepositoryInterface
 
     /** @return Collection<int, TransportContract>|LengthAwarePaginator */
     public function search(
-        int $companyId,
+        int   $companyId,
         array $filters,
-        ?int $userId = null,
-        bool $canViewAll = true,
+        ?int  $userId = null,
+        bool  $canViewAll = true,
     ): Collection|LengthAwarePaginator;
 
     public function findOrFail(int $companyId, int $id): TransportContract;
 
     public function findAccessibleOrFail(
-        int $companyId,
-        int $id,
-        int $userId,
+        int  $companyId,
+        int  $id,
+        int  $userId,
         bool $canViewAll,
     ): TransportContract;
 
     /** @return Collection<int, TransportContract> */
     public function options(
-        int $companyId,
+        int  $companyId,
         ?int $userId = null,
         bool $canViewAll = true,
     ): Collection;
 
     public function accessibleExists(
-        int $companyId,
-        int $id,
-        int $userId,
+        int  $companyId,
+        int  $id,
+        int  $userId,
         bool $canViewAll,
     ): bool;
 
@@ -57,13 +57,13 @@ interface TransportContractRepositoryInterface
 
     /** @param array<int, string> $fields */
     public function clearDefaults(
-        int $companyId,
+        int   $companyId,
         array $fields,
-        ?int $exceptTransportContractId = null,
+        ?int  $exceptTransportContractId = null,
     ): void;
 
     /**
-     * @param  list<int>  $userIds
+     * @param list<int> $userIds
      * @return list<int>
      */
     public function syncUsers(TransportContract $transportContract, array $userIds): array;

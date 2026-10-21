@@ -35,30 +35,30 @@ interface WaybillRepositoryInterface
     public function trackingCodeExists(int $companyId, string $trackingCode): bool;
 
     public function referralNumberExists(
-        int $companyId,
+        int    $companyId,
         string $referralSerial,
         string $referralNumber,
-        ?int $ignoreWaybillId = null,
+        ?int   $ignoreWaybillId = null,
     ): bool;
 
     public function highestUsedReferralNumber(
-        int $companyId,
+        int    $companyId,
         string $referralSerial,
-        int $fromNumber,
-        int $toNumber,
+        int    $fromNumber,
+        int    $toNumber,
     ): ?int;
 
     public function bijakNumberExists(
-        int $companyId,
+        int    $companyId,
         string $serialNumber,
         string $bijakNumber,
-        ?int $ignoreWaybillId = null,
+        ?int   $ignoreWaybillId = null,
     ): bool;
 
     public function firstAvailableBijakNumber(
-        int $companyId,
+        int    $companyId,
         string $serialNumber,
-        int $fromNumber,
-        int $toNumber,
+        int    $fromNumber,
+        int    $toNumber,
     ): ?int;
 }

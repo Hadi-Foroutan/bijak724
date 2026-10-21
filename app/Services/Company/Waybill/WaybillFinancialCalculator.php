@@ -7,7 +7,9 @@ use App\Interfaces\Company\TransportContractRepositoryInterface;
 
 class WaybillFinancialCalculator
 {
-    public function __construct(protected TransportContractRepositoryInterface $transportContractRepository) {}
+    public function __construct(protected TransportContractRepositoryInterface $transportContractRepository)
+    {
+    }
 
     /** @param array<string, mixed> $data */
     public function calculate(int $companyId, array $data): array
@@ -19,14 +21,14 @@ class WaybillFinancialCalculator
             return $data;
         }
 
-        $contract = $this->transportContractRepository->findOrFail($companyId, (int) $contractId);
-        $items = $contract->items->keyBy(fn ($item): string => $item->name->value);
-        $baseFreightAmount = (int) $baseFreightAmount;
+        $contract = $this->transportContractRepository->findOrFail($companyId, (int)$contractId);
+        $items = $contract->items->keyBy(fn($item): string => $item->name->value);
+        $baseFreightAmount = (int)$baseFreightAmount;
 
         $percentageAmount = function (TransportContractItemName $itemName) use ($items, $baseFreightAmount): int {
-            $percentage = (float) ($items->get($itemName->value)?->primary_value ?? 0);
+            $percentage = (float)($items->get($itemName->value)?->primary_value ?? 0);
 
-            return (int) round($baseFreightAmount * $percentage / 100);
+            return (int)round($baseFreightAmount * $percentage / 100);
         };
 
 //        $data['advance_freight_amount'] = $percentageAmount(TransportContractItemName::AdvanceFreight);
@@ -60,7 +62,7 @@ class WaybillFinancialCalculator
     /** @param array<string, mixed> $data */
     private function driverReceivableAmount(array $data): int
     {
-        return (int) collect([
+        return (int)collect([
             $data['weighbridge_amount'],
             $data['loading_amount'],
             $data['warehousing_amount'],

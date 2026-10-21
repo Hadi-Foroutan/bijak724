@@ -27,10 +27,11 @@ class SyncCompanyTablesCommand extends Command
     protected $description = 'Create missing company tables, sync existing ones (add, alter and drop columns) and drop tables removed from config/company_tables.php';
 
     public function __construct(
-        protected CompanyTableService $companyTableService,
-        protected CompanyTableRegistry $tableRegistry,
+        protected CompanyTableService      $companyTableService,
+        protected CompanyTableRegistry     $tableRegistry,
         protected CompanyDataOwnerResolver $companyDataOwnerResolver,
-    ) {
+    )
+    {
         parent::__construct();
     }
 
@@ -41,7 +42,7 @@ class SyncCompanyTablesCommand extends Command
     {
         $companyId = $this->option('company');
         $companies = Company::query()
-            ->when($companyId !== null, fn ($query) => $query->whereKey($companyId))
+            ->when($companyId !== null, fn($query) => $query->whereKey($companyId))
             ->get();
 
         if ($companyId !== null && $companies->isEmpty()) {
@@ -52,7 +53,7 @@ class SyncCompanyTablesCommand extends Command
 
         // Branches share their data owner's tables, so each owner is synced once.
         $ownerCompanyIds = $companies
-            ->map(fn (Company $company): int => $this->companyDataOwnerResolver->resolveId($company->id))
+            ->map(fn(Company $company): int => $this->companyDataOwnerResolver->resolveId($company->id))
             ->unique()
             ->values();
         $failures = 0;

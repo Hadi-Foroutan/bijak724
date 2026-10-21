@@ -60,7 +60,7 @@ test('admin sends a realtime notification without deleting previous messages', f
 
     Event::assertDispatched(
         NotificationSent::class,
-        fn (NotificationSent $event): bool => $event->notification->id === $notificationId,
+        fn(NotificationSent $event): bool => $event->notification->id === $notificationId,
     );
 });
 
@@ -150,7 +150,7 @@ test('authenticated users can authorize the private notifications channel', func
     Broadcast::setDefaultDriver('reverb');
     Broadcast::channel(
         'notifications',
-        fn (User $user): bool => $user->exists,
+        fn(User $user): bool => $user->exists,
         ['guards' => ['sanctum']],
     );
 

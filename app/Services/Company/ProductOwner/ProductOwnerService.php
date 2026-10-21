@@ -10,8 +10,10 @@ class ProductOwnerService
 {
     public function __construct(
         protected ProductOwnerRepositoryInterface $productOwnerRepository,
-        protected IssuedWaybillDeletionGuard $issuedWaybillDeletionGuard,
-    ) {}
+        protected IssuedWaybillDeletionGuard      $issuedWaybillDeletionGuard,
+    )
+    {
+    }
 
     public function index(int $companyId, array $params): ServiceResult
     {

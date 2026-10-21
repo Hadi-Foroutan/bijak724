@@ -14,7 +14,7 @@ class UpdateCompanySettingsRequest extends BaseRequest
         foreach (CompanySettingKey::cases() as $key) {
             $value = data_get($input, $key->value);
 
-            if (! is_string($value)) {
+            if (!is_string($value)) {
                 continue;
             }
 

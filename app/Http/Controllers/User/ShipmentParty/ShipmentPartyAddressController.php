@@ -19,7 +19,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ShipmentPartyAddressController extends Controller
 {
-    public function __construct(protected ShipmentPartyAddressService $addressService) {}
+    public function __construct(protected ShipmentPartyAddressService $addressService)
+    {
+    }
 
     public function inquiry(FindShipmentPartyAddressByPostalCodeRequest $request): JsonResponse
     {
@@ -71,10 +73,11 @@ class ShipmentPartyAddressController extends Controller
     }
 
     public function show(
-        Request $request,
-        ShipmentParty $shipmentParty,
+        Request              $request,
+        ShipmentParty        $shipmentParty,
         ShipmentPartyAddress $address,
-    ): JsonResponse {
+    ): JsonResponse
+    {
         $result = $this->addressService->show(
             $this->companyId($request),
             $shipmentParty->getKey(),
@@ -88,9 +91,10 @@ class ShipmentPartyAddressController extends Controller
 
     public function update(
         UpdateShipmentPartyAddressRequest $request,
-        ShipmentParty $shipmentParty,
-        ShipmentPartyAddress $address,
-    ): JsonResponse {
+        ShipmentParty                     $shipmentParty,
+        ShipmentPartyAddress              $address,
+    ): JsonResponse
+    {
         $result = $this->addressService->update(
             $this->companyId($request),
             $shipmentParty->getKey(),
@@ -105,10 +109,11 @@ class ShipmentPartyAddressController extends Controller
     }
 
     public function destroy(
-        Request $request,
-        ShipmentParty $shipmentParty,
+        Request              $request,
+        ShipmentParty        $shipmentParty,
         ShipmentPartyAddress $address,
-    ): JsonResponse {
+    ): JsonResponse
+    {
         $result = $this->addressService->delete(
             $this->companyId($request),
             $shipmentParty->getKey(),

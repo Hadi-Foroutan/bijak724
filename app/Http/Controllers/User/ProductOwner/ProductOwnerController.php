@@ -15,7 +15,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ProductOwnerController extends Controller
 {
-    public function __construct(protected ProductOwnerService $productOwnerService) {}
+    public function __construct(protected ProductOwnerService $productOwnerService)
+    {
+    }
 
     public function index(Request $request): JsonResponse
     {

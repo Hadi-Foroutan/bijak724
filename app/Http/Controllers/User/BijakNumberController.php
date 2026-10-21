@@ -15,7 +15,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class BijakNumberController extends Controller
 {
-    public function __construct(protected BijakNumberService $bijakNumberService) {}
+    public function __construct(protected BijakNumberService $bijakNumberService)
+    {
+    }
 
     public function index(Request $request): JsonResponse
     {

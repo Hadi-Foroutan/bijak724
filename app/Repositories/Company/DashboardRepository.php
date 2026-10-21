@@ -16,11 +16,13 @@ use Illuminate\Support\Collection;
 class DashboardRepository implements DashboardRepositoryInterface
 {
     public function __construct(
-        protected WaybillRepositoryInterface $waybillRepository,
+        protected WaybillRepositoryInterface      $waybillRepository,
         protected WaybillCargoRepositoryInterface $waybillCargoRepository,
-        protected DriverRepositoryInterface $driverRepository,
-        protected FleetRepositoryInterface $fleetRepository,
-    ) {}
+        protected DriverRepositoryInterface       $driverRepository,
+        protected FleetRepositoryInterface        $fleetRepository,
+    )
+    {
+    }
 
     public function summary(int $companyId, CarbonInterface $today): array
     {
@@ -39,10 +41,11 @@ class DashboardRepository implements DashboardRepositoryInterface
     }
 
     public function issuedWaybillsByDay(
-        int $companyId,
+        int             $companyId,
         CarbonInterface $from,
         CarbonInterface $to,
-    ): Collection {
+    ): Collection
+    {
         $query = $this->waybillRepository->query($companyId);
         $issuedAt = $query->getModel()->qualifyColumn('issued_at');
         $periodExpression = "DATE({$issuedAt})";
@@ -56,10 +59,11 @@ class DashboardRepository implements DashboardRepositoryInterface
     }
 
     public function issuedWaybillsByMonth(
-        int $companyId,
+        int             $companyId,
         CarbonInterface $from,
         CarbonInterface $to,
-    ): Collection {
+    ): Collection
+    {
         $query = $this->waybillRepository->query($companyId);
         $issuedAt = $query->getModel()->qualifyColumn('issued_at');
 
@@ -98,7 +102,7 @@ class DashboardRepository implements DashboardRepositoryInterface
             ->whereNotNull("{$cargoTable}.cargo_id")
             ->when(
                 $waybillModel->companyId() !== $companyId,
-                fn (Builder $query): Builder => $query->where(
+                fn(Builder $query): Builder => $query->where(
                     "{$waybillTable}.owner_company_id",
                     $companyId,
                 ),
@@ -119,11 +123,11 @@ class DashboardRepository implements DashboardRepositoryInterface
             ->limit($limit);
 
         return $query->get()
-            ->map(fn ($cargo): array => [
-                'cargo_id' => (int) $cargo->cargo_id,
-                'cargo_code' => (int) $cargo->cargo_code,
-                'cargo_name' => (string) $cargo->cargo_name,
-                'count' => (int) $cargo->waybill_count,
+            ->map(fn($cargo): array => [
+                'cargo_id' => (int)$cargo->cargo_id,
+                'cargo_code' => (int)$cargo->cargo_code,
+                'cargo_name' => (string)$cargo->cargo_name,
+                'count' => (int)$cargo->waybill_count,
             ])
             ->all();
     }
@@ -148,7 +152,7 @@ class DashboardRepository implements DashboardRepositoryInterface
             ->whereNotNull("{$waybillTable}.driver1_id")
             ->when(
                 $driverModel->companyId() !== $companyId,
-                fn (Builder $query): Builder => $query->where(
+                fn(Builder $query): Builder => $query->where(
                     "{$driverTable}.owner_company_id",
                     $companyId,
                 ),
@@ -169,22 +173,23 @@ class DashboardRepository implements DashboardRepositoryInterface
             ->limit($limit);
 
         return $query->get()
-            ->map(fn ($driver): array => [
-                'driver_id' => (int) $driver->driver_id,
-                'full_name' => (string) $driver->full_name,
-                'national_code' => (string) $driver->national_code,
-                'count' => (int) $driver->waybill_count,
+            ->map(fn($driver): array => [
+                'driver_id' => (int)$driver->driver_id,
+                'full_name' => (string)$driver->full_name,
+                'national_code' => (string)$driver->national_code,
+                'count' => (int)$driver->waybill_count,
             ])
             ->all();
     }
 
     /** @return Collection<string, int> */
     private function aggregateIssuedWaybills(
-        Builder $query,
+        Builder         $query,
         CarbonInterface $from,
         CarbonInterface $to,
-        string $periodExpression,
-    ): Collection {
+        string          $periodExpression,
+    ): Collection
+    {
         return $query
             ->where('status', WaybillStatus::Completed->value)
             ->whereNotNull('issued_at')
@@ -193,8 +198,8 @@ class DashboardRepository implements DashboardRepositoryInterface
             ->groupByRaw($periodExpression)
             ->orderBy('period')
             ->pluck('aggregate', 'period')
-            ->mapWithKeys(fn (mixed $count, mixed $period): array => [
-                (string) $period => (int) $count,
+            ->mapWithKeys(fn(mixed $count, mixed $period): array => [
+                (string)$period => (int)$count,
             ]);
     }
 

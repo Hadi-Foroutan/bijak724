@@ -293,7 +293,8 @@ function createSupportTestCompany(
     string $panelCode,
     string $organizationCode,
     string $nationalCode,
-): Company {
+): Company
+{
     return Company::query()->forceCreate([
         'parent_type' => 'original',
         'panel_code' => $panelCode,
@@ -305,10 +306,11 @@ function createSupportTestCompany(
 }
 
 function issueSupportToken(
-    mixed $testCase,
-    string $adminToken,
+    mixed   $testCase,
+    string  $adminToken,
     Company $company,
-): string {
+): string
+{
     return withFreshBearerToken($testCase, $adminToken)
         ->postJson("/api/admin/companies/{$company->id}/login-as")
         ->assertCreated()

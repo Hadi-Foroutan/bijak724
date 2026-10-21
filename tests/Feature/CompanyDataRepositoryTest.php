@@ -88,7 +88,7 @@ test('every dynamic table repository declares its dedicated model', function () 
         $repository = app($repositoryInterface);
         $model = $repository->query(42)->getModel();
         $constructorTypes = collect((new ReflectionClass($repository))->getConstructor()?->getParameters())
-            ->map(fn (ReflectionParameter $parameter): ?string => $parameter->getType()?->getName());
+            ->map(fn(ReflectionParameter $parameter): ?string => $parameter->getType()?->getName());
 
         expect($model)->toBeInstanceOf($modelClass)
             ->and($model->getTable())->toBe("company_42_{$tableKey}")

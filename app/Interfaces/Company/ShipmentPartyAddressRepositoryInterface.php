@@ -26,15 +26,15 @@ interface ShipmentPartyAddressRepositoryInterface
     public function searchForParty(int $companyId, int $shipmentPartyId, array $filters): Collection|LengthAwarePaginator;
 
     public function uniquePostalCodeForPartyRule(
-        int $companyId,
-        int $shipmentPartyId,
+        int  $companyId,
+        int  $shipmentPartyId,
         ?int $ignoreAddressId = null,
     ): Unique;
 
     public function findForPartyOrFail(int $companyId, int $shipmentPartyId, int $addressId): ShipmentPartyAddress;
 
     public function findShipmentPartyByPostalCodeAndType(
-        int $companyId,
+        int    $companyId,
         string $postalCode,
         string $type,
     ): ?ShipmentParty;

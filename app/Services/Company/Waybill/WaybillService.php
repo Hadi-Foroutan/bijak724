@@ -36,18 +36,20 @@ class WaybillService
     ];
 
     public function __construct(
-        protected WaybillRepositoryInterface $waybillRepository,
-        protected WaybillReferenceSnapshotBuilder $snapshotBuilder,
-        protected WaybillFinancialCalculator $financialCalculator,
-        protected WaybillTrackingCodeGenerator $trackingCodeGenerator,
-        protected WaybillCargoService $waybillCargoService,
-        protected BijakNumberService $bijakNumberService,
-        protected ReferralNumberService $referralNumberService,
+        protected WaybillRepositoryInterface           $waybillRepository,
+        protected WaybillReferenceSnapshotBuilder      $snapshotBuilder,
+        protected WaybillFinancialCalculator           $financialCalculator,
+        protected WaybillTrackingCodeGenerator         $trackingCodeGenerator,
+        protected WaybillCargoService                  $waybillCargoService,
+        protected BijakNumberService                   $bijakNumberService,
+        protected ReferralNumberService                $referralNumberService,
         protected TransportContractRepositoryInterface $transportContractRepository,
-        protected SharedWaybillRepositoryInterface $sharedWaybillRepository,
-        protected TransportContractAccessService $transportContractAccessService,
-        protected CanceledReferralRepositoryInterface $canceledReferralRepository,
-    ) {}
+        protected SharedWaybillRepositoryInterface     $sharedWaybillRepository,
+        protected TransportContractAccessService       $transportContractAccessService,
+        protected CanceledReferralRepositoryInterface  $canceledReferralRepository,
+    )
+    {
+    }
 
     public function index(int $companyId, array $params): ServiceResult
     {
@@ -68,17 +70,17 @@ class WaybillService
         );
 
         return ServiceResult::success([
-            'statuses' => collect(WaybillStatus::cases())->map(fn (WaybillStatus $status): array => [
+            'statuses' => collect(WaybillStatus::cases())->map(fn(WaybillStatus $status): array => [
                 'value' => $status->value,
                 'label' => $status->label(),
             ])->values(),
-            'transport_contracts' => $contracts->map(fn (TransportContract $contract): array => [
+            'transport_contracts' => $contracts->map(fn(TransportContract $contract): array => [
                 'id' => $contract->id,
                 'title' => $contract->title,
                 'contract_number' => $contract->contract_number,
-                'items' => $contract->items->map(fn ($item): array => [
+                'items' => $contract->items->map(fn($item): array => [
                     'name' => $item->name->value,
-                    'primary_value' => $item->primary_value === null ? null : (float) $item->primary_value,
+                    'primary_value' => $item->primary_value === null ? null : (float)$item->primary_value,
                 ])->values(),
             ]),
         ]);
@@ -225,7 +227,7 @@ class WaybillService
                 'referral_serial' => $waybill->referral_serial,
                 'waybill_snapshot' => $waybill->attributesToArray(),
                 'cargos_snapshot' => $waybill->cargos
-                    ->map(static fn ($cargo): array => $cargo->toArray())
+                    ->map(static fn($cargo): array => $cargo->toArray())
                     ->values()
                     ->all(),
                 'canceled_at' => now(),
@@ -261,10 +263,10 @@ class WaybillService
             return;
         }
 
-        if (! $this->transportContractRepository->accessibleExists(
+        if (!$this->transportContractRepository->accessibleExists(
             $companyId,
-            (int) $transportContractId,
-            (int) $user->getKey(),
+            (int)$transportContractId,
+            (int)$user->getKey(),
             $this->transportContractAccessService->canViewAll($user),
         )) {
             throw ValidationException::withMessages([
@@ -276,7 +278,7 @@ class WaybillService
     /** @param array<string, mixed> $data */
     private function normalizeStatus(array &$data): WaybillStatus
     {
-        $status = WaybillStatus::from((string) $data['status']);
+        $status = WaybillStatus::from((string)$data['status']);
         $data['status'] = $status->value;
 
         return $status;
@@ -293,17 +295,17 @@ class WaybillService
                 $companyId,
                 $waybill?->getKey(),
             )->data;
-            $data['referral_number'] = (string) $nextReferralNumber['referral_number'];
-            $data['referral_serial'] = (string) $nextReferralNumber['serial_number'];
+            $data['referral_number'] = (string)$nextReferralNumber['referral_number'];
+            $data['referral_serial'] = (string)$nextReferralNumber['serial_number'];
         }
 
         if (($data['status'] ?? null) === WaybillStatus::Completed->value) {
             $nextBijakNumber = $this->bijakNumberService->reserveNextForBijak(
                 $companyId,
-                trim((string) ($data['serial_number'] ?? '')),
-                (int) ($data['bijak_number'] ?? 0),
+                trim((string)($data['serial_number'] ?? '')),
+                (int)($data['bijak_number'] ?? 0),
             )->data;
-            $data['bijak_number'] = (string) $nextBijakNumber['bijak_number'];
+            $data['bijak_number'] = (string)$nextBijakNumber['bijak_number'];
             $data['serial_number'] = $nextBijakNumber['serial_number'];
         }
 
@@ -317,10 +319,11 @@ class WaybillService
     }
 
     private function assignReferralNumberIfNeeded(
-        int $companyId,
+        int           $companyId,
         WaybillStatus $status,
-        Waybill $waybill,
-    ): Waybill {
+        Waybill       $waybill,
+    ): Waybill
+    {
         if ($status !== WaybillStatus::Referral || $waybill->referral_number !== null) {
             return $waybill;
         }
@@ -338,7 +341,7 @@ class WaybillService
             return $waybill->bijak_tracking_code;
         }
 
-        $bijakNumber = trim((string) ($data['bijak_number'] ?? ''));
+        $bijakNumber = trim((string)($data['bijak_number'] ?? ''));
 
         if (($data['status'] ?? null) !== WaybillStatus::Completed->value || $bijakNumber === '') {
             return null;
@@ -349,7 +352,7 @@ class WaybillService
 
     private function ensureEditable(Waybill $waybill): void
     {
-        if (! in_array($waybill->status, [WaybillStatus::Incomplete, WaybillStatus::Referral], true)) {
+        if (!in_array($waybill->status, [WaybillStatus::Incomplete, WaybillStatus::Referral], true)) {
             ServiceResult::error(
                 __('public.waybill_edit_forbidden'),
                 Response::HTTP_UNPROCESSABLE_ENTITY,
@@ -371,19 +374,20 @@ class WaybillService
 
     /** @param array<string, mixed> $data */
     private function ensureBijakNumberIsAvailable(
-        int $companyId,
+        int   $companyId,
         array $data,
-        ?int $ignoreWaybillId = null,
-    ): void {
-        $serialNumber = trim((string) ($data['serial_number'] ?? ''));
-        $bijakNumber = trim((string) ($data['bijak_number'] ?? ''));
+        ?int  $ignoreWaybillId = null,
+    ): void
+    {
+        $serialNumber = trim((string)($data['serial_number'] ?? ''));
+        $bijakNumber = trim((string)($data['bijak_number'] ?? ''));
 
-        if ($serialNumber === '' || $bijakNumber === '' || ! $this->waybillRepository->bijakNumberExists(
-            $companyId,
-            $serialNumber,
-            $bijakNumber,
-            $ignoreWaybillId,
-        )) {
+        if ($serialNumber === '' || $bijakNumber === '' || !$this->waybillRepository->bijakNumberExists(
+                $companyId,
+                $serialNumber,
+                $bijakNumber,
+                $ignoreWaybillId,
+            )) {
             return;
         }
 
@@ -398,7 +402,7 @@ class WaybillService
 
     private function handleNumberUniqueViolation(UniqueConstraintViolationException $exception): ServiceResult
     {
-        $message = strtolower((string) ($exception->errorInfo[2] ?? $exception->getMessage()));
+        $message = strtolower((string)($exception->errorInfo[2] ?? $exception->getMessage()));
         $isReferralNumberViolation = str_contains($message, 'referral_unique')
             || str_contains($message, 'referral_number');
         $isBijakNumberViolation = str_contains($message, 'serial_bijak_unique')

@@ -12,9 +12,11 @@ use Illuminate\Validation\ValidationException;
 class FleetService
 {
     public function __construct(
-        protected FleetRepositoryInterface $fleetRepository,
+        protected FleetRepositoryInterface   $fleetRepository,
         protected IssuedWaybillDeletionGuard $issuedWaybillDeletionGuard,
-    ) {}
+    )
+    {
+    }
 
     public function index(int $companyId, array $params): ServiceResult
     {
@@ -104,7 +106,7 @@ class FleetService
 
     private function validateSystemAndTip(?int $systemId, ?int $tipCode): void
     {
-        if ($tipCode !== null && ! $this->fleetRepository->tipExists($tipCode)) {
+        if ($tipCode !== null && !$this->fleetRepository->tipExists($tipCode)) {
             throw ValidationException::withMessages([
                 'tip_code' => __('validation.exists', ['attribute' => 'تیپ ناوگان']),
             ]);
@@ -114,7 +116,7 @@ class FleetService
             return;
         }
 
-        if (! $this->fleetRepository->tipBelongsToSystem($tipCode, $systemId)) {
+        if (!$this->fleetRepository->tipBelongsToSystem($tipCode, $systemId)) {
             throw ValidationException::withMessages([
                 'tip_code' => __('public.fleet_tip_system_mismatch'),
             ]);
@@ -140,6 +142,6 @@ class FleetService
 
     private function nullableInteger(mixed $value): ?int
     {
-        return $value === null ? null : (int) $value;
+        return $value === null ? null : (int)$value;
     }
 }

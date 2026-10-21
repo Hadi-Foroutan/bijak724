@@ -45,7 +45,7 @@ class UpdateInsuranceRequest extends BaseRequest
             $startDate = $this->input('start_date', $insurance->start_date->format('Y-m-d'));
             $endDate = $this->input('end_date', $insurance->end_date->format('Y-m-d'));
 
-            if (strtotime((string) $endDate) < strtotime((string) $startDate)) {
+            if (strtotime((string)$endDate) < strtotime((string)$startDate)) {
                 $validator->errors()->add('end_date', __('public.insurance_end_date_invalid'));
             }
         });

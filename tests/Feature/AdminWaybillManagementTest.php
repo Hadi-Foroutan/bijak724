@@ -101,17 +101,17 @@ test('admin filters shared waybills by company status date and dynamic document 
 
     Auth::forgetGuards();
     $this->withToken($this->admin->createToken('admin-waybill-filters')->plainTextToken)
-        ->getJson('/api/admin/waybills?'.http_build_query([
-            'company_id' => $this->firstCompany->id,
-            'status' => WaybillStatus::Completed->value,
-            'created_at_from' => '2026-09-01',
-            'created_at_to' => '2026-09-15',
-            'serial_number' => '1405-A',
-            'referral_number' => '100001',
-            'bijak_tracking_code' => '1234',
-            'paginate' => true,
-            'itemsPerPage' => 10,
-        ]))
+        ->getJson('/api/admin/waybills?' . http_build_query([
+                'company_id' => $this->firstCompany->id,
+                'status' => WaybillStatus::Completed->value,
+                'created_at_from' => '2026-09-01',
+                'created_at_to' => '2026-09-15',
+                'serial_number' => '1405-A',
+                'referral_number' => '100001',
+                'bijak_tracking_code' => '1234',
+                'paginate' => true,
+                'itemsPerPage' => 10,
+            ]))
         ->assertSuccessful()
         ->assertJsonPath('data.total', 1)
         ->assertJsonPath('data.data.0.waybill_id', $firstWaybillId)

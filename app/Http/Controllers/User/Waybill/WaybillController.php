@@ -17,7 +17,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class WaybillController extends Controller
 {
-    public function __construct(protected WaybillService $waybillService) {}
+    public function __construct(protected WaybillService $waybillService)
+    {
+    }
 
     public function options(Request $request): JsonResponse
     {
@@ -43,7 +45,7 @@ class WaybillController extends Controller
             $this->companyId($request),
             [
                 ...$request->validated(),
-                'created_by' => (int) $request->user()->getKey(),
+                'created_by' => (int)$request->user()->getKey(),
                 'issued_by_print_name' => $request->user()->printNameOrFullName(),
             ],
             $request->user(),

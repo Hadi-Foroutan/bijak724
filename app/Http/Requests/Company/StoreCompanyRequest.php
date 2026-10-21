@@ -22,17 +22,17 @@ class StoreCompanyRequest extends BaseRequest
                 'nullable',
                 'integer',
                 Rule::exists(Company::class, 'id')->where(
-                    fn ($query) => $query
+                    fn($query) => $query
                         ->where('parent_type', CompanyParentEnum::ORIGINAL->value)
                         ->whereNull('parent_id')
                         ->whereNull('deleted_at'),
                 ),
 
                 // اگر BRANCH بود → اجباری
-                Rule::requiredIf(fn () => $this->parent_type === CompanyParentEnum::BRANCH->value),
+                Rule::requiredIf(fn() => $this->parent_type === CompanyParentEnum::BRANCH->value),
 
                 // اگر BRANCH نبود → نباید ارسال بشه
-                Rule::prohibitedIf(fn () => $this->parent_type !== CompanyParentEnum::BRANCH->value),
+                Rule::prohibitedIf(fn() => $this->parent_type !== CompanyParentEnum::BRANCH->value),
             ],
 
             'organization_code' => ['required', 'string', 'max:255', Rule::unique(Company::class)],

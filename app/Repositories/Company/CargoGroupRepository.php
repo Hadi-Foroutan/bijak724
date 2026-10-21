@@ -31,7 +31,7 @@ class CargoGroupRepository implements CargoGroupRepositoryInterface
         $cargoIds = Cargo::query()
             ->whereIn('code', $cargoCodes)
             ->pluck('id')
-            ->map(static fn (int|string $cargoId): int => (int) $cargoId)
+            ->map(static fn(int|string $cargoId): int => (int)$cargoId)
             ->all();
 
         if ($cargoGroup->group_number === 1) {
@@ -59,7 +59,7 @@ class CargoGroupRepository implements CargoGroupRepositoryInterface
 
             $now = now();
             CargoGroupCargo::query()->insert(array_map(
-                fn (int $cargoId): array => [
+                fn(int $cargoId): array => [
                     'company_id' => $companyId,
                     'cargo_group_id' => $cargoGroup->id,
                     'cargo_id' => $cargoId,
@@ -75,7 +75,7 @@ class CargoGroupRepository implements CargoGroupRepositoryInterface
 
     public function resolveGroupIdsForCargoCodes(int $companyId, array $cargoCodes): array
     {
-        $defaultGroupId = (int) CargoGroup::query()
+        $defaultGroupId = (int)CargoGroup::query()
             ->where('group_number', 1)
             ->firstOrFail()
             ->getKey();
@@ -89,14 +89,14 @@ class CargoGroupRepository implements CargoGroupRepositoryInterface
             ->pluck('cargo_group_id', 'cargo_id');
 
         return collect($cargoCodes)
-            ->mapWithKeys(fn (int $cargoCode): array => [
-                $cargoCode => (int) ($assignedGroupIds[$cargoIdsByCode[$cargoCode]] ?? $defaultGroupId),
+            ->mapWithKeys(fn(int $cargoCode): array => [
+                $cargoCode => (int)($assignedGroupIds[$cargoIdsByCode[$cargoCode]] ?? $defaultGroupId),
             ])
             ->all();
     }
 
     /**
-     * @param  Collection<int, CargoGroup>  $groups
+     * @param Collection<int, CargoGroup> $groups
      * @return Collection<int, CargoGroup>
      */
     private function loadCompanyCargos(int $companyId, Collection $groups): Collection
@@ -109,7 +109,7 @@ class CargoGroupRepository implements CargoGroupRepositoryInterface
         $assignedCargoIds = $assignments->pluck('cargo_id');
         $defaultCargos = $groups->contains('group_number', 1)
             ? Cargo::query()
-                ->when($assignedCargoIds->isNotEmpty(), fn ($query) => $query->whereNotIn('id', $assignedCargoIds))
+                ->when($assignedCargoIds->isNotEmpty(), fn($query) => $query->whereNotIn('id', $assignedCargoIds))
                 ->get()
             : collect();
 

@@ -2,4 +2,6 @@
 
 namespace App\Http\Resources;
 
-class ReferralNumberResource extends CompanyDynamicResource {}
+class ReferralNumberResource extends CompanyDynamicResource
+{
+}

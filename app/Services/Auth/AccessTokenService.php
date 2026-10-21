@@ -10,14 +10,15 @@ use Laravel\Sanctum\PersonalAccessToken;
 class AccessTokenService
 {
     /**
-     * @param  array<int, string>  $abilities
+     * @param array<int, string> $abilities
      */
     public function create(
-        User $user,
-        string $name = 'token',
-        array $abilities = ['*'],
+        User               $user,
+        string             $name = 'token',
+        array              $abilities = ['*'],
         ?DateTimeInterface $expiresAt = null,
-    ): NewAccessToken {
+    ): NewAccessToken
+    {
         return $user->createToken($name, $abilities, $expiresAt);
     }
 

@@ -12,8 +12,10 @@ class ShipmentPartyService
 {
     public function __construct(
         protected ShipmentPartyRepositoryInterface $shipmentPartyRepository,
-        protected IssuedWaybillDeletionGuard $issuedWaybillDeletionGuard,
-    ) {}
+        protected IssuedWaybillDeletionGuard       $issuedWaybillDeletionGuard,
+    )
+    {
+    }
 
     public function index(int $companyId, array $params): ServiceResult
     {
@@ -24,8 +26,8 @@ class ShipmentPartyService
     {
         $data['status'] ??= StatusEnum::ACTIVE->value;
         $this->validateRoles(
-            (bool) ($data['is_sender'] ?? false),
-            (bool) ($data['is_receiver'] ?? false),
+            (bool)($data['is_sender'] ?? false),
+            (bool)($data['is_receiver'] ?? false),
         );
 
         return ServiceResult::success($this->shipmentPartyRepository->create($companyId, $data));
@@ -40,11 +42,11 @@ class ShipmentPartyService
     {
         $shipmentParty = $this->shipmentPartyRepository->findOrFail($companyId, $id);
         $isSender = array_key_exists('is_sender', $data)
-            ? (bool) $data['is_sender']
-            : (bool) $shipmentParty->getAttribute('is_sender');
+            ? (bool)$data['is_sender']
+            : (bool)$shipmentParty->getAttribute('is_sender');
         $isReceiver = array_key_exists('is_receiver', $data)
-            ? (bool) $data['is_receiver']
-            : (bool) $shipmentParty->getAttribute('is_receiver');
+            ? (bool)$data['is_receiver']
+            : (bool)$shipmentParty->getAttribute('is_receiver');
 
         $this->validateRoles($isSender, $isReceiver);
 
@@ -69,10 +71,11 @@ class ShipmentPartyService
     }
 
     public function findByNationalIdentifierAndType(
-        int $companyId,
+        int    $companyId,
         string $nationalIdentifier,
         string $type,
-    ): ServiceResult {
+    ): ServiceResult
+    {
 
         $shipmentParty = $this->shipmentPartyRepository->findByNationalIdentifierAndType(
             $companyId,

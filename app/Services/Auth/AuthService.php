@@ -18,21 +18,23 @@ use Symfony\Component\HttpFoundation\Response;
 class AuthService
 {
     public function __construct(
-        protected UserInterface $authRepository,
-        protected PermissionInterface $permissionRepository,
+        protected UserInterface              $authRepository,
+        protected PermissionInterface        $permissionRepository,
         protected CompanySupportTokenService $supportTokenService,
-        protected AccessTokenService $accessTokenService,
-    ) {}
+        protected AccessTokenService         $accessTokenService,
+    )
+    {
+    }
 
     public function login(string $username, string $password): ServiceResult
     {
         $user = $this->authRepository->findByUsername($username);
-        if (! $user) {
+        if (!$user) {
             return ServiceResult::error(__('public.not_found', ['attribute' => 'کاربر']));
         }
 
         $verify = Hash::check($password, $user->password);
-        if (! $verify) {
+        if (!$verify) {
             return ServiceResult::error(__('public.invalid_credentials'));
         }
 
@@ -53,13 +55,13 @@ class AuthService
 
     public function loginAsCompany(User $admin, Company $company, int $durationDays): ServiceResult
     {
-        if (! $admin->isSuperAdmin() && ! $admin->hasRole(RoleEnum::ADMIN->value)) {
+        if (!$admin->isSuperAdmin() && !$admin->hasRole(RoleEnum::ADMIN->value)) {
             return ServiceResult::error(__('public.access_denied', ['attribute' => 'شرکت']), Response::HTTP_FORBIDDEN);
         }
 
         $supportRole = $this->supportTokenService->supportRole();
 
-        if (! $supportRole) {
+        if (!$supportRole) {
             return ServiceResult::error(
                 __('public.not_found', ['attribute' => 'نقش مدیر شرکت']),
                 Response::HTTP_UNPROCESSABLE_ENTITY,
@@ -103,13 +105,13 @@ class AuthService
      */
     private function authenticatedUserData(User $user): array
     {
-        if (! $user->isActive()) {
+        if (!$user->isActive()) {
             ServiceResult::error(__('auth.user_inactive'), Response::HTTP_FORBIDDEN);
         }
 
         $role = $this->permissionRepository->findRole($user);
 
-        if (! $role) {
+        if (!$role) {
             ServiceResult::error(__('public.not_found', ['attribute' => 'نقش']), Response::HTTP_FORBIDDEN);
         }
 
@@ -133,7 +135,7 @@ class AuthService
     {
         $data = $this->authenticatedUserData($user);
 
-        if (! $token) {
+        if (!$token) {
             return [
                 ...$data,
                 'auth_mode' => 'system',
@@ -142,7 +144,7 @@ class AuthService
 
         $companyContext = $this->supportTokenService->context($user, $token);
 
-        if (! $companyContext) {
+        if (!$companyContext) {
             return [
                 ...$data,
                 'auth_mode' => 'system',
@@ -168,7 +170,7 @@ class AuthService
     {
         $company = $user->company;
 
-        if (! $company || $company->status !== StatusEnum::ACTIVE->value) {
+        if (!$company || $company->status !== StatusEnum::ACTIVE->value) {
             ServiceResult::error(__('public.access_denied', ['attribute' => 'شرکت']), Response::HTTP_FORBIDDEN);
         }
 

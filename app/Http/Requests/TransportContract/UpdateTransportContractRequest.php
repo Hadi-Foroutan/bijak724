@@ -25,7 +25,7 @@ class UpdateTransportContractRequest extends BaseRequest
     /** @return array<string, mixed> */
     public function rules(): array
     {
-        $itemsRules = ['array', 'size:'.count(TransportContractItemName::cases()), new BaseFreightTypesDisabled];
+        $itemsRules = ['array', 'size:' . count(TransportContractItemName::cases()), new BaseFreightTypesDisabled];
 
         return [
             'title' => ['sometimes', 'required', 'string', 'max:255'],

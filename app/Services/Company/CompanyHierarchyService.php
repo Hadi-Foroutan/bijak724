@@ -34,7 +34,7 @@ class CompanyHierarchyService
                 ->whereIn('parent_id', $pendingParentIds)
                 ->whereNotIn('id', $companyIds)
                 ->pluck('id')
-                ->map(fn (mixed $id): int => (int) $id)
+                ->map(fn(mixed $id): int => (int)$id)
                 ->all();
 
             if ($childCompanyIds === []) {

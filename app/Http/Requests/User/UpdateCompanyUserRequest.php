@@ -13,7 +13,7 @@ class UpdateCompanyUserRequest extends StoreCompanyUserRequest
             ->map(function (array $rules): array {
                 $optionalRules = array_values(array_filter(
                     $rules,
-                    fn (mixed $rule): bool => $rule !== 'required',
+                    fn(mixed $rule): bool => $rule !== 'required',
                 ));
 
                 return in_array('sometimes', $optionalRules, true)

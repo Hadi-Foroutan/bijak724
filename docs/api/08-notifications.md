@@ -8,22 +8,23 @@
 
 ### ۸.۱ روت‌ها و مجوزها
 
-| # | متد | مسیر | نوع ورودی | مجوز لازم | کاربرد |
-| --- | --- | --- | --- | --- | --- |
-| ۸.۱ | GET | `/api/user/notifications` | query string | `user.notifications.index` | اعلان‌های من |
-| ۸.۲ | GET | `/api/user/notifications/{notification}` | query string | `user.notifications.show` | جزئیات اعلان |
+| #   | متد | مسیر                                     | نوع ورودی    | مجوز لازم                  | کاربرد       |
+|-----|-----|------------------------------------------|--------------|----------------------------|--------------|
+| ۸.۱ | GET | `/api/user/notifications`                | query string | `user.notifications.index` | اعلان‌های من  |
+| ۸.۲ | GET | `/api/user/notifications/{notification}` | query string | `user.notifications.show`  | جزئیات اعلان |
 
 ### ۸.۲ ورودی و خروجی
 
-ادمین‌ها اعلان‌ها را از طریق Laravel Reverb (پروتکل Pusher) روی یک کانال خصوصی به نام `notifications` پخش می‌کنند که همهٔ کاربران احراز هویت‌شده می‌توانند به آن بپیوندند. نام رویداد `notification.sent` است.
+ادمین‌ها اعلان‌ها را از طریق Laravel Reverb (پروتکل Pusher) روی یک کانال خصوصی به نام `notifications` پخش می‌کنند که
+همهٔ کاربران احراز هویت‌شده می‌توانند به آن بپیوندند. نام رویداد `notification.sent` است.
 
-| مورد | مقدار |
-| --- | --- |
-| سرور | Reverb: `VITE_REVERB_APP_KEY`، `VITE_REVERB_HOST`، `VITE_REVERB_PORT`، `VITE_REVERB_SCHEME` |
-| احراز هویت کانال | `POST /api/broadcasting/auth` با bearer token |
-| کانال | `private-notifications` (در Echo: `Echo.private("notifications")`) |
-| رویداد | `.notification.sent` (نقطهٔ ابتدایی در Echo لازم است، چون از `broadcastAs` استفاده شده) |
-| ارسال‌کننده | `POST /api/admin/notifications` با `{ type, message, should_remove_previous? }` |
+| مورد             | مقدار                                                                                       |
+|------------------|---------------------------------------------------------------------------------------------|
+| سرور             | Reverb: `VITE_REVERB_APP_KEY`، `VITE_REVERB_HOST`، `VITE_REVERB_PORT`، `VITE_REVERB_SCHEME` |
+| احراز هویت کانال | `POST /api/broadcasting/auth` با bearer token                                               |
+| کانال            | `private-notifications` (در Echo: `Echo.private("notifications")`)                          |
+| رویداد           | `.notification.sent` (نقطهٔ ابتدایی در Echo لازم است، چون از `broadcastAs` استفاده شده)      |
+| ارسال‌کننده       | `POST /api/admin/notifications` با `{ type, message, should_remove_previous? }`             |
 
 محتوای رویداد:
 
@@ -64,4 +65,8 @@ echo.private("notifications").listen(".notification.sent", ({ notification }) =>
 });
 ```
 
-اگر `should_remove_previous` برابر true بود، پیش از نمایش اعلان جدید اعلان‌های قبلی را حذف کنید. سبک نمایش از `type` تبعیت می‌کند (`success`، `error`، `warning`، `info`). endpointهای تاریخچه همین داده را همراه با `type_label` و `sender{id, full_name}` برمی‌گردانند: `GET /user/notifications` برای کاربران و `GET /admin/notifications` برای ادمین‌ها که `username` و `email` فرستنده را هم دارد. هنگام شروع، تاریخچه را بارگذاری کنید و سپس رویدادهای زنده را به آن اضافه کنید.
+اگر `should_remove_previous` برابر true بود، پیش از نمایش اعلان جدید اعلان‌های قبلی را حذف کنید. سبک نمایش از `type`
+تبعیت می‌کند (`success`، `error`، `warning`، `info`). endpointهای تاریخچه همین داده را همراه با `type_label` و
+`sender{id, full_name}` برمی‌گردانند: `GET /user/notifications` برای کاربران و `GET /admin/notifications` برای ادمین‌ها
+که `username` و `email` فرستنده را هم دارد. هنگام شروع، تاریخچه را بارگذاری کنید و سپس رویدادهای زنده را به آن اضافه
+کنید.

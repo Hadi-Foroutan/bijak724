@@ -13,7 +13,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class NotificationController extends Controller
 {
-    public function __construct(protected NotificationService $notificationService) {}
+    public function __construct(protected NotificationService $notificationService)
+    {
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -26,7 +28,7 @@ class NotificationController extends Controller
 
     public function store(StoreNotificationRequest $request): JsonResponse
     {
-        $result = $this->notificationService->store((int) $request->user()->getKey(), $request->validated());
+        $result = $this->notificationService->store((int)$request->user()->getKey(), $request->validated());
 
         return ResponseHandler::success(
             AdminNotificationResource::make($result->data)->resolve($request),

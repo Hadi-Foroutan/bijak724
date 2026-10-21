@@ -22,9 +22,9 @@ interface DriverAccountRepositoryInterface
 
     /** @param array<string, mixed> $data */
     public function updateForDriver(
-        int $companyId,
-        int $driverId,
-        int $accountId,
+        int   $companyId,
+        int   $driverId,
+        int   $accountId,
         array $data,
     ): DriverAccount;
 

@@ -19,14 +19,14 @@ interface DashboardRepositoryInterface
 
     /** @return Collection<string, int> */
     public function issuedWaybillsByDay(
-        int $companyId,
+        int             $companyId,
         CarbonInterface $from,
         CarbonInterface $to,
     ): Collection;
 
     /** @return Collection<string, int> */
     public function issuedWaybillsByMonth(
-        int $companyId,
+        int             $companyId,
         CarbonInterface $from,
         CarbonInterface $to,
     ): Collection;

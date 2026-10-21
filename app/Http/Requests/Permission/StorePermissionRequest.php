@@ -26,12 +26,12 @@ class StorePermissionRequest extends BaseRequest
                 'required',
                 'string',
                 'max:255',
-                'regex:'.self::NAME_PATTERN,
+                'regex:' . self::NAME_PATTERN,
                 $uniqueName,
             ],
             'display_name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'status' => ['in:'.implode(',', StatusEnum::values())],
+            'status' => ['in:' . implode(',', StatusEnum::values())],
             'is_default' => ['sometimes', 'boolean'],
         ];
     }

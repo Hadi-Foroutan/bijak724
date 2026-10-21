@@ -10,7 +10,9 @@ class UserObserver
 {
     public function __construct(
         protected RoleInterface $roleRepository,
-    ) {}
+    )
+    {
+    }
 
     /**
      * Handle the User "created" event.

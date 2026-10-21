@@ -32,7 +32,7 @@ test('it lists permission ids for each role', function () {
     $permissions = collect([
         ['name' => 'admin.users.index', 'display_name' => 'List users'],
         ['name' => 'admin.users.store', 'display_name' => 'Create user'],
-    ])->map(fn (array $attributes): Permission => Permission::query()->create($attributes));
+    ])->map(fn(array $attributes): Permission => Permission::query()->create($attributes));
     $permissionIds = $permissions->pluck('id')->all();
 
     $role->permissions()->attach($permissionIds);

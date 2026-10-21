@@ -20,7 +20,9 @@ class CompanyUserController extends Controller
 {
     public function __construct(
         protected CompanyUserService $companyUserService,
-    ) {}
+    )
+    {
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -104,16 +106,17 @@ class CompanyUserController extends Controller
 
     private function userCollectionResource(
         Collection|LengthAwarePaginator $users,
-        Request $request,
-    ): Collection|LengthAwarePaginator {
+        Request                         $request,
+    ): Collection|LengthAwarePaginator
+    {
         if ($users instanceof LengthAwarePaginator) {
             return $users->through(
-                fn (User $user): array => UserResource::make($user)->resolve($request),
+                fn(User $user): array => UserResource::make($user)->resolve($request),
             );
         }
 
         return $users->map(
-            fn (User $user): array => UserResource::make($user)->resolve($request),
+            fn(User $user): array => UserResource::make($user)->resolve($request),
         );
     }
 }

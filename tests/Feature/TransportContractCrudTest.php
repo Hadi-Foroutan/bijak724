@@ -171,7 +171,7 @@ test('transport contract list places the four default types before regular contr
         'default_unknown',
     ];
 
-    $defaultIds = collect($defaultFields)->map(fn (string $field): int => TransportContract::factory()
+    $defaultIds = collect($defaultFields)->map(fn(string $field): int => TransportContract::factory()
         ->for($this->company)
         ->create([$field => true])
         ->getKey());

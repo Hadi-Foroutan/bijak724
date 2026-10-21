@@ -12,7 +12,7 @@ class RoleRepository implements RoleInterface
     {
         $roles = Role::searchRecords(
             $params,
-            fn ($query) => $query->with(['permissions:id']),
+            fn($query) => $query->with(['permissions:id']),
         );
 
         $roles->each(function (Role $role): void {

@@ -12,12 +12,12 @@ abstract class CompanyDynamicResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        if (! $this->resource instanceof DynamicModel) {
+        if (!$this->resource instanceof DynamicModel) {
             throw new LogicException('Company dynamic resources require a DynamicModel.');
         }
 
         $fieldNames = collect(app(CompanyTableRegistry::class)->columns($this->resource->companyTableKey()))
-            ->filter(fn (array $column): bool => (bool) ($column['api'] ?? true))
+            ->filter(fn(array $column): bool => (bool)($column['api'] ?? true))
             ->pluck('name')
             ->all();
 

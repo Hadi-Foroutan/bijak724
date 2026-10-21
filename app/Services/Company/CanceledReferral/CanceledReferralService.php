@@ -9,7 +9,9 @@ class CanceledReferralService
 {
     public function __construct(
         protected CanceledReferralRepositoryInterface $canceledReferralRepository,
-    ) {}
+    )
+    {
+    }
 
     /** @param array<string, mixed> $filters */
     public function index(int $companyId, array $filters): ServiceResult

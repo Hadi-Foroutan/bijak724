@@ -14,11 +14,13 @@ use Symfony\Component\HttpFoundation\Response;
 class InsuranceService
 {
     public function __construct(
-        protected InsuranceRepositoryInterface $insuranceRepository,
+        protected InsuranceRepositoryInterface       $insuranceRepository,
         protected InsuranceTariffRepositoryInterface $insuranceTariffRepository,
-        protected CargoGroupRepositoryInterface $cargoGroupRepository,
-        protected IssuedWaybillDeletionGuard $issuedWaybillDeletionGuard,
-    ) {}
+        protected CargoGroupRepositoryInterface      $cargoGroupRepository,
+        protected IssuedWaybillDeletionGuard         $issuedWaybillDeletionGuard,
+    )
+    {
+    }
 
     public function index(int $companyId, array $filters): ServiceResult
     {
@@ -48,19 +50,19 @@ class InsuranceService
     public function inquiry(int $companyId, array $data): ServiceResult
     {
         //        return ServiceResult::success(['fee_amount' => 200000]);
-        $insuranceId = (int) $data['insurance_id'];
+        $insuranceId = (int)$data['insurance_id'];
         $this->insuranceRepository->findOrFail($companyId, $insuranceId);
 
         $cargoCodes = array_map(
-            static fn (array $cargo): int => (int) $cargo['id'],
+            static fn(array $cargo): int => (int)$cargo['id'],
             $data['cargos'],
         );
         $groupIdsByCargoCode = $this->cargoGroupRepository->resolveGroupIdsForCargoCodes($companyId, $cargoCodes);
         $feeAmount = 0.0;
 
         foreach ($data['cargos'] as $cargo) {
-            $cargoCode = (int) $cargo['id'];
-            $cargoValue = (float) $cargo['value'];
+            $cargoCode = (int)$cargo['id'];
+            $cargoValue = (float)$cargo['value'];
             $tariff = $this->insuranceTariffRepository->findApplicable(
                 $companyId,
                 $insuranceId,
@@ -83,9 +85,9 @@ class InsuranceService
 
     private function calculateFee(InsuranceTariff $tariff, float $cargoValue): float
     {
-        $fixedPremium = (float) ($tariff->fixed_premium ?? 0);
-        $premiumPercentage = (float) ($tariff->premium_percentage ?? 0);
-        $excessAmount = (float) ($tariff->excess_amount ?? 0);
+        $fixedPremium = (float)($tariff->fixed_premium ?? 0);
+        $premiumPercentage = (float)($tariff->premium_percentage ?? 0);
+        $excessAmount = (float)($tariff->excess_amount ?? 0);
         $chargeableValue = max($cargoValue - $excessAmount, 0);
 
         return round($fixedPremium + ($chargeableValue * $premiumPercentage / 100), 2);

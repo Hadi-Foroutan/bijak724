@@ -46,7 +46,7 @@ class ReferralNumberRepository implements ReferralNumberRepositoryInterface
         return ReferralNumber::sharedQueryForCompany($companyId)
             ->where('owner_company_id', $companyId)
             ->where('status', ReferralNumberStatus::Active->value)
-            ->when($ignoreId !== null, fn ($query) => $query->whereKeyNot($ignoreId))
+            ->when($ignoreId !== null, fn($query) => $query->whereKeyNot($ignoreId))
             ->lockForUpdate()
             ->first();
     }

@@ -17,8 +17,8 @@ enum SettingValueType: string
 
         return match ($this) {
             self::Boolean => in_array(strtolower($value), ['1', 'true', 'yes', 'on'], true),
-            self::Integer => (int) $value,
-            self::Decimal => (float) $value,
+            self::Integer => (int)$value,
+            self::Decimal => (float)$value,
             self::String => $value,
         };
     }
@@ -30,10 +30,10 @@ enum SettingValueType: string
         }
 
         return match ($this) {
-            self::Boolean => (bool) $value ? '1' : '0',
-            self::Integer => (string) ((int) $value),
-            self::Decimal => (string) ((float) $value),
-            self::String => (string) $value,
+            self::Boolean => (bool)$value ? '1' : '0',
+            self::Integer => (string)((int)$value),
+            self::Decimal => (string)((float)$value),
+            self::String => (string)$value,
         };
     }
 

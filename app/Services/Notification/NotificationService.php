@@ -8,7 +8,9 @@ use App\Interfaces\NotificationRepositoryInterface;
 
 class NotificationService
 {
-    public function __construct(protected NotificationRepositoryInterface $notificationRepository) {}
+    public function __construct(protected NotificationRepositoryInterface $notificationRepository)
+    {
+    }
 
     public function index(array $filters): ServiceResult
     {

@@ -12,6 +12,6 @@ class NotFoundHttpException extends Exception
 {
     public function render(Request $request): JsonResponse
     {
-        return ResponseHandler::error(__('public.not_found', ['attribute' => 'صفحه مورد نظر']),status: Response::HTTP_NOT_FOUND);
+        return ResponseHandler::error(__('public.not_found', ['attribute' => 'صفحه مورد نظر']), status: Response::HTTP_NOT_FOUND);
     }
 }

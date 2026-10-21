@@ -18,7 +18,7 @@ class InsuranceResource extends JsonResource
             'id' => $this->id,
             'company_id' => $this->company_id,
             'insurance_company_id' => $this->insurance_company_id,
-            'insurance_company' => $this->whenLoaded('insuranceCompany', fn (): array => [
+            'insurance_company' => $this->whenLoaded('insuranceCompany', fn(): array => [
                 'id' => $this->insuranceCompany->id,
                 'name' => $this->insuranceCompany->name,
             ]),
@@ -45,7 +45,7 @@ class InsuranceResource extends JsonResource
     {
         $fullName = trim(implode(' ', array_filter(
             [$this->representative_first_name, $this->representative_last_name],
-            fn (?string $name): bool => filled($name),
+            fn(?string $name): bool => filled($name),
         )));
 
         return $fullName === '' ? null : $fullName;

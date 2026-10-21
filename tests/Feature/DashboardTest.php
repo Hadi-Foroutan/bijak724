@@ -194,7 +194,7 @@ test('it returns issued waybill totals for the current and previous five months'
 });
 
 test('it returns the five cargos used in the most issued waybills', function () {
-    $cargos = collect(range(1, 6))->map(fn (int $number): Cargo => Cargo::query()->create([
+    $cargos = collect(range(1, 6))->map(fn(int $number): Cargo => Cargo::query()->create([
         'name' => "محموله {$number}",
         'code' => 1200000 + $number,
     ]));
@@ -227,7 +227,7 @@ test('it returns the five cargos used in the most issued waybills', function () 
 
 test('it returns the ten primary drivers with the most issued waybills', function () {
     $drivers = collect(range(1, 11))->map(
-        fn (int $number) => createDashboardDriver($this, $number),
+        fn(int $number) => createDashboardDriver($this, $number),
     );
 
     foreach ($drivers as $driver) {
@@ -287,9 +287,9 @@ function insertDashboardWaybillCargo(Company $company, int $waybillId, int $carg
 function createDashboardDriver(object $test, int $number): CompanyDriver
 {
     return app(DriverRepositoryInterface::class)->create($test->company->id, [
-        'national_code' => str_pad((string) $number, 10, '0', STR_PAD_LEFT),
+        'national_code' => str_pad((string)$number, 10, '0', STR_PAD_LEFT),
         'first_name' => 'راننده',
-        'last_name' => (string) $number,
+        'last_name' => (string)$number,
         'father_name' => 'پدر',
         'license_number' => "LICENSE-{$number}",
         'license_type' => $test->driverLicenseType->id,

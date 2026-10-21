@@ -31,10 +31,12 @@ class UserService
     ];
 
     public function __construct(
-        protected UserInterface $userRepository,
-        protected RoleInterface $roleRepository,
+        protected UserInterface     $userRepository,
+        protected RoleInterface     $roleRepository,
         protected UserImageUploader $imageUploader,
-    ) {}
+    )
+    {
+    }
 
     public function all(array $params): ServiceResult
     {
@@ -51,7 +53,7 @@ class UserService
         $images = $this->pullImages($data);
         $role = $this->roleRepository->findById($data['role_id']);
 
-        if (! $role) {
+        if (!$role) {
             return ServiceResult::error(
                 __('public.not_found', ['attribute' => 'نقش'])
             );
@@ -62,7 +64,7 @@ class UserService
             RoleEnum::SUPERADMIN->value,
         ], true);
 
-        if (! $isAdmin && empty($data['company_id'])) {
+        if (!$isAdmin && empty($data['company_id'])) {
             return ServiceResult::error(
                 __('validation.required', [
                     'attribute' => 'شرکت',
@@ -86,7 +88,7 @@ class UserService
             $user = DB::transaction(function () use ($data, $images, $role, &$uploadedPaths): ?User {
                 $user = $this->userRepository->store($data);
 
-                if (! $user) {
+                if (!$user) {
                     return null;
                 }
 
@@ -117,9 +119,9 @@ class UserService
         $roleId = $data['role_id'] ?? null;
         $role = $roleId === null
             ? $user->roles()->first()
-            : $this->roleRepository->findById((int) $roleId);
+            : $this->roleRepository->findById((int)$roleId);
 
-        if (! $role) {
+        if (!$role) {
             return ServiceResult::error(
                 __('public.not_found', ['attribute' => 'نقش']),
                 Response::HTTP_NOT_FOUND
@@ -135,7 +137,7 @@ class UserService
             true
         );
 
-        if (! $isAdmin && empty($data['company_id'] ?? $user->company_id)) {
+        if (!$isAdmin && empty($data['company_id'] ?? $user->company_id)) {
             return ServiceResult::error(
                 __('validation.required', ['attribute' => 'شرکت']),
                 Response::HTTP_UNPROCESSABLE_ENTITY
@@ -147,15 +149,15 @@ class UserService
         }
 
         if (array_key_exists('company_id', $data)
-            && (int) $data['company_id'] !== (int) $user->company_id
-            && ! array_key_exists('parent_id', $data)) {
+            && (int)$data['company_id'] !== (int)$user->company_id
+            && !array_key_exists('parent_id', $data)) {
             $data['parent_id'] = null;
         }
 
         $this->validateParent($data, $user);
 
         $currentPaths = collect(array_keys(self::IMAGE_FIELDS))
-            ->mapWithKeys(fn (string $field): array => [$field => $user->{$field}])
+            ->mapWithKeys(fn(string $field): array => [$field => $user->{$field}])
             ->all();
         $uploadedPaths = [];
 
@@ -163,11 +165,11 @@ class UserService
             $shouldRemove = false;
 
             foreach ($definition['delete_flags'] as $deleteFlag) {
-                $shouldRemove = $shouldRemove || (bool) ($data[$deleteFlag] ?? false);
+                $shouldRemove = $shouldRemove || (bool)($data[$deleteFlag] ?? false);
                 unset($data[$deleteFlag]);
             }
 
-            if ($shouldRemove && ! isset($images[$field])) {
+            if ($shouldRemove && !isset($images[$field])) {
                 $data[$field] = null;
             }
         }
@@ -210,7 +212,7 @@ class UserService
     {
         $user ??= auth()->user();
         $imagePaths = collect(array_keys(self::IMAGE_FIELDS))
-            ->map(fn (string $field): ?string => $user->{$field})
+            ->map(fn(string $field): ?string => $user->{$field})
             ->all();
 
         DB::transaction(function () use ($user): void {
@@ -223,7 +225,7 @@ class UserService
     }
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param array<string, mixed> $data
      * @return array<string, UploadedFile>
      */
     private function pullImages(array &$data): array
@@ -243,8 +245,8 @@ class UserService
     }
 
     /**
-     * @param  array<string, UploadedFile>  $images
-     * @param  array<int, string>  $uploadedPaths
+     * @param array<string, UploadedFile> $images
+     * @param array<int, string> $uploadedPaths
      * @return array<string, string>
      */
     private function uploadImages(array $images, int $userId, array &$uploadedPaths): array
@@ -275,7 +277,7 @@ class UserService
     /** @param array<string, mixed> $data */
     private function validateParent(array $data, ?User $user = null): void
     {
-        if (! array_key_exists('parent_id', $data) || $data['parent_id'] === null) {
+        if (!array_key_exists('parent_id', $data) || $data['parent_id'] === null) {
             return;
         }
 
@@ -283,7 +285,7 @@ class UserService
         $parent = $companyId === null
             ? null
             : User::query()
-                ->whereKey((int) $data['parent_id'])
+                ->whereKey((int)$data['parent_id'])
                 ->where('company_id', $companyId)
                 ->first();
 
@@ -304,12 +306,12 @@ class UserService
         $candidate = $parent;
 
         while ($candidate !== null) {
-            if ((int) $candidate->id === (int) $user->id
-                || in_array((int) $candidate->id, $visitedUserIds, true)) {
+            if ((int)$candidate->id === (int)$user->id
+                || in_array((int)$candidate->id, $visitedUserIds, true)) {
                 return true;
             }
 
-            $visitedUserIds[] = (int) $candidate->id;
+            $visitedUserIds[] = (int)$candidate->id;
             $candidate = $candidate->parent_id === null
                 ? null
                 : User::withTrashed()->find($candidate->parent_id);

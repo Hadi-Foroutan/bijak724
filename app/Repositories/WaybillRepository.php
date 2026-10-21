@@ -14,7 +14,9 @@ class WaybillRepository implements WaybillRepositoryInterface
 {
     public function __construct(
         protected CompanyWaybillRepositoryInterface $companyWaybillRepository,
-    ) {}
+    )
+    {
+    }
 
     public function search(array $filters): Collection|LengthAwarePaginator
     {
@@ -52,7 +54,7 @@ class WaybillRepository implements WaybillRepositoryInterface
     }
 
     /**
-     * @param  array<string, mixed>  $filters
+     * @param array<string, mixed> $filters
      * @return array{0: array<string, mixed>, 1: array<string, mixed>}
      */
     private function prepareFilters(array $filters): array
@@ -69,7 +71,7 @@ class WaybillRepository implements WaybillRepositoryInterface
         }
 
         if (isset($filters['status'])) {
-            $status = WaybillStatus::tryFrom((string) $filters['status']);
+            $status = WaybillStatus::tryFrom((string)$filters['status']);
             $dynamicFilters['eq-status'] = $status?->value ?? '__invalid_status__';
         }
 
@@ -88,11 +90,11 @@ class WaybillRepository implements WaybillRepositoryInterface
         unset($sharedFilters['company_name']);
 
         if (isset($filters['created_at_from'])) {
-            $sharedFilters['min-created_at'] = $filters['created_at_from'].' 00:00:00';
+            $sharedFilters['min-created_at'] = $filters['created_at_from'] . ' 00:00:00';
         }
 
         if (isset($filters['created_at_to'])) {
-            $sharedFilters['max-created_at'] = $filters['created_at_to'].' 23:59:59';
+            $sharedFilters['max-created_at'] = $filters['created_at_to'] . ' 23:59:59';
         }
 
         unset($sharedFilters['created_at_from'], $sharedFilters['created_at_to']);
@@ -122,7 +124,7 @@ class WaybillRepository implements WaybillRepositoryInterface
         $query->where(function (Builder $query) use ($companyIds, $dynamicFilters): void {
             foreach ($companyIds as $companyId) {
                 $waybillIds = $this->companyWaybillRepository
-                    ->query((int) $companyId)
+                    ->query((int)$companyId)
                     ->advancedSearch($dynamicFilters)
                     ->reorder()
                     ->select('id');
@@ -146,7 +148,7 @@ class WaybillRepository implements WaybillRepositoryInterface
             ->groupBy('company_id')
             ->each(function (Collection $indexes, int|string $companyId): void {
                 $companyWaybills = $this->companyWaybillRepository
-                    ->query((int) $companyId)
+                    ->query((int)$companyId)
                     ->with('creator')
                     ->whereKey($indexes->pluck('waybill_id'))
                     ->get()

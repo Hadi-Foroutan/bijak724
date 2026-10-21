@@ -18,7 +18,7 @@ class CompanySettingsSeeder extends Seeder
         Company::query()
             ->select('id')
             ->eachById(
-                fn (Company $company) => $companySettingService->ensureDefaultsForCompany($company->id),
+                fn(Company $company) => $companySettingService->ensureDefaultsForCompany($company->id),
             );
     }
 }

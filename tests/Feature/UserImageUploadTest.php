@@ -63,8 +63,8 @@ test('admin uploads profile and signature images when creating a system user', f
 
     expect($user->profile_image)->toStartWith("users/{$user->id}/profile-images/")
         ->and($user->signature_image)->toStartWith("users/{$user->id}/signatures/")
-        ->and($response->json('data.profile_image_url'))->toContain('/storage/'.$user->profile_image)
-        ->and($response->json('data.signature_image_url'))->toContain('/storage/'.$user->signature_image);
+        ->and($response->json('data.profile_image_url'))->toContain('/storage/' . $user->profile_image)
+        ->and($response->json('data.signature_image_url'))->toContain('/storage/' . $user->signature_image);
     Storage::disk('public')->assertExists($user->profile_image);
     Storage::disk('public')->assertExists($user->signature_image);
 });
@@ -91,8 +91,8 @@ test('company uploads and replaces profile and signature images for its user', f
 
     expect($user->profile_image)->not->toBe($firstProfilePath)
         ->and($user->signature_image)->not->toBe($firstSignaturePath)
-        ->and($updateResponse->json('data.profile_image_url'))->toContain('/storage/'.$user->profile_image)
-        ->and($updateResponse->json('data.signature_image_url'))->toContain('/storage/'.$user->signature_image);
+        ->and($updateResponse->json('data.profile_image_url'))->toContain('/storage/' . $user->profile_image)
+        ->and($updateResponse->json('data.signature_image_url'))->toContain('/storage/' . $user->signature_image);
     Storage::disk('public')->assertMissing($firstProfilePath);
     Storage::disk('public')->assertMissing($firstSignaturePath);
     Storage::disk('public')->assertExists($user->profile_image);
@@ -181,7 +181,7 @@ function userUploadImage(string $name): UploadedFile
 {
     return UploadedFile::fake()->createWithContent(
         $name,
-        (string) base64_decode(
+        (string)base64_decode(
             'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z1pAAAAAASUVORK5CYII=',
             true,
         ),

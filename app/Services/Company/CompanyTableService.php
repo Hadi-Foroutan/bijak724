@@ -19,9 +19,11 @@ class CompanyTableService
     private const SYSTEM_COLUMNS = ['id', 'owner_company_id', 'created_at', 'updated_at'];
 
     public function __construct(
-        protected CompanyTableRegistry $tableRegistry,
+        protected CompanyTableRegistry     $tableRegistry,
         protected CompanyDataOwnerResolver $companyDataOwnerResolver,
-    ) {}
+    )
+    {
+    }
 
     public function sync(int $companyId): void
     {
@@ -44,13 +46,13 @@ class CompanyTableService
         $companyId = $this->companyDataOwnerResolver->resolveId($companyId);
         $prefix = "company_{$companyId}_";
         $configuredTables = array_map(
-            fn (string $tableKey): string => $this->tableRegistry->tableName($companyId, $tableKey),
+            fn(string $tableKey): string => $this->tableRegistry->tableName($companyId, $tableKey),
             $this->tableRegistry->tableKeys(),
         );
 
         $removedTables = array_values(array_filter(
             Schema::getTableListing(Schema::getCurrentSchemaListing(), false),
-            fn (string $table): bool => str_starts_with($table, $prefix) && ! in_array($table, $configuredTables, true),
+            fn(string $table): bool => str_starts_with($table, $prefix) && !in_array($table, $configuredTables, true),
         ));
 
         if ($removedTables === []) {
@@ -221,8 +223,8 @@ class CompanyTableService
     {
         if (
             $tableKey !== 'waybills'
-            || ! Schema::hasColumn($tableName, 'status')
-            || ! Schema::hasColumn($tableName, 'is_incomplete')
+            || !Schema::hasColumn($tableName, 'status')
+            || !Schema::hasColumn($tableName, 'is_incomplete')
         ) {
             return;
         }
@@ -247,7 +249,7 @@ class CompanyTableService
      * Add configured columns that are missing and alter existing ones whose
      * type, nullability or default no longer match the configuration.
      *
-     * @param  list<array<string, mixed>>  $columns
+     * @param list<array<string, mixed>> $columns
      */
     private function syncColumns(string $tableName, array $columns, int $companyId): void
     {
@@ -279,7 +281,7 @@ class CompanyTableService
 
         $this->replaceIncompatibleValues($tableName, $column, $definition);
 
-        if (! $definition->nullable && $definition->default !== null) {
+        if (!$definition->nullable && $definition->default !== null) {
             DB::table($tableName)
                 ->whereNull($column['name'])
                 ->update([$column['name'] => $definition->default]);
@@ -299,7 +301,7 @@ class CompanyTableService
      * would make the ALTER fail, so they are replaced with the column default,
      * or null. When the column allows neither, the sync stops and names the rows.
      *
-     * @param  array<string, mixed>  $column
+     * @param array<string, mixed> $column
      */
     private function replaceIncompatibleValues(string $tableName, array $column, ColumnDefinition $definition): void
     {
@@ -317,7 +319,7 @@ class CompanyTableService
             ->whereNotNull($name)
             ->lazyById(1000)
             ->each(function (object $row) use ($name, $isValid, &$invalidValues): void {
-                if (! $isValid((string) $row->{$name})) {
+                if (!$isValid((string)$row->{$name})) {
                     $invalidValues[$row->id] = $row->{$name};
                 }
             });
@@ -328,16 +330,16 @@ class CompanyTableService
 
         $replacement = $definition->default;
 
-        if ($replacement === null && ! $definition->nullable) {
+        if ($replacement === null && !$definition->nullable) {
             $rows = collect($invalidValues)
                 ->take(10)
-                ->map(fn (mixed $value, int $id): string => "id {$id}: '{$value}'")
+                ->map(fn(mixed $value, int $id): string => "id {$id}: '{$value}'")
                 ->implode(', ');
 
             throw new RuntimeException(
-                "Cannot convert [{$tableName}.{$name}] to [{$column['type']}]: ".count($invalidValues)
-                ." row(s) hold values that do not fit ({$rows}) and the column is neither nullable nor has a default."
-                .' Fix these values and run the sync again.'
+                "Cannot convert [{$tableName}.{$name}] to [{$column['type']}]: " . count($invalidValues)
+                . " row(s) hold values that do not fit ({$rows}) and the column is neither nullable nor has a default."
+                . ' Fix these values and run the sync again.'
             );
         }
 
@@ -355,39 +357,39 @@ class CompanyTableService
     }
 
     /**
-     * @param  array<string, mixed>  $column
+     * @param array<string, mixed> $column
      * @return (callable(string): bool)|null
      */
     private function columnValueValidator(array $column): ?callable
     {
-        $isUnsignedInteger = fn (string $value, int $max = PHP_INT_MAX): bool => preg_match('/^\d+$/', $value) === 1
-            && (int) $value <= $max;
+        $isUnsignedInteger = fn(string $value, int $max = PHP_INT_MAX): bool => preg_match('/^\d+$/', $value) === 1
+            && (int)$value <= $max;
 
         return match ($column['type']) {
-            'integer' => fn (string $value): bool => preg_match('/^-?\d+$/', $value) === 1
-                && (int) $value >= -2147483648 && (int) $value <= 2147483647,
-            'boolean' => fn (string $value): bool => preg_match('/^-?\d+$/', $value) === 1
-                && (int) $value >= -128 && (int) $value <= 127,
-            'unsignedSmallInteger' => fn (string $value): bool => $isUnsignedInteger($value, 65535),
-            'unsignedInteger' => fn (string $value): bool => $isUnsignedInteger($value, 4294967295),
-            'unsignedBigInteger' => fn (string $value): bool => $isUnsignedInteger($value),
-            'decimal' => fn (string $value): bool => is_numeric($value),
-            'date', 'dateTime' => fn (string $value): bool => preg_match('/^\d{4}-\d{2}-\d{2}([ T]\d{2}:\d{2}(:\d{2}(\.\d+)?)?)?$/', $value) === 1,
-            'enum' => fn (string $value): bool => in_array($value, array_map('strval', $column['values']), true),
+            'integer' => fn(string $value): bool => preg_match('/^-?\d+$/', $value) === 1
+                && (int)$value >= -2147483648 && (int)$value <= 2147483647,
+            'boolean' => fn(string $value): bool => preg_match('/^-?\d+$/', $value) === 1
+                && (int)$value >= -128 && (int)$value <= 127,
+            'unsignedSmallInteger' => fn(string $value): bool => $isUnsignedInteger($value, 65535),
+            'unsignedInteger' => fn(string $value): bool => $isUnsignedInteger($value, 4294967295),
+            'unsignedBigInteger' => fn(string $value): bool => $isUnsignedInteger($value),
+            'decimal' => fn(string $value): bool => is_numeric($value),
+            'date', 'dateTime' => fn(string $value): bool => preg_match('/^\d{4}-\d{2}-\d{2}([ T]\d{2}:\d{2}(:\d{2}(\.\d+)?)?)?$/', $value) === 1,
+            'enum' => fn(string $value): bool => in_array($value, array_map('strval', $column['values']), true),
             default => null,
         };
     }
 
     /**
-     * @param  array<string, mixed>  $column
-     * @param  array<string, mixed>  $currentColumn
+     * @param array<string, mixed> $column
+     * @param array<string, mixed> $currentColumn
      */
     private function columnMatches(string $tableName, array $column, array $currentColumn): bool
     {
         $expected = $this->columnDefinition(new Blueprint(Schema::getConnection(), $tableName), $column);
 
         return $this->normalizeColumnType($this->expectedColumnType($expected)) === $this->normalizeColumnType($currentColumn['type'])
-            && (bool) $expected->nullable === (bool) $currentColumn['nullable']
+            && (bool)$expected->nullable === (bool)$currentColumn['nullable']
             && $this->columnDefaultMatches($expected->default, $currentColumn['default']);
     }
 
@@ -397,10 +399,10 @@ class CompanyTableService
 
         // Ask the schema grammar for the type it would generate, so the
         // comparison follows exactly what addColumn() creates on this driver.
-        $type = (fn (Fluent $column): string => $this->getType($column))
+        $type = (fn(Fluent $column): string => $this->getType($column))
             ->call($connection->getSchemaGrammar(), $definition);
 
-        if (! $connection instanceof MySqlConnection) {
+        if (!$connection instanceof MySqlConnection) {
             return $type;
         }
 
@@ -426,9 +428,9 @@ class CompanyTableService
     {
         $expected = match (true) {
             $expected === null => null,
-            is_bool($expected) => (string) (int) $expected,
-            $expected instanceof BackedEnum => (string) $expected->value,
-            default => (string) $expected,
+            is_bool($expected) => (string)(int)$expected,
+            $expected instanceof BackedEnum => (string)$expected->value,
+            default => (string)$expected,
         };
 
         if ($current !== null && strtoupper($current) === 'NULL') {
@@ -438,7 +440,7 @@ class CompanyTableService
         }
 
         if (is_numeric($expected) && is_numeric($current)) {
-            return (float) $expected === (float) $current;
+            return (float)$expected === (float)$current;
         }
 
         return $expected === $current;
@@ -459,8 +461,8 @@ class CompanyTableService
         $this->dropForeignKeys($tableName, $removedColumns);
 
         $indexes = collect(Schema::getIndexes($tableName))
-            ->reject(fn (array $index): bool => $index['primary'])
-            ->filter(fn (array $index): bool => array_intersect($index['columns'], $removedColumns) !== []);
+            ->reject(fn(array $index): bool => $index['primary'])
+            ->filter(fn(array $index): bool => array_intersect($index['columns'], $removedColumns) !== []);
 
         foreach ($indexes as $index) {
             Schema::table($tableName, function (Blueprint $table) use ($index): void {
@@ -477,7 +479,7 @@ class CompanyTableService
     private function dropForeignKeys(string $tableName, array $columnNames): void
     {
         $foreignKeys = collect(Schema::getForeignKeys($tableName))
-            ->filter(fn (array $foreignKey): bool => array_intersect($foreignKey['columns'], $columnNames) !== []);
+            ->filter(fn(array $foreignKey): bool => array_intersect($foreignKey['columns'], $columnNames) !== []);
 
         foreach ($foreignKeys as $foreignKey) {
             Schema::table($tableName, function (Blueprint $table) use ($foreignKey): void {
@@ -503,7 +505,7 @@ class CompanyTableService
      * Keep the single-column "index" / "unique" indexes created by addColumn()
      * in line with the configuration.
      *
-     * @param  list<array<string, mixed>>  $columns
+     * @param list<array<string, mixed>> $columns
      */
     private function syncColumnIndexes(string $tableName, array $columns): void
     {
@@ -512,20 +514,20 @@ class CompanyTableService
         foreach ($columns as $column) {
             $uniqueIndex = strtolower("{$tableName}_{$column['name']}_unique");
             $plainIndex = strtolower("{$tableName}_{$column['name']}_index");
-            $wantsUnique = (bool) ($column['unique'] ?? false);
-            $wantsIndex = ! $wantsUnique && (bool) ($column['index'] ?? false);
+            $wantsUnique = (bool)($column['unique'] ?? false);
+            $wantsIndex = !$wantsUnique && (bool)($column['index'] ?? false);
             $hasUnique = in_array($uniqueIndex, $indexNames, true);
             $hasIndex = in_array($plainIndex, $indexNames, true);
 
             // A foreign key column must keep an index, so its last one is never dropped.
-            $mayDropIndex = $wantsUnique || $wantsIndex || ! isset($column['foreign']);
+            $mayDropIndex = $wantsUnique || $wantsIndex || !isset($column['foreign']);
 
-            $addUnique = $wantsUnique && ! $hasUnique;
-            $addIndex = $wantsIndex && ! $hasIndex;
-            $dropUnique = $hasUnique && ! $wantsUnique && $mayDropIndex;
-            $dropIndex = $hasIndex && ! $wantsIndex && $mayDropIndex;
+            $addUnique = $wantsUnique && !$hasUnique;
+            $addIndex = $wantsIndex && !$hasIndex;
+            $dropUnique = $hasUnique && !$wantsUnique && $mayDropIndex;
+            $dropIndex = $hasIndex && !$wantsIndex && $mayDropIndex;
 
-            if (! $addUnique && ! $addIndex && ! $dropUnique && ! $dropIndex) {
+            if (!$addUnique && !$addIndex && !$dropUnique && !$dropIndex) {
                 continue;
             }
 
@@ -553,7 +555,7 @@ class CompanyTableService
 
     private function ensureOwnerCompanyColumn(string $tableName, int $companyId): void
     {
-        if (! Schema::hasColumn($tableName, 'owner_company_id')) {
+        if (!Schema::hasColumn($tableName, 'owner_company_id')) {
             Schema::table($tableName, function (Blueprint $table): void {
                 $table->unsignedBigInteger('owner_company_id')->nullable()->after('id')->index();
             });
@@ -624,7 +626,7 @@ class CompanyTableService
         foreach ($columns as $column) {
             $existingForeignKey = $foreignKeysByColumn->get($column['name']);
 
-            if (! isset($column['foreign'])) {
+            if (!isset($column['foreign'])) {
                 if ($existingForeignKey !== null) {
                     Schema::table($tableName, function (Blueprint $table) use ($existingForeignKey): void {
                         $this->dropForeignKey($table, $existingForeignKey);
@@ -658,9 +660,10 @@ class CompanyTableService
 
     private function clearOrphanedNullableForeignKeyValues(
         string $tableName,
-        array $column,
-        int $companyId,
-    ): void {
+        array  $column,
+        int    $companyId,
+    ): void
+    {
         if (($column['foreign']['on_delete'] ?? 'restrict') !== 'null') {
             return;
         }
@@ -702,7 +705,7 @@ class CompanyTableService
             'null' => 'set null',
             default => 'restrict',
         };
-        $currentAction = strtolower(str_replace('_', ' ', (string) ($foreignKey['on_delete'] ?? 'restrict')));
+        $currentAction = strtolower(str_replace('_', ' ', (string)($foreignKey['on_delete'] ?? 'restrict')));
 
         return $currentAction === $configuredAction
             || ($configuredAction === 'restrict' && $currentAction === 'no action');

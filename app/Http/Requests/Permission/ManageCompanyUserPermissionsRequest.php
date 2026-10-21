@@ -16,14 +16,14 @@ class ManageCompanyUserPermissionsRequest extends BaseRequest
     {
         $actor = $this->user();
 
-        if (! $actor instanceof User) {
+        if (!$actor instanceof User) {
             return false;
         }
 
         $isCompanyManager = $actor->hasRole(RoleEnum::COMPANY_MANAGER->value);
         $isCompanySupport = app(CompanySupportTokenService::class)->isSupportToken($actor);
 
-        if (! $isCompanyManager && ! $isCompanySupport) {
+        if (!$isCompanyManager && !$isCompanySupport) {
             return false;
         }
 

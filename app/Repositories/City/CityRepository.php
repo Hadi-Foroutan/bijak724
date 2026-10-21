@@ -13,7 +13,7 @@ class CityRepository implements CityRepositoryInterface
     {
         return City::searchRecords(
             $params,
-            fn ($query) => $query->with('state')
+            fn($query) => $query->with('state')
         );
     }
 

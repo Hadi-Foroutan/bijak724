@@ -36,7 +36,7 @@ class StoreTransportContractRequest extends BaseRequest
             'default_free' => ['required', 'boolean'],
             'default_unknown' => ['required', 'boolean'],
             'description' => ['nullable', 'string'],
-            'items' => ['required', 'array', 'size:'.count(TransportContractItemName::cases()), new BaseFreightTypesDisabled],
+            'items' => ['required', 'array', 'size:' . count(TransportContractItemName::cases()), new BaseFreightTypesDisabled],
             ...$this->itemRules(),
         ];
     }

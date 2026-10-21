@@ -23,15 +23,16 @@ abstract class Controller
     }
 
     /**
-     * @param  Collection<int, Model>|LengthAwarePaginator  $records
-     * @param  class-string<JsonResource>  $resourceClass
+     * @param Collection<int, Model>|LengthAwarePaginator $records
+     * @param class-string<JsonResource> $resourceClass
      */
     protected function resourceCollection(
         Collection|LengthAwarePaginator $records,
-        string $resourceClass,
-        Request $request,
-    ): Collection|LengthAwarePaginator {
-        $transform = fn (Model $model): array => $resourceClass::make($model)->resolve($request);
+        string                          $resourceClass,
+        Request                         $request,
+    ): Collection|LengthAwarePaginator
+    {
+        $transform = fn(Model $model): array => $resourceClass::make($model)->resolve($request);
 
         return $records instanceof LengthAwarePaginator
             ? $records->through($transform)

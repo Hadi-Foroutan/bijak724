@@ -142,7 +142,7 @@ test('it updates and deletes a fleet', function () {
 test('it finds a fleet by its complete plate only inside the current company', function () {
     $this->postJson('/api/user/fleets', fleetPayload($this))->assertCreated();
 
-    $this->getJson('/api/user/fleets/inquiry?'.http_build_query(fleetPlate()))
+    $this->getJson('/api/user/fleets/inquiry?' . http_build_query(fleetPlate()))
         ->assertSuccessful()
         ->assertJsonPath('data.smart_card_number', '1234567890')
         ->assertJsonPath('data.fleet_type.tip_code', 1001);
@@ -151,10 +151,10 @@ test('it finds a fleet by its complete plate only inside the current company', f
         ->assertSuccessful()
         ->assertJsonPath('data.plate.first_number', '12');
 
-    $this->getJson('/api/user/fleets/inquiry?'.http_build_query([
-        ...fleetPlate(),
-        'plate_fourth_number' => '68',
-    ]))->assertNotFound();
+    $this->getJson('/api/user/fleets/inquiry?' . http_build_query([
+            ...fleetPlate(),
+            'plate_fourth_number' => '68',
+        ]))->assertNotFound();
 
     $otherCompany = Company::query()->forceCreate([
         'parent_type' => 'original',
@@ -173,7 +173,7 @@ test('it finds a fleet by its complete plate only inside the current company', f
     app('auth')->forgetGuards();
 
     $this->withToken($otherToken)
-        ->getJson('/api/user/fleets/inquiry?'.http_build_query(fleetPlate()))
+        ->getJson('/api/user/fleets/inquiry?' . http_build_query(fleetPlate()))
         ->assertNotFound();
 });
 
@@ -198,7 +198,7 @@ test('it reports an inactive fleet during plate inquiry', function () {
         'status' => StatusEnum::INACTIVE->value,
     ])->assertCreated();
 
-    $this->getJson('/api/user/fleets/inquiry?'.http_build_query(fleetPlate()))
+    $this->getJson('/api/user/fleets/inquiry?' . http_build_query(fleetPlate()))
         ->assertUnprocessable()
         ->assertJsonPath('message', 'ناوگان غیرفعال است.')
         ->assertJsonPath('errors.status.0', 'ناوگان غیرفعال است.');
@@ -216,10 +216,10 @@ test('it accepts up to three characters in the plate letter for create update an
         ->assertJsonPath('data.plate.second_letter', 'الف')
         ->json('data.id');
 
-    $this->getJson('/api/user/fleets/inquiry?'.http_build_query([
-        ...fleetPlate(),
-        'plate_second_letter' => 'الف',
-    ]))->assertSuccessful()->assertJsonPath('data.id', $fleetId);
+    $this->getJson('/api/user/fleets/inquiry?' . http_build_query([
+            ...fleetPlate(),
+            'plate_second_letter' => 'الف',
+        ]))->assertSuccessful()->assertJsonPath('data.id', $fleetId);
 
     $this->patchJson("/api/user/fleets/{$fleetId}", [
         'plate_second_letter' => 'ابج',

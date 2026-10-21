@@ -72,7 +72,7 @@ class WaybillCargoRepository implements WaybillCargoRepositoryInterface
             ->whereIn('code', array_column($cargos, 'packaging_id'))
             ->pluck('id', 'code');
 
-        return array_map(static fn (array $cargo): array => [
+        return array_map(static fn(array $cargo): array => [
             ...$cargo,
             'cargo_id' => isset($cargo['cargo_id']) ? $cargoIdsByCode[$cargo['cargo_id']] : null,
             'packaging_id' => isset($cargo['packaging_id']) ? $packagingIdsByCode[$cargo['packaging_id']] : null,
@@ -84,10 +84,10 @@ class WaybillCargoRepository implements WaybillCargoRepositoryInterface
         $currentCargos = WaybillCargo::queryForCompany($companyId)
             ->where('waybill_id', $waybill->getKey())
             ->get()
-            ->map(fn (WaybillCargo $cargo): array => $this->normalize($cargo->only(self::FIELDS)))
+            ->map(fn(WaybillCargo $cargo): array => $this->normalize($cargo->only(self::FIELDS)))
             ->values()
             ->all();
-        $newCargos = array_map(fn (array $cargo): array => $this->normalize($cargo), $cargos);
+        $newCargos = array_map(fn(array $cargo): array => $this->normalize($cargo), $cargos);
 
         return $currentCargos === $newCargos;
     }
@@ -100,14 +100,14 @@ class WaybillCargoRepository implements WaybillCargoRepositoryInterface
         );
 
         foreach (['cargo_id', 'packaging_id', 'product_owner_id', 'value', 'quantity'] as $field) {
-            $normalized[$field] = $normalized[$field] === null ? null : (int) $normalized[$field];
+            $normalized[$field] = $normalized[$field] === null ? null : (int)$normalized[$field];
         }
 
         $normalized['origin_weight'] = $normalized['origin_weight'] === null
             ? null
-            : (float) $normalized['origin_weight'];
-        $normalized['is_traffic'] = (bool) $normalized['is_traffic'];
-        $normalized['is_returned'] = (bool) $normalized['is_returned'];
+            : (float)$normalized['origin_weight'];
+        $normalized['is_traffic'] = (bool)$normalized['is_traffic'];
+        $normalized['is_returned'] = (bool)$normalized['is_returned'];
 
         return $normalized;
     }

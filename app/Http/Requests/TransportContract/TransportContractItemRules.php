@@ -25,8 +25,8 @@ trait TransportContractItemRules
             'items.*.is_unknown' => ['required', 'boolean'],
             'items.*.charge_recipient' => ['required', 'boolean'],
             'items.*.primary_value' => Rule::forEach(
-                fn (mixed $value, string $attribute, mixed $data, mixed $item): array => is_array($item)
-                    && ($item['name'] ?? null) === TransportContractItemName::BaseFreight->value
+                fn(mixed $value, string $attribute, mixed $data, mixed $item): array => is_array($item)
+                && ($item['name'] ?? null) === TransportContractItemName::BaseFreight->value
                     ? ['nullable', 'numeric', 'min:0']
                     : ['nullable', 'numeric', 'between:0,100'],
             ),

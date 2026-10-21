@@ -16,7 +16,7 @@ class NotificationSeeder extends Seeder
     public function run(): void
     {
         $sender = User::query()
-            ->whereHas('roles', fn ($query) => $query->whereIn('name', [
+            ->whereHas('roles', fn($query) => $query->whereIn('name', [
                 RoleEnum::ADMIN->value,
                 RoleEnum::SUPERADMIN->value,
             ]))

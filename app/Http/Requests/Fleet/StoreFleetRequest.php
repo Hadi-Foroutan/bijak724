@@ -35,7 +35,7 @@ class StoreFleetRequest extends BaseRequest
             'plate_second_letter' => ['required', 'string', 'min:1', 'max:1'],
             'plate_third_number' => ['required', 'string', 'regex:/^\d{3}$/'],
             'plate_fourth_number' => ['required', 'string', 'regex:/^\d{2}$/'],
-            'manufacture_year' => ['nullable', 'integer', 'between:1300,'.(now()->year + 1)],
+            'manufacture_year' => ['nullable', 'integer', 'between:1300,' . (now()->year + 1)],
             'driver_license_type_id' => ['nullable', 'integer', Rule::exists(DriverLicenseType::class, 'id')],
             'owner_mobile' => ['nullable', 'string', 'regex:/^09\d{9}$/'],
             'loading_type_id' => ['nullable', 'integer', Rule::exists(LoadingType::class, 'id')],
@@ -71,7 +71,7 @@ class StoreFleetRequest extends BaseRequest
 
         foreach (self::DATE_FIELDS as $dateField) {
             if (array_key_exists($dateField, $this->all())
-                && ! $this->isFormattedDate($this->input($dateField))) {
+                && !$this->isFormattedDate($this->input($dateField))) {
                 $normalized[$dateField] = null;
             }
         }
@@ -87,7 +87,7 @@ class StoreFleetRequest extends BaseRequest
 
     private function isEmptyFormValue(mixed $value): bool
     {
-        if (! is_string($value)) {
+        if (!is_string($value)) {
             return false;
         }
 

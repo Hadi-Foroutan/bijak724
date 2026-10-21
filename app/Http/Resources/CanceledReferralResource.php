@@ -2,4 +2,6 @@
 
 namespace App\Http\Resources;
 
-class CanceledReferralResource extends CompanyDynamicResource {}
+class CanceledReferralResource extends CompanyDynamicResource
+{
+}

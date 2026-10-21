@@ -53,7 +53,7 @@ abstract class DynamicModel extends Model
                 array_values(array_unique([
                     ...$this->getSearchableFields(),
                     ...$columns
-                        ->filter(fn (array $column): bool => (bool) ($column['searchable'] ?? true))
+                        ->filter(fn(array $column): bool => (bool)($column['searchable'] ?? true))
                         ->pluck('name')
                         ->filter()
                         ->values()
@@ -62,7 +62,7 @@ abstract class DynamicModel extends Model
             )
             ->setGlobalSearchFields(
                 $columns
-                    ->filter(fn (array $column): bool => (bool) ($column['global_search'] ?? in_array(
+                    ->filter(fn(array $column): bool => (bool)($column['global_search'] ?? in_array(
                         Arr::get($column, 'type'),
                         ['string', 'text'],
                         true,
@@ -88,7 +88,7 @@ abstract class DynamicModel extends Model
         $model = $this->newInstanceForCompany($companyId);
         $query = $model->newQuery();
 
-        if (! app(CompanyDataOwnerResolver::class)->isDataOwner($companyId)) {
+        if (!app(CompanyDataOwnerResolver::class)->isDataOwner($companyId)) {
             $query->where($model->qualifyColumn('owner_company_id'), $companyId);
         }
 
@@ -123,10 +123,11 @@ abstract class DynamicModel extends Model
 
     /** @param array<string, mixed> $attributes */
     public static function createForCompany(
-        int $companyId,
+        int   $companyId,
         array $attributes,
-        bool $loadDefaultRelations = true,
-    ): static {
+        bool  $loadDefaultRelations = true,
+    ): static
+    {
         $model = static::modelForCompany($companyId)
             ->newQuery()
             ->create([...$attributes, 'owner_company_id' => $companyId]);
@@ -135,13 +136,14 @@ abstract class DynamicModel extends Model
     }
 
     /**
-     * @param  null|Closure(Builder): (Builder|void)  $queryCallback
+     * @param null|Closure(Builder): (Builder|void) $queryCallback
      */
     public static function findForCompanyOrFail(
-        int $companyId,
-        int $id,
+        int      $companyId,
+        int      $id,
         ?Closure $queryCallback = null,
-    ): static {
+    ): static
+    {
         $model = new static;
         $query = $model->newQueryForCompany($companyId)
             ->with($model->defaultRelations());
@@ -158,15 +160,16 @@ abstract class DynamicModel extends Model
     }
 
     /**
-     * @param  array<string, mixed>  $attributes
-     * @param  null|Closure(Builder): (Builder|void)  $queryCallback
+     * @param array<string, mixed> $attributes
+     * @param null|Closure(Builder): (Builder|void) $queryCallback
      */
     public static function updateForCompany(
-        int $companyId,
-        int $id,
-        array $attributes,
+        int      $companyId,
+        int      $id,
+        array    $attributes,
         ?Closure $queryCallback = null,
-    ): static {
+    ): static
+    {
         unset($attributes['owner_company_id']);
 
         $model = static::findForCompanyOrFail($companyId, $id, $queryCallback);
@@ -180,13 +183,14 @@ abstract class DynamicModel extends Model
     }
 
     /**
-     * @param  null|Closure(Builder): (Builder|void)  $queryCallback
+     * @param null|Closure(Builder): (Builder|void) $queryCallback
      */
     public static function deleteForCompany(
-        int $companyId,
-        int $id,
+        int      $companyId,
+        int      $id,
         ?Closure $queryCallback = null,
-    ): void {
+    ): void
+    {
         $query = static::queryForCompany($companyId);
 
         if ($queryCallback !== null) {
@@ -203,15 +207,16 @@ abstract class DynamicModel extends Model
     /**
      * Search records in the current company's dynamic table.
      *
-     * @param  array<string, mixed>  $filters
-     * @param  null|Closure(Builder): (Builder|void)  $queryCallback
+     * @param array<string, mixed> $filters
+     * @param null|Closure(Builder): (Builder|void) $queryCallback
      * @return Collection<int, static>|LengthAwarePaginator
      */
     public static function searchRecordsForCompany(
-        int $companyId,
-        array $filters,
+        int      $companyId,
+        array    $filters,
         ?Closure $queryCallback = null,
-    ): Collection|LengthAwarePaginator {
+    ): Collection|LengthAwarePaginator
+    {
         $model = new static;
         $query = $model->newQueryForCompany($companyId)
             ->with($model->defaultRelations())
@@ -287,7 +292,7 @@ abstract class DynamicModel extends Model
             throw new LogicException("Company ID cannot be resolved from table [{$this->getTable()}].");
         }
 
-        return (int) $matches[1];
+        return (int)$matches[1];
     }
 
     public function companyContextId(): int
@@ -296,18 +301,19 @@ abstract class DynamicModel extends Model
 
         return $ownerCompanyId === null
             ? ($this->companyContextId ?? $this->companyId())
-            : (int) $ownerCompanyId;
+            : (int)$ownerCompanyId;
     }
 
     /**
-     * @param  class-string<DynamicModel>  $related
+     * @param class-string<DynamicModel> $related
      */
     protected function belongsToCompany(
         string $related,
         string $foreignKey,
         string $ownerKey = 'id',
         string $relationName = '',
-    ): BelongsTo {
+    ): BelongsTo
+    {
         $instance = $this->newCompanyRelatedInstance($related);
 
         return $this->newBelongsTo(
@@ -320,13 +326,14 @@ abstract class DynamicModel extends Model
     }
 
     /**
-     * @param  class-string<DynamicModel>  $related
+     * @param class-string<DynamicModel> $related
      */
     protected function hasManyCompany(
         string $related,
         string $foreignKey,
         string $localKey = 'id',
-    ): HasMany {
+    ): HasMany
+    {
         $instance = $this->newCompanyRelatedInstance($related);
 
         return $this->newHasMany(
@@ -338,7 +345,7 @@ abstract class DynamicModel extends Model
     }
 
     /**
-     * @param  class-string<DynamicModel>  $related
+     * @param class-string<DynamicModel> $related
      */
     private function newCompanyRelatedInstance(string $related): DynamicModel
     {
@@ -353,7 +360,7 @@ abstract class DynamicModel extends Model
         $query = $instance->newQuery();
         $companyId = $this->companyContextId();
 
-        if (! app(CompanyDataOwnerResolver::class)->isDataOwner($companyId)) {
+        if (!app(CompanyDataOwnerResolver::class)->isDataOwner($companyId)) {
             $query->where($instance->qualifyColumn('owner_company_id'), $companyId);
         }
 
@@ -365,13 +372,13 @@ abstract class DynamicModel extends Model
     {
         $definition = config("company_tables.{$this->companyTableKey()}", []);
 
-        if (! is_array($definition)) {
+        if (!is_array($definition)) {
             throw new LogicException("Columns for company table [{$this->companyTableKey()}] must be an array.");
         }
 
         $columns = Arr::isList($definition) ? $definition : ($definition['columns'] ?? []);
 
-        if (! is_array($columns)) {
+        if (!is_array($columns)) {
             throw new LogicException("Columns for company table [{$this->companyTableKey()}] must be an array.");
         }
 

@@ -13,7 +13,9 @@ class DashboardService
 
     public function __construct(
         protected DashboardRepositoryInterface $dashboardRepository,
-    ) {}
+    )
+    {
+    }
 
     public function summary(int $companyId): ServiceResult
     {
@@ -23,7 +25,7 @@ class DashboardService
             Cache::remember(
                 $this->cacheKey($companyId, 'summary', $today->toDateString()),
                 $this->cacheTtl(),
-                fn (): array => $this->dashboardRepository->summary($companyId, $today),
+                fn(): array => $this->dashboardRepository->summary($companyId, $today),
             ),
         );
     }
@@ -91,7 +93,7 @@ class DashboardService
                                 return [
                                     'month' => $monthKey,
                                     'label' => $month->locale('fa')->translatedFormat('F Y'),
-                                    'count' => (int) $counts->get($monthKey, 0),
+                                    'count' => (int)$counts->get($monthKey, 0),
                                 ];
                             })
                             ->all(),
@@ -107,7 +109,7 @@ class DashboardService
             Cache::remember(
                 $this->cacheKey($companyId, 'top-cargos'),
                 $this->cacheTtl(),
-                fn (): array => [
+                fn(): array => [
                     'items' => $this->dashboardRepository->topCargos($companyId),
                 ],
             ),
@@ -120,7 +122,7 @@ class DashboardService
             Cache::remember(
                 $this->cacheKey($companyId, 'top-drivers'),
                 $this->cacheTtl(),
-                fn (): array => [
+                fn(): array => [
                     'items' => $this->dashboardRepository->topDrivers($companyId),
                 ],
             ),
@@ -140,6 +142,6 @@ class DashboardService
 
     private function cacheTtl(): int
     {
-        return max(1, (int) config('dashboard.cache_ttl_seconds', 7200));
+        return max(1, (int)config('dashboard.cache_ttl_seconds', 7200));
     }
 }

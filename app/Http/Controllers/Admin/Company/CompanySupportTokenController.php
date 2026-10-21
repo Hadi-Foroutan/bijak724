@@ -16,7 +16,9 @@ class CompanySupportTokenController extends Controller
 {
     public function __construct(
         protected AuthService $authService,
-    ) {}
+    )
+    {
+    }
 
     public function store(IssueCompanySupportTokenRequest $request, Company $company): JsonResponse
     {

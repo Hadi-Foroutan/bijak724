@@ -78,7 +78,7 @@ test('it stores replaces and deletes a driver profile image inside its company f
     $firstPath = DB::table($driverTable)->where('id', $driverId)->value('profile_image_path');
 
     expect($firstPath)->toStartWith("companies/{$this->company->id}/drivers/")
-        ->and($createResponse->json('data.profile_image_url'))->toContain('/storage/'.$firstPath);
+        ->and($createResponse->json('data.profile_image_url'))->toContain('/storage/' . $firstPath);
     Storage::disk('public')->assertExists($firstPath);
 
     $updateResponse = $this->post("/api/user/drivers/{$driverId}", [
@@ -89,7 +89,7 @@ test('it stores replaces and deletes a driver profile image inside its company f
     $secondPath = DB::table($driverTable)->where('id', $driverId)->value('profile_image_path');
 
     expect($secondPath)->not->toBe($firstPath)
-        ->and($updateResponse->json('data.profile_image_url'))->toContain('/storage/'.$secondPath);
+        ->and($updateResponse->json('data.profile_image_url'))->toContain('/storage/' . $secondPath);
     Storage::disk('public')->assertMissing($firstPath);
     Storage::disk('public')->assertExists($secondPath);
 
@@ -162,7 +162,7 @@ test('driver update keeps the original database exception and removes a newly up
         Mockery::mock(IssuedWaybillDeletionGuard::class),
     );
 
-    expect(fn () => $service->update($this->company->id, 15, [
+    expect(fn() => $service->update($this->company->id, 15, [
         'profile_image' => driverProfileImage('replacement.png'),
     ]))->toThrow(RuntimeException::class, 'database update failed');
 
@@ -219,7 +219,7 @@ function driverProfileImage(string $name): UploadedFile
 {
     return UploadedFile::fake()->createWithContent(
         $name,
-        (string) base64_decode(
+        (string)base64_decode(
             'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z1pAAAAAASUVORK5CYII=',
             true,
         ),

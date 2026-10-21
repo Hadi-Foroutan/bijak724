@@ -17,7 +17,7 @@ trait HasFullName
     protected function makeFullName(): ?string
     {
         $fullName = Str::squish(
-            (string) $this->getAttribute('first_name').' '.(string) $this->getAttribute('last_name'),
+            (string)$this->getAttribute('first_name') . ' ' . (string)$this->getAttribute('last_name'),
         );
 
         return $fullName === '' ? null : $fullName;

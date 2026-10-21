@@ -27,14 +27,14 @@ class UpdateCompanyRequest extends BaseRequest
                 'nullable',
                 'integer',
                 Rule::exists(Company::class, 'id')->where(
-                    fn ($query) => $query
+                    fn($query) => $query
                         ->where('parent_type', CompanyParentEnum::ORIGINAL->value)
                         ->whereNull('parent_id')
                         ->whereNull('deleted_at'),
                 ),
 
-                Rule::requiredIf(fn () => $this->isBranch() && $this->has('parent_type')),
-                Rule::prohibitedIf(fn () => ! $this->isBranch() && $this->has('parent_id')),
+                Rule::requiredIf(fn() => $this->isBranch() && $this->has('parent_type')),
+                Rule::prohibitedIf(fn() => !$this->isBranch() && $this->has('parent_id')),
             ],
 
             /*'code' => [
@@ -90,7 +90,7 @@ class UpdateCompanyRequest extends BaseRequest
         $type = $this->input('parent_type');
 
         // اگر ارسال نشده، مقدار فعلی مدل رو در نظر بگیر
-        if (! $type) {
+        if (!$type) {
             /** @var Company $company */
             $company = $this->route('company');
 

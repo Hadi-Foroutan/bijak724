@@ -18,7 +18,7 @@ class RefreshTable extends Command
         $table = $this->argument('table');
 
         $migration = collect(File::files(database_path('migrations')))
-            ->first(fn ($file) => str_contains($file->getFilename(), $table));
+            ->first(fn($file) => str_contains($file->getFilename(), $table));
 
         if (!$migration) {
             $this->error("Migration for table [$table] not found.");

@@ -20,9 +20,9 @@ beforeEach(function (): void {
         ['name' => 'status', 'type' => 'string', 'nullable' => false, 'default' => 'draft'],
     ]);
 
-    $this->syncProbes = fn () => app(CompanyTableService::class)->syncTable($this->companyId, 'sync_probes');
-    $this->column = fn (string $name): ?array => collect(Schema::getColumns($this->tableName))->firstWhere('name', $name);
-    $this->hasIndex = fn (string $name): bool => Schema::hasIndex($this->tableName, $name);
+    $this->syncProbes = fn() => app(CompanyTableService::class)->syncTable($this->companyId, 'sync_probes');
+    $this->column = fn(string $name): ?array => collect(Schema::getColumns($this->tableName))->firstWhere('name', $name);
+    $this->hasIndex = fn(string $name): bool => Schema::hasIndex($this->tableName, $name);
 });
 
 test('sync creates a missing table and leaves an existing one in place', function () {
@@ -90,7 +90,7 @@ test('sync alters columns whose definition changed and keeps their data', functi
     expect(($this->column)('title'))
         ->nullable->toBeFalse()
         ->and(($this->column)('counter')['type_name'])->toBe('varchar')
-        ->and(trim((string) ($this->column)('status')['default'], "'"))->toBe('published');
+        ->and(trim((string)($this->column)('status')['default'], "'"))->toBe('published');
     $this->assertDatabaseHas($this->tableName, ['id' => 1, 'title' => 'کالا', 'counter' => '7']);
     $this->assertDatabaseHas($this->tableName, ['id' => 2, 'title' => 'بی‌نام']);
 });
@@ -133,7 +133,7 @@ test('re-syncing up-to-date company tables changes nothing', function () {
 
     $schemaChanges = collect(DB::getQueryLog())
         ->pluck('query')
-        ->filter(fn (string $query): bool => preg_match('/^\s*(alter|create|drop)\b/i', $query) === 1)
+        ->filter(fn(string $query): bool => preg_match('/^\s*(alter|create|drop)\b/i', $query) === 1)
         ->values()
         ->all();
 
@@ -164,7 +164,7 @@ test('sync refuses to convert values that do not fit a required column and keeps
 
     config()->set('company_tables.sync_probes.1', ['name' => 'code', 'type' => 'unsignedBigInteger', 'nullable' => false]);
 
-    expect(fn () => ($this->syncProbes)())
+    expect(fn() => ($this->syncProbes)())
         ->toThrow(RuntimeException::class, "Cannot convert [{$this->tableName}.code] to [unsignedBigInteger]: 1 row(s) hold values that do not fit (id 2: 'testi')");
     expect(($this->column)('code')['type_name'])->toBe('varchar');
     $this->assertDatabaseHas($this->tableName, ['id' => 2, 'code' => 'testi']);

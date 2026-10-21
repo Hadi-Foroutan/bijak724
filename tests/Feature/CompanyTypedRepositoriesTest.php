@@ -81,7 +81,7 @@ test('company services depend on their dedicated repository interfaces', functio
     foreach ($services as $serviceClass => $repositoryInterface) {
         $constructor = (new ReflectionClass($serviceClass))->getConstructor();
         $parameterTypes = collect($constructor?->getParameters())
-            ->map(fn (ReflectionParameter $parameter): ?string => $parameter->getType()?->getName());
+            ->map(fn(ReflectionParameter $parameter): ?string => $parameter->getType()?->getName());
 
         expect($parameterTypes)->toContain($repositoryInterface);
     }

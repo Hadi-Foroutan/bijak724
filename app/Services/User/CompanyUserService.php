@@ -15,11 +15,13 @@ use Symfony\Component\HttpFoundation\Response;
 class CompanyUserService
 {
     public function __construct(
-        protected UserService $userService,
-        protected UserInterface $userRepository,
-        protected RoleInterface $roleRepository,
+        protected UserService       $userService,
+        protected UserInterface     $userRepository,
+        protected RoleInterface     $roleRepository,
         protected PermissionService $permissionService,
-    ) {}
+    )
+    {
+    }
 
     public function all(int $companyId, array $params): ServiceResult
     {
@@ -39,14 +41,14 @@ class CompanyUserService
     {
         $role = $this->roleRepository->findByName(RoleEnum::USER->value);
 
-        if (! $role) {
+        if (!$role) {
             return ServiceResult::error(
                 __('public.not_found', ['attribute' => 'نقش کاربران حمل نقل']),
                 Response::HTTP_UNPROCESSABLE_ENTITY,
             );
         }
 
-        return DB::transaction(fn (): ServiceResult => $this->userService->store([
+        return DB::transaction(fn(): ServiceResult => $this->userService->store([
             ...$data,
             'company_id' => $companyId,
             'role_id' => $role->id,
@@ -76,7 +78,7 @@ class CompanyUserService
     }
 
     /**
-     * @param  array<int, int>  $permissions
+     * @param array<int, int> $permissions
      */
     public function syncPermissions(int $companyId, int $userId, array $permissions): ServiceResult
     {
@@ -92,7 +94,7 @@ class CompanyUserService
     {
         $user = $this->userRepository->findForCompany($companyId, $userId);
 
-        if ((int) $user->getKey() === $actorId) {
+        if ((int)$user->getKey() === $actorId) {
             return ServiceResult::error(
                 __('public.access_denied', ['attribute' => 'حذف حساب کاربری خود']),
                 Response::HTTP_UNPROCESSABLE_ENTITY,
@@ -106,7 +108,7 @@ class CompanyUserService
     {
         $role = $this->roleRepository->findByName(RoleEnum::COMPANY_MANAGER->value);
 
-        if (! $role) {
+        if (!$role) {
             ServiceResult::error(
                 __('public.not_found', ['attribute' => 'نقش مدیر شرکت']),
                 Response::HTTP_UNPROCESSABLE_ENTITY,
