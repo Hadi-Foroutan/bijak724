@@ -5,6 +5,7 @@ namespace App\Services\Notification;
 use App\Events\NotificationSent;
 use App\Helpers\ServiceResult;
 use App\Interfaces\NotificationRepositoryInterface;
+use App\Models\User;
 
 class NotificationService
 {
@@ -12,14 +13,14 @@ class NotificationService
     {
     }
 
-    public function index(array $filters): ServiceResult
+    public function index(array $filters, ?User $viewer = null): ServiceResult
     {
-        return ServiceResult::success($this->notificationRepository->search($filters));
+        return ServiceResult::success($this->notificationRepository->search($filters, $viewer));
     }
 
-    public function show(int $id): ServiceResult
+    public function show(int $id, ?User $viewer = null): ServiceResult
     {
-        return ServiceResult::success($this->notificationRepository->findOrFail($id));
+        return ServiceResult::success($this->notificationRepository->findOrFail($id, $viewer));
     }
 
     /** @param array<string, mixed> $data */
@@ -27,6 +28,9 @@ class NotificationService
     {
         $data['should_remove_previous'] ??= false;
         $data['sender_id'] = $senderId;
+        $data['recipient_user_id'] = $data['user_id'] ?? null;
+        $data['recipient_company_id'] = $data['company_id'] ?? null;
+        unset($data['user_id'], $data['company_id']);
         $notification = $this->notificationRepository->create($data);
 
         NotificationSent::dispatch($notification);

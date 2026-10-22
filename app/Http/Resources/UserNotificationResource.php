@@ -16,6 +16,7 @@ class UserNotificationResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'is_private' => ! $this->isPublic(),
             'type' => $this->type->value,
             'type_label' => $this->type->label(),
             'should_remove_previous' => $this->should_remove_previous,

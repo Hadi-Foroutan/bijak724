@@ -70,3 +70,20 @@ echo.private("notifications").listen(".notification.sent", ({ notification }) =>
 `sender{id, full_name}` برمی‌گردانند: `GET /user/notifications` برای کاربران و `GET /admin/notifications` برای ادمین‌ها
 که `username` و `email` فرستنده را هم دارد. هنگام شروع، تاریخچه را بارگذاری کنید و سپس رویدادهای زنده را به آن اضافه
 کنید.
+
+## اعلان اختصاصی (کانال خصوصی کاربر / شرکت)
+
+علاوه بر کانال عمومی `notifications`، دو کانال خصوصی دیگر وجود دارد. فرانت باید هر سه را گوش دهد (با همان توکن و همان `authEndpoint`):
+
+| کانال | چه کسی می‌تواند عضو شود |
+| --- | --- |
+| `private-notifications` | همهٔ کاربران احراز هویت‌شده (اعلان عمومی) |
+| `private-users.{userId}.notifications` | فقط خود همان کاربر |
+| `private-companies.{companyId}.notifications` | فقط کاربران همان شرکت |
+
+```ts
+echo.private(`users.${user.id}.notifications`).listen(".notification.sent", handle);
+echo.private(`companies.${user.company_id}.notifications`).listen(".notification.sent", handle);
+```
+
+نام رویداد و ساختار payload یکی است؛ فیلد `is_private` مشخص می‌کند اعلان عمومی بوده یا اختصاصی. تاریخچهٔ `GET /user/notifications` فقط اعلان‌های عمومی و اعلان‌های اختصاصی همین کاربر یا شرکتش را برمی‌گرداند؛ اعلان اختصاصی دیگران `404` می‌دهد.

@@ -19,6 +19,9 @@ class StoreNotificationRequest extends BaseRequest
             'type' => ['required', Rule::enum(NotificationType::class)],
             'should_remove_previous' => ['sometimes', 'boolean'],
             'message' => ['required', 'string', 'max:5000'],
+            // هیچ‌کدام: عمومی برای همه؛ فقط یکی از دو مورد: اعلان اختصاصی.
+            'user_id' => ['sometimes', 'nullable', 'integer', 'exists:users,id', 'prohibits:company_id'],
+            'company_id' => ['sometimes', 'nullable', 'integer', 'exists:companies,id'],
         ];
     }
 

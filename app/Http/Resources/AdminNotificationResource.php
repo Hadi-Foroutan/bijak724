@@ -22,6 +22,15 @@ class AdminNotificationResource extends JsonResource
                 'username' => $this->sender->username,
                 'email' => $this->sender->email,
             ]),
+            'recipient_user' => $this->whenLoaded('recipientUser', fn(): ?array => $this->recipientUser === null ? null : [
+                'id' => $this->recipientUser->id,
+                'full_name' => $this->recipientUser->full_name,
+            ]),
+            'recipient_company' => $this->whenLoaded('recipientCompany', fn(): ?array => $this->recipientCompany === null ? null : [
+                'id' => $this->recipientCompany->id,
+                'name' => $this->recipientCompany->name,
+            ]),
+            'is_private' => ! $this->isPublic(),
             'type' => $this->type->value,
             'type_label' => $this->type->label(),
             'should_remove_previous' => $this->should_remove_previous,

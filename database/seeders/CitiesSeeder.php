@@ -19,7 +19,7 @@ class CitiesSeeder extends Seeder
         $sql = File::get(database_path('seeders/cities.sql'));
         $stateIdsByCode = State::query()->pluck('id', 'code');
 
-        preg_match_all('/^\((?<row>.*?)\)[,;]\r?$/m', $sql, $matches);
+        preg_match_all('/^[ \t]*(?:VALUES[ \t]+)?\((?<row>.*?)\)[,;]\r?$/m', $sql, $matches);
 
         collect($matches['row'])
             ->chunk(500)

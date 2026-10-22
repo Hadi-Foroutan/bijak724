@@ -25,6 +25,14 @@ class NotificationSent implements ShouldBroadcastNow
      */
     public function broadcastOn(): array
     {
+        if ($this->notification->recipient_user_id !== null) {
+            return [new PrivateChannel("users.{$this->notification->recipient_user_id}.notifications")];
+        }
+
+        if ($this->notification->recipient_company_id !== null) {
+            return [new PrivateChannel("companies.{$this->notification->recipient_company_id}.notifications")];
+        }
+
         return [new PrivateChannel('notifications')];
     }
 
@@ -42,6 +50,7 @@ class NotificationSent implements ShouldBroadcastNow
                 'type' => $this->notification->type->value,
                 'should_remove_previous' => $this->notification->should_remove_previous,
                 'message' => $this->notification->message,
+                'is_private' => ! $this->notification->isPublic(),
                 /*'sender' => [
                     'full_name' => $this->notification->sender->full_name,
                 ],*/

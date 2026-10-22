@@ -16,5 +16,11 @@
 
 ### ۲۴.۲ ورودی و خروجی
 
-بدنهٔ ارسال: `{ type, message, should_remove_previous? }` (`type`: success، error، warning، info). جزئیات پخش لحظه‌ای در
+بدنهٔ ارسال: `{ type, message, should_remove_previous?, user_id?, company_id? }` (`type`: success، error، warning، info).
+
+- بدون `user_id` و `company_id`: اعلان **عمومی** برای همه (کانال `notifications`).
+- `user_id`: اعلان **اختصاصی** برای یک کاربر (کانال `users.{id}.notifications`).
+- `company_id`: اعلان **اختصاصی** برای همهٔ کاربران یک شرکت (کانال `companies.{id}.notifications`).
+- ارسال همزمان `user_id` و `company_id` خطای ۴۲۲ می‌دهد.
+- خروجی علاوه بر فیلدهای قبلی: `is_private`، `recipient_user{id, full_name}` و `recipient_company{id, name}`. جزئیات پخش لحظه‌ای در
 بخش «اعلان‌ها (کاربر شرکت)».

@@ -15,8 +15,8 @@ return new class extends Migration {
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->string('title');
             $table->string('contract_number');
-            $table->date('contract_date');
-            $table->string('customer_name');
+            $table->date('contract_date')->nullable();
+            $table->string('customer_name')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->boolean('is_public')->default(true);
             $table->boolean('default_owned')->default(false);

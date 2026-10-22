@@ -28,8 +28,8 @@ class StoreTransportContractRequest extends BaseRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'contract_number' => ['required', 'string', 'max:255', Rule::unique('transport_contracts')->where('company_id', $this->companyId())],
-            'contract_date' => ['required', 'date_format:Y-m-d'],
-            'customer_name' => ['required', 'string', 'max:255'],
+            'contract_date' => ['nullable', 'date_format:Y-m-d'],
+            'customer_name' => ['nullable', 'string', 'max:255'],
             'status' => ['required', Rule::enum(StatusEnum::class)],
             'default_owned' => ['required', 'boolean'],
             'default_rental' => ['required', 'boolean'],

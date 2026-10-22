@@ -17,7 +17,7 @@ class NotificationController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $result = $this->notificationService->index($request->all());
+        $result = $this->notificationService->index($request->all(), $request->user());
 
         return ResponseHandler::success(
             $this->resourceCollection($result->data, UserNotificationResource::class, $request),
@@ -26,7 +26,7 @@ class NotificationController extends Controller
 
     public function show(Request $request, int $notification): JsonResponse
     {
-        $result = $this->notificationService->show($notification);
+        $result = $this->notificationService->show($notification, $request->user());
 
         return ResponseHandler::success(
             UserNotificationResource::make($result->data)->resolve($request),

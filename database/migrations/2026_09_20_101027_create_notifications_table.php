@@ -14,6 +14,10 @@ return new class extends Migration {
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('sender_id')->constrained('users')->restrictOnDelete();
+            $table->foreignId('recipient_user_id')->nullable()
+                ->constrained('users')->cascadeOnDelete();
+            $table->foreignId('recipient_company_id')->nullable()
+                ->constrained('companies')->cascadeOnDelete();
             $table->enum('type', array_column(NotificationType::cases(), 'value'))->index();
             $table->boolean('should_remove_previous')->default(false);
             $table->text('message');
