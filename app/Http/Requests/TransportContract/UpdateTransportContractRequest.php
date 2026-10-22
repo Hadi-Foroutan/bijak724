@@ -30,8 +30,8 @@ class UpdateTransportContractRequest extends BaseRequest
         return [
             'title' => ['sometimes', 'required', 'string', 'max:255'],
             'contract_number' => ['sometimes', 'required', 'string', 'max:255', Rule::unique('transport_contracts')->where('company_id', $this->companyId())->ignore($this->route('transportContract'))],
-            'contract_date' => ['sometimes', 'required', 'date_format:Y-m-d'],
-            'customer_name' => ['sometimes', 'required', 'string', 'max:255'],
+            'contract_date' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
+            'customer_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'status' => ['sometimes', 'required', Rule::enum(StatusEnum::class)],
             'default_owned' => ['sometimes', 'required', 'boolean'],
             'default_rental' => ['sometimes', 'required', 'boolean'],
