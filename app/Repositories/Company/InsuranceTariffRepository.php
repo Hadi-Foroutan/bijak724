@@ -49,6 +49,11 @@ class InsuranceTariffRepository implements InsuranceTariffRepositoryInterface
         $tariff->delete();
     }
 
+    /**
+     * بازه‌ها فقط وقتی تداخل دارند که اشتراک واقعی داشته باشند؛ برخورد در یک نقطهٔ مرزی
+     * (مثلاً پایان یک بازه = شروع بازهٔ بعدی) تداخل حساب نمی‌شود.
+     * در استعلام، در نقطهٔ مرزی تعرفهٔ بازهٔ بعدی (شروع بزرگ‌تر) اعمال می‌شود.
+     */
     public function overlappingRangeExists(
         int    $insuranceId,
         ?int   $cargoGroupId,
@@ -66,11 +71,11 @@ class InsuranceTariffRepository implements InsuranceTariffRepositoryInterface
             )
             ->when(
                 $cargoValueTo !== null,
-                fn(Builder $query): Builder => $query->where('cargo_value_from', '<=', $cargoValueTo),
+                fn(Builder $query): Builder => $query->where('cargo_value_from', '<', $cargoValueTo),
             )
             ->where(fn(Builder $query): Builder => $query
                 ->whereNull('cargo_value_to')
-                ->orWhere('cargo_value_to', '>=', $cargoValueFrom))
+                ->orWhere('cargo_value_to', '>', $cargoValueFrom))
             ->when($ignoreId !== null, fn(Builder $query): Builder => $query->whereKeyNot($ignoreId))
             ->exists();
     }

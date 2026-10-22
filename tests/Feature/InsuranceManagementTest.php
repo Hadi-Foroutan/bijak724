@@ -178,7 +178,7 @@ test('insurance tariff rejects overlapping ranges only within the same cargo gro
 
     $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [
         'cargo_group_id' => null,
-        'cargo_value_from' => 100,
+        'cargo_value_from' => 99,
         'cargo_value_to' => 200,
         'fixed_premium' => 50,
     ])->assertUnprocessable()
@@ -346,3 +346,30 @@ function insurancePayload(int $insuranceCompanyId, string $contractNumber, bool 
         'representative_address' => 'تهران',
     ];
 }
+
+test('insurance tariff ranges may touch at a shared boundary and a tariff can be edited next to its neighbour', function () {
+    $insuranceId = $this->postJson('/api/user/insurances', insurancePayload($this->insuranceCompany->id, 'INS-BOUND'))
+        ->assertCreated()
+        ->json('data.id');
+
+    $create = fn (int $from, ?int $to) => $this->postJson("/api/user/insurances/{$insuranceId}/tariffs", [
+        'cargo_group_id' => $this->cargoGroup->id,
+        'cargo_value_from' => $from,
+        'cargo_value_to' => $to,
+        'fixed_premium' => 10,
+    ]);
+
+    $first = $create(1, 10_000_000_000)->assertCreated()->json('data.id');
+    $create(10_000_000_000, 99_999_999_999)->assertCreated();
+
+    // ویرایش اولین تعرفه: 1..10B → 0..10B نباید با تعرفهٔ مجاور تداخل بدهد.
+    $this->patchJson("/api/user/insurances/{$insuranceId}/tariffs/{$first}", [
+        'cargo_value_from' => 0,
+    ])->assertSuccessful();
+
+    // اشتراک واقعی همچنان رد می‌شود.
+    $this->patchJson("/api/user/insurances/{$insuranceId}/tariffs/{$first}", [
+        'cargo_value_to' => 10_000_000_001,
+    ])->assertUnprocessable()
+        ->assertJsonPath('errors.error.0', __('public.insurance_tariff_range_exists'));
+});
