@@ -58,6 +58,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     'notification' => '[0-9]+',
                     'productOwner' => '[0-9]+',
                     'referralNumber' => '[0-9]+',
+                    'sharedAdditionalField' => '[0-9]+',
                     'shipmentParty' => '[0-9]+',
                     'state' => '[0-9]+',
                     'tariff' => '[0-9]+',

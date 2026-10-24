@@ -80,6 +80,12 @@ class Waybill extends DynamicModel
         'payable_amount',
         'freight_at_origin',
         'is_fixed',
+        'additional_field_1',
+        'additional_field_2',
+        'additional_field_3',
+        'additional_field_4',
+        'additional_field_5',
+        'additional_field_6',
     ];
 
     protected array $defaultRelations = [

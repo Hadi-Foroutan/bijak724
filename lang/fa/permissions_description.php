@@ -123,6 +123,9 @@ return [
 
     'user.settings.show' => 'مشاهده تنظیمات شرکت',
     'user.settings.update' => 'ویرایش تنظیمات شرکت',
+    'user.shared-additional-fields.index' => 'مشاهده لیست فیلدهای اضافی مشترک',
+    'user.shared-additional-fields.show' => 'مشاهده فیلد اضافی مشترک',
+    'user.shared-additional-fields.update' => 'ویرایش فیلد اضافی مشترک',
 
     'user.general.cargos' => 'مشاهده لیست عمومی محموله‌ها',
     'user.general.packaging' => 'مشاهده لیست عمومی بسته‌بندی‌ها',

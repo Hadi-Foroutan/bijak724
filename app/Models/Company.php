@@ -141,6 +141,11 @@ class Company extends Model
         return $this->hasMany(CompanySetting::class);
     }
 
+    public function sharedAdditionalFields(): HasMany
+    {
+        return $this->hasMany(SharedAdditionalField::class);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Scopes

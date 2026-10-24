@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Waybill;
 
+use App\Enums\AdditionalFieldType;
 use App\Enums\WaybillStatus;
 use App\Http\Requests\BaseRequest;
 use App\Interfaces\Company\DriverRepositoryInterface;
@@ -10,9 +11,11 @@ use App\Interfaces\Company\InsuranceRepositoryInterface;
 use App\Interfaces\Company\ProductOwnerRepositoryInterface;
 use App\Interfaces\Company\ShipmentPartyAddressRepositoryInterface;
 use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
+use App\Interfaces\Company\SharedAdditionalFieldRepositoryInterface;
 use App\Interfaces\Company\TransportContractRepositoryInterface;
 use App\Models\Cargo;
 use App\Models\Packaging;
+use App\Models\SharedAdditionalField;
 use Illuminate\Validation\Rule;
 
 class StoreWaybillRequest extends BaseRequest
@@ -46,6 +49,7 @@ class StoreWaybillRequest extends BaseRequest
         InsuranceRepositoryInterface            $insuranceRepository,
         TransportContractRepositoryInterface    $transportContractRepository,
         ProductOwnerRepositoryInterface         $productOwnerRepository,
+        SharedAdditionalFieldRepositoryInterface $sharedAdditionalFieldRepository,
     ): array
     {
         $companyId = $this->companyId();
@@ -86,7 +90,31 @@ class StoreWaybillRequest extends BaseRequest
                 $requiredWhenCompleted,
                 $requiredWhenCompletedOrReferral,
             ),
+            ...$this->additionalFieldRules($sharedAdditionalFieldRepository, $companyId),
         ];
+    }
+
+    /**
+     * Additional field values are keyed by field number (1..6) and validated against that field's type.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    private function additionalFieldRules(
+        SharedAdditionalFieldRepositoryInterface $sharedAdditionalFieldRepository,
+        int                                      $companyId,
+    ): array
+    {
+        $fieldTypes = $sharedAdditionalFieldRepository->all($companyId)->pluck('field_type', 'number');
+        $rules = [
+            'additional_fields' => ['sometimes', 'nullable', 'array:' . implode(',', SharedAdditionalField::numbers())],
+        ];
+
+        foreach (SharedAdditionalField::numbers() as $number) {
+            $fieldType = $fieldTypes->get($number, AdditionalFieldType::Text);
+            $rules["additional_fields.{$number}"] = ['nullable', $fieldType->valueRule()];
+        }
+
+        return $rules;
     }
 
     /** @return array<string, array<int, mixed>> */

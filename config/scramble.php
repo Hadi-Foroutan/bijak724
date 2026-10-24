@@ -32,6 +32,12 @@ return [
     'export_path' => 'api.json',
 
     /*
+     * After every `php artisan scramble:export` the exported file is also copied here (for Postman).
+     * Set to null to disable.
+     */
+    'postman_export_path' => env('SCRAMBLE_POSTMAN_EXPORT_PATH', storage_path('app/postman-openapi.json')),
+
+    /*
      * Cache configuration for the generated OpenAPI document.
      *
      * Use `scramble:cache` to warm the cache and `scramble:clear` to invalidate it.
@@ -57,7 +63,7 @@ return [
         'title' => null,
     ],
 
-    'renderer' => 'elements',
+    'renderer' => 'scalar',
 
     'renderers' => [
         /*
@@ -82,6 +88,9 @@ return [
             'theme' => 'laravel',
             'proxyUrl' => 'https://proxy.scalar.com',
             'darkMode' => false,
+            // دکمهٔ دانلود OpenAPI (JSON و YAML) داخل صفحهٔ مستند؛ فایل را مستقیم می‌شود در Postman import کرد.
+            'hideDownloadButton' => false,
+            'documentDownloadType' => 'both',
             'showDeveloperTools' => 'never',
             'agent' => ['disabled' => true],
             'credentials' => 'include',

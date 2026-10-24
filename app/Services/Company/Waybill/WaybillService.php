@@ -9,6 +9,7 @@ use App\Interfaces\Company\TransportContractRepositoryInterface;
 use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Interfaces\WaybillRepositoryInterface as SharedWaybillRepositoryInterface;
 use App\Models\Company\Waybill;
+use App\Models\SharedAdditionalField;
 use App\Models\TransportContract;
 use App\Models\User;
 use App\Services\Company\BijakNumber\BijakNumberService;
@@ -92,6 +93,7 @@ class WaybillService
         try {
             return DB::transaction(function () use ($companyId, $data, $user): ServiceResult {
                 $this->validateTransportContractAccess($companyId, $user, $data);
+                $data = $this->mapAdditionalFields($data);
                 $cargos = Arr::pull($data, 'cargos', []) ?? [];
                 $data = $this->snapshotBuilder->forCreate($companyId, $data);
                 $data = $this->financialCalculator->calculate($companyId, $data);
@@ -148,6 +150,7 @@ class WaybillService
                 $waybill = $this->waybillRepository->findOrFailForUpdate($companyId, $id);
                 $this->ensureEditable($waybill);
                 $data = Arr::except($data, self::IMMUTABLE_UPDATE_FIELDS);
+                $data = $this->mapAdditionalFields($data);
                 $this->validateTransportContractAccess($companyId, $user, $data);
                 $status = $this->normalizeStatus($data);
                 $status = $this->preserveReferralStatus($waybill, $status, $data);
@@ -273,6 +276,22 @@ class WaybillService
                 'transport_contract_id' => __('validation.exists', ['attribute' => 'قرارداد حمل']),
             ]);
         }
+    }
+
+    /**
+     * Move submitted additional field values, keyed by field number, into their waybill columns.
+     * Numbers that were not submitted are left untouched.
+     *
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    private function mapAdditionalFields(array $data): array
+    {
+        foreach (Arr::pull($data, 'additional_fields') ?? [] as $number => $value) {
+            $data[SharedAdditionalField::waybillColumn((int)$number)] = $value;
+        }
+
+        return $data;
     }
 
     /** @param array<string, mixed> $data */

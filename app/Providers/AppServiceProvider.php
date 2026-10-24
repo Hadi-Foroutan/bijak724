@@ -9,6 +9,7 @@ use App\Interfaces\Company\CargoGroupRepositoryInterface;
 use App\Interfaces\Company\CargoRepositoryInterface;
 use App\Interfaces\Company\CompanySettingRepositoryInterface;
 use App\Interfaces\Company\DashboardRepositoryInterface;
+use App\Interfaces\Company\SharedAdditionalFieldRepositoryInterface;
 use App\Interfaces\Company\DriverAccountRepositoryInterface;
 use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Interfaces\Company\FleetRepositoryInterface;
@@ -29,6 +30,7 @@ use App\Interfaces\PermissionInterface;
 use App\Interfaces\RoleInterface;
 use App\Interfaces\UserInterface;
 use App\Interfaces\WaybillRepositoryInterface as SharedWaybillRepositoryInterface;
+use App\Listeners\SyncPostmanOpenApi;
 use App\Models\Company;
 use App\Models\User;
 use App\Observers\CompanyObserver;
@@ -41,6 +43,7 @@ use App\Repositories\Company\CargoRepository;
 use App\Repositories\Company\CompanyRepository;
 use App\Repositories\Company\CompanySettingRepository;
 use App\Repositories\Company\DashboardRepository;
+use App\Repositories\Company\SharedAdditionalFieldRepository;
 use App\Repositories\Company\DriverAccountRepository;
 use App\Repositories\Company\DriverRepository;
 use App\Repositories\Company\FleetRepository;
@@ -65,6 +68,8 @@ use App\Services\Company\Settings\CompanySettingService;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
+use Illuminate\Console\Events\CommandFinished;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -84,6 +89,7 @@ class AppServiceProvider extends ServiceProvider
         BijakNumberRepositoryInterface::class => BijakNumberRepository::class,
         CanceledReferralRepositoryInterface::class => CanceledReferralRepository::class,
         CompanySettingRepositoryInterface::class => CompanySettingRepository::class,
+        SharedAdditionalFieldRepositoryInterface::class => SharedAdditionalFieldRepository::class,
         DashboardRepositoryInterface::class => DashboardRepository::class,
         CargoGroupRepositoryInterface::class => CargoGroupRepository::class,
         InsuranceRepositoryInterface::class => InsuranceRepository::class,
@@ -114,6 +120,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Event::listen(CommandFinished::class, SyncPostmanOpenApi::class);
+
         Company::observe(CompanyObserver::class);
         User::observe(UserObserver::class);
 

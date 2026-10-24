@@ -14,6 +14,7 @@ use App\Http\Controllers\User\InsuranceTariffController;
 use App\Http\Controllers\User\NotificationController;
 use App\Http\Controllers\User\ProductOwner\ProductOwnerController;
 use App\Http\Controllers\User\ReferralNumberController;
+use App\Http\Controllers\User\SharedAdditionalFieldController;
 use App\Http\Controllers\User\ShipmentParty\ShipmentPartyAddressController;
 use App\Http\Controllers\User\ShipmentParty\ShipmentPartyController;
 use App\Http\Controllers\User\TransportContractController;
@@ -38,6 +39,11 @@ Route::prefix('settings')->name('settings.')->group(function () {
     Route::get('/', [CompanySettingController::class, 'show'])->name('show');
     Route::match(['put', 'patch'], '/', [CompanySettingController::class, 'update'])->name('update');
 });
+
+// Shared Additional Fields (six fixed fields per company: no store/destroy)
+Route::apiResource('shared-additional-fields', SharedAdditionalFieldController::class)
+    ->only(['index', 'show', 'update'])
+    ->parameters(['shared-additional-fields' => 'sharedAdditionalField']);
 
 // Company Users
 Route::prefix('{user}/permissions')->name('permissions.')->group(function () {

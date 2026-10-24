@@ -81,6 +81,13 @@ return [
         ['name' => 'payable_amount', 'type' => 'unsignedBigInteger'],
         ['name' => 'freight_at_origin', 'type' => 'boolean', 'default' => false, 'nullable' => false],
         ['name' => 'is_fixed', 'type' => 'boolean', 'default' => false, 'nullable' => false],
+        // Values of the company's shared additional fields 1..6, see SharedAdditionalField::waybillColumn().
+        ['name' => 'additional_field_1', 'type' => 'text', 'global_search' => false],
+        ['name' => 'additional_field_2', 'type' => 'text', 'global_search' => false],
+        ['name' => 'additional_field_3', 'type' => 'text', 'global_search' => false],
+        ['name' => 'additional_field_4', 'type' => 'text', 'global_search' => false],
+        ['name' => 'additional_field_5', 'type' => 'text', 'global_search' => false],
+        ['name' => 'additional_field_6', 'type' => 'text', 'global_search' => false],
     ],
     'waybill_cargos' => [
         ['name' => 'waybill_id', 'type' => 'unsignedBigInteger', 'nullable' => false, 'index' => true, 'foreign' => ['company_table' => 'waybills', 'column' => 'id', 'on_delete' => 'cascade']],
