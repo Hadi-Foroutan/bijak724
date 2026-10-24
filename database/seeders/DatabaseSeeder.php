@@ -28,7 +28,7 @@ class DatabaseSeeder extends Seeder
             CompanySeeder::class,
             CompanySettingsSeeder::class,
             UserSeeder::class,
-            ProductOwnerSeeder::class,
+//            ProductOwnerSeeder::class,
             ShipmentPartiesSeeder::class,
             AddressesSeeder::class,
         ]);

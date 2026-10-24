@@ -24,7 +24,7 @@
 | `first_name`، `last_name`                                | string      | حداکثر ۲۵۵                                             |
 | `print_name`                                             | string/null | عنوان چاپی                                             |
 | `national_code`                                          | string      | یکتا                                                   |
-| `postal_code`، `telephone`                               | string/null | حداکثر ۲۰                                              |
+| `personal_code`، `telephone`                               | string/null | حداکثر ۲۰                                              |
 | `phone`                                                  | string/null | شماره همراه؛ یکتا                                      |
 | `min_commission_percentage`، `max_commission_percentage` | number      | ۰ تا ۱۰۰                                               |
 | `address`                                                | string/null |                                                        |

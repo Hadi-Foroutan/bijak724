@@ -29,15 +29,15 @@ class CompanyObserver
      */
     public function created(Company $company): void
     {
-        $this->defaultTransportContractService->createForCompany($company);
+//        $this->defaultTransportContractService->createForCompany($company);
 
         if ($company->parent_type !== CompanyParentEnum::BRANCH->value) {
             $this->companyTableService->sync($company->id);
         }
 
-        $this->bijakNumberService->ensureDefaultForCompany($company->id);
-        $this->referralNumberService->ensureDefaultForCompany($company->id);
-        $this->defaultInsuranceService->createForCompany($company);
+//        $this->bijakNumberService->ensureDefaultForCompany($company->id);
+//        $this->referralNumberService->ensureDefaultForCompany($company->id);
+//        $this->defaultInsuranceService->createForCompany($company);
         $this->companySettingService->ensureDefaultsForCompany($company->id);
     }
 
