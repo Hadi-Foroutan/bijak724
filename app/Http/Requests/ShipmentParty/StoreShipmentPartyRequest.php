@@ -4,20 +4,20 @@ namespace App\Http\Requests\ShipmentParty;
 
 use App\Enums\StatusEnum;
 use App\Http\Requests\BaseRequest;
-use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
 use Illuminate\Validation\Rule;
+use App\Models\Company\ShipmentParty;
 
 class StoreShipmentPartyRequest extends BaseRequest
 {
     /** @return array<string, array<int, mixed>> */
-    public function rules(ShipmentPartyRepositoryInterface $shipmentPartyRepository): array
+    public function rules(): array
     {
         return [
             'national_identifier' => [
                 'required',
                 'string',
                 'max:20',
-                $shipmentPartyRepository->uniqueNationalIdentifierRule($this->companyId()),
+                $this->uniqueInCompany(ShipmentParty::class, 'national_identifier'),
             ],
             'is_sender' => ['required', 'boolean'],
             'is_receiver' => ['required', 'boolean'],

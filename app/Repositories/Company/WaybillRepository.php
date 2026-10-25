@@ -5,20 +5,32 @@ namespace App\Repositories\Company;
 use App\Enums\WaybillStatus;
 use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Models\Company\Waybill;
+use App\Models\User;
+use App\Services\Company\Waybill\WaybillVisibilityService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 class WaybillRepository implements WaybillRepositoryInterface
 {
+    public function __construct(
+        protected WaybillVisibilityService $visibility,
+    )
+    {
+    }
+
     public function query(int $companyId): Builder
     {
         return Waybill::queryForCompany($companyId);
     }
 
-    public function search(int $companyId, array $filters): Collection|LengthAwarePaginator
+    public function search(int $companyId, array $filters, ?User $viewer = null): Collection|LengthAwarePaginator
     {
-        $result = Waybill::searchRecordsForCompany($companyId, $filters);
+        $result = Waybill::searchRecordsForCompany(
+            $companyId,
+            $filters,
+            $viewer === null ? null : fn(Builder $query): Builder => $this->visibility->scope($query, $viewer),
+        );
         $waybills = $result instanceof LengthAwarePaginator
             ? $result->getCollection()
             : $result;
@@ -38,9 +50,13 @@ class WaybillRepository implements WaybillRepositoryInterface
         return Waybill::createForCompany($companyId, $data);
     }
 
-    public function findOrFail(int $companyId, int $id): Waybill
+    public function findOrFail(int $companyId, int $id, ?User $viewer = null): Waybill
     {
-        return Waybill::findForCompanyOrFail($companyId, $id)->loadMissing('transportContract.items');
+        return Waybill::findForCompanyOrFail(
+            $companyId,
+            $id,
+            $viewer === null ? null : fn(Builder $query): Builder => $this->visibility->scope($query, $viewer),
+        )->loadMissing('transportContract.items');
     }
 
     public function findOrFailForUpdate(int $companyId, int $id): Waybill

@@ -6,7 +6,6 @@ use App\Models\Company\ProductOwner;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Validation\Rules\Exists;
 
 interface ProductOwnerRepositoryInterface
 {
@@ -26,5 +25,4 @@ interface ProductOwnerRepositoryInterface
 
     public function delete(int $companyId, int $id): void;
 
-    public function existsRule(int $companyId, string $column = 'id'): Exists;
 }

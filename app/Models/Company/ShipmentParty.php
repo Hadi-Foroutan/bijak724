@@ -31,6 +31,7 @@ class ShipmentParty extends DynamicModel
     ];
 
     protected array $defaultRelations = [
+        'ownerCompany',
         'addresses.city',
     ];
 

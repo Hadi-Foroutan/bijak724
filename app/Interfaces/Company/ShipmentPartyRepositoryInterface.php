@@ -6,8 +6,6 @@ use App\Models\Company\ShipmentParty;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Validation\Rules\Exists;
-use Illuminate\Validation\Rules\Unique;
 
 interface ShipmentPartyRepositoryInterface
 {
@@ -29,13 +27,10 @@ interface ShipmentPartyRepositoryInterface
 
     public function exists(int $companyId, int $id): bool;
 
-    public function existsRule(int $companyId, string $column = 'id'): Exists;
-
     public function findByNationalIdentifierAndType(
         int    $companyId,
         string $nationalIdentifier,
         string $type,
     ): ShipmentParty;
 
-    public function uniqueNationalIdentifierRule(int $companyId, ?int $ignoreShipmentPartyId = null): Unique;
 }

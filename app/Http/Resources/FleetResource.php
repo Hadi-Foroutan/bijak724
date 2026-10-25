@@ -14,6 +14,11 @@ class FleetResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'owner_company_id' => $this->owner_company_id,
+            'owner_company' => $this->whenLoaded('ownerCompany', fn(): array => [
+                'id' => $this->ownerCompany->id,
+                'name' => $this->ownerCompany->name,
+            ]),
             'smart_card_number' => $this->smart_card_number,
             'status' => $this->status,
             'ownership_type' => $this->ownership_type,

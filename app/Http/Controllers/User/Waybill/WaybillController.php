@@ -11,14 +11,27 @@ use App\Http\Resources\WaybillResource;
 use App\Models\Company\Waybill;
 use App\Models\User;
 use App\Services\Company\Waybill\WaybillService;
+use App\Services\Company\Waybill\WaybillVisibilityService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class WaybillController extends Controller
 {
-    public function __construct(protected WaybillService $waybillService)
+    public function __construct(
+        protected WaybillService           $waybillService,
+        protected WaybillVisibilityService $waybillVisibility,
+    )
     {
+    }
+
+    /** کاربر نباید بارنامه‌ای را که اجازهٔ دیدنش را ندارد ویرایش، ابطال یا حذف کند. */
+    private function ensureVisible(Request $request, Waybill $waybill): void
+    {
+        if (!$this->waybillVisibility->canView($waybill, $request->user())) {
+            throw (new ModelNotFoundException)->setModel(Waybill::class, [$waybill->getKey()]);
+        }
     }
 
     public function options(Request $request): JsonResponse
@@ -32,7 +45,7 @@ class WaybillController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $result = $this->waybillService->index($this->companyId($request), $request->all());
+        $result = $this->waybillService->index($this->companyId($request), $request->all(), $request->user());
 
         return ResponseHandler::success(
             $this->resourceCollection($result->data, WaybillResource::class, $request),
@@ -60,13 +73,15 @@ class WaybillController extends Controller
 
     public function show(Request $request, Waybill $waybill): JsonResponse
     {
-        $result = $this->waybillService->show($this->companyId($request), $waybill->getKey());
+        $result = $this->waybillService->show($this->companyId($request), $waybill->getKey(), $request->user());
 
         return ResponseHandler::success(WaybillResource::make($result->data)->resolve($request));
     }
 
     public function update(UpdateWaybillRequest $request, Waybill $waybill): JsonResponse
     {
+        $this->ensureVisible($request, $waybill);
+
         $result = $this->waybillService->update(
             $this->companyId($request),
             $waybill->getKey(),
@@ -85,6 +100,8 @@ class WaybillController extends Controller
 
     public function cancel(Request $request, Waybill $waybill): JsonResponse
     {
+        $this->ensureVisible($request, $waybill);
+
         $result = $this->waybillService->cancel($this->companyId($request), $waybill->getKey());
 
         return ResponseHandler::success(
@@ -95,6 +112,8 @@ class WaybillController extends Controller
 
     public function cancelReferral(CancelWaybillReferralRequest $request, Waybill $waybill): JsonResponse
     {
+        $this->ensureVisible($request, $waybill);
+
         $result = $this->waybillService->cancelReferral(
             $this->companyId($request),
             $waybill->getKey(),
@@ -110,6 +129,8 @@ class WaybillController extends Controller
 
     public function destroy(Request $request, Waybill $waybill): JsonResponse
     {
+        $this->ensureVisible($request, $waybill);
+
         $result = $this->waybillService->delete($this->companyId($request), $waybill->getKey());
 
         return ResponseHandler::success([], $result->data);

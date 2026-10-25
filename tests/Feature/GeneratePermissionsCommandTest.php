@@ -183,8 +183,8 @@ test('it resets and regenerates route permissions with groups and role links', f
     $waybillGroup = PermissionGroup::query()
         ->where('name', 'مدیریت بارنامه‌ها')
         ->firstOrFail();
-    $cargoGroup = PermissionGroup::query()
-        ->where('name', 'مدیریت محموله‌ها')
+    $waybillViewGroup = PermissionGroup::query()
+        ->where('name', 'نمایش بارنامه')
         ->firstOrFail();
     $productOwnerGroup = PermissionGroup::query()
         ->where('name', 'مدیریت صاحبان کالا')
@@ -201,18 +201,23 @@ test('it resets and regenerates route permissions with groups and role links', f
             'user.dashboard.waybills.daily',
             'user.dashboard.waybills.monthly',
         ]);
-    expect($driverGroup->permissions()->count())->toBe(6)
+    expect($driverGroup->permissions()->count())->toBe(11)
         ->and($driverGroup->permissions()->where('name', 'user.drivers.inquiry')->exists())->toBeTrue();
     expect($fleetGroup->permissions()->count())->toBe(6)
         ->and($fleetGroup->permissions()->where('name', 'user.fleets.inquiry')->exists())->toBeTrue();
-    expect($shipmentPartyGroup->permissions()->count())->toBe(6)
+    expect($shipmentPartyGroup->permissions()->count())->toBe(7)
         ->and($shipmentPartyGroup->permissions()->where('name', 'user.shipment-parties.inquiry')->exists())->toBeTrue()
         ->and($addressGroup->permissions()->count())->toBe(5)
         ->and($addressGroup->permissions()->where('name', 'user.addresses.index')->exists())->toBeTrue()
         ->and(Permission::query()->where('name', 'user.shipment-parties.addresses.index')->exists())->toBeFalse()
-        ->and($waybillGroup->permissions()->count())->toBe(6)
+        ->and($waybillGroup->permissions()->count())->toBe(8)
         ->and($waybillGroup->permissions()->where('name', 'user.waybills.cancel')->exists())->toBeTrue()
-        ->and($cargoGroup->permissions()->count())->toBe(5)
+        ->and($waybillGroup->permissions()->where('name', 'like', 'user.waybills.view-%')->exists())->toBeFalse()
+        ->and($waybillViewGroup->permissions()->pluck('name')->sort()->values()->all())->toBe([
+            'user.waybills.view-all-users',
+            'user.waybills.view-parent-user',
+            'user.waybills.view-peer-users',
+        ])
         ->and($productOwnerGroup->permissions()->count())->toBe(5)
         ->and($generalGroup->permissions()->count())->toBe(7);
 
@@ -265,4 +270,36 @@ test('it regenerates permissions when generated permission attributes change', f
 
     expect(Permission::query()->where('name', $permission->name)->value('display_name'))
         ->toBe($expectedDisplayName);
+});
+
+test('every generated permission has a real persian description and no unnamed permission is stored', function () {
+    $this->artisan('generate-permissions', ['--force' => true])->assertSuccessful();
+
+    $unnamed = Permission::query()
+        ->get(['name', 'display_name', 'description'])
+        ->filter(fn(Permission $permission): bool => blank($permission->display_name)
+            || blank($permission->description)
+            || str_starts_with($permission->display_name, 'دسترسی به '))
+        ->pluck('name')
+        ->all();
+
+    expect($unnamed)->toBe([])
+        ->and(Permission::query()->where('name', 'like', 'generated::%')->exists())->toBeFalse()
+        ->and(Permission::query()->where('name', 'user.waybills.view-all-users')->value('display_name'))
+        ->toBe('مشاهده بارنامه تمامی کاربران');
+});
+
+test('plain users do not receive the waybill visibility permissions by default', function () {
+    $userRole = Role::query()->create(['name' => RoleEnum::USER->value, 'display_name' => 'کاربر']);
+    $managerRole = Role::query()->create(['name' => RoleEnum::COMPANY_MANAGER->value, 'display_name' => 'مدیر شرکت']);
+    $user = User::factory()->create();
+    $manager = User::factory()->create();
+    $user->roles()->attach($userRole);
+    $manager->roles()->attach($managerRole);
+
+    $this->artisan('generate-permissions', ['--force' => true])->assertSuccessful();
+
+    expect($user->permissions()->where('name', 'like', 'user.waybills.view-%')->exists())->toBeFalse()
+        ->and($user->permissions()->where('name', 'user.waybills.index')->exists())->toBeTrue()
+        ->and($manager->permissions()->where('name', 'like', 'user.waybills.view-%')->count())->toBe(3);
 });

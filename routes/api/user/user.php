@@ -11,6 +11,7 @@ use App\Http\Controllers\User\Driver\DriverController;
 use App\Http\Controllers\User\Fleet\FleetController;
 use App\Http\Controllers\User\InsuranceController;
 use App\Http\Controllers\User\InsuranceTariffController;
+use App\Http\Controllers\User\TechnicalManagerController;
 use App\Http\Controllers\User\NotificationController;
 use App\Http\Controllers\User\ProductOwner\ProductOwnerController;
 use App\Http\Controllers\User\ReferralNumberController;
@@ -148,6 +149,10 @@ Route::prefix('transport-contracts')->name('transport-contracts.')->group(functi
 });
 Route::apiResource('transport-contracts', TransportContractController::class)
     ->parameters(['transport-contracts' => 'transportContract']);
+
+// Technical managers
+Route::apiResource('technical-managers', TechnicalManagerController::class)
+    ->parameters(['technical-managers' => 'technicalManager']);
 
 // Insurances
 Route::prefix('insurances')->name('insurances.')->group(function () {

@@ -2,14 +2,13 @@
 
 return [
     // Admin Companies
-    'admin.dashboard.index' => 'مشاهده داشبورد ادمین',
-
     'admin.companies.index' => 'مشاهده لیست شرکت ها ادمین',
     'admin.companies.store' => 'ایجاد شرکتت جدید ادمین',
     'admin.companies.show' => 'نمایش شرکت ادمین',
     'admin.companies.update' => 'ویرایش اطلاعات شرکت ها ادمین',
     'admin.companies.destroy' => 'حذف شرکت از سیستم ادمین',
     'admin.companies.loginAs' => 'ورود به پنل شرکت ادمین',
+    'admin.companies.aggregate-report' => 'مشاهده گزارش تجمیعی شرکت‌ها ادمین',
 
     'admin.users.index' => 'مشاهده لیست کاربران ادمین',
     'admin.users.store' => 'ایجاد کاربر جدید ادمین',
@@ -17,6 +16,7 @@ return [
     'admin.users.update' => 'ویرایش اطلاعات کاربران ادمین',
     'admin.users.destroy' => 'حذف کاربر از سیستم ادمین',
     'admin.users.syncPermissions' => 'ویرایش دسترسی های کاربران ادمین',
+    'admin.users.permissions' => 'مشاهده دسترسی‌های کاربران ادمین',
 
     'admin.cities.index' => 'مشاهده لیست شهر ها ادمین',
     'admin.cities.store' => 'ایجاد شهر جدید ادمین',
@@ -30,7 +30,6 @@ return [
 
     'admin.permissions.index' => 'مشاهده لیست دسترسی ها ادمین',
     'admin.permissions.store' => 'ایجاد دسترسی جدید ادمین',
-    'admin.permissions.show' => 'نمایش دسترسی ادمین',
     'admin.permissions.update' => 'ویرایش اطلاعات دسترسی ادمین',
     'admin.permissions.destroy' => 'حذف دسترسی از سیستم ادمین',
 
@@ -39,6 +38,8 @@ return [
     'admin.roles.show' => 'نمایش نقش ادمین',
     'admin.roles.update' => 'ویرایش اطلاعات نقش ادمین',
     'admin.roles.destroy' => 'حذف نقش از سیستم ادمین',
+
+    'admin.waybills.index' => 'مشاهده بارنامه‌های تمامی شرکت‌ها ادمین',
 
     // User Permissions
     'user.dashboard.index' => 'مشاهده خلاصه داشبورد کاربر',
@@ -62,6 +63,11 @@ return [
     'user.drivers.update' => 'ویرایش اطلاعات راننده کاربر',
     'user.drivers.destroy' => 'حذف راننده از شرکت کاربر',
     'user.drivers.inquiry' => 'استعلام راننده کاربر',
+    'user.drivers.accounts.index' => 'مشاهده لیست حساب‌های بانکی راننده',
+    'user.drivers.accounts.store' => 'افزودن حساب بانکی راننده',
+    'user.drivers.accounts.show' => 'مشاهده حساب بانکی راننده',
+    'user.drivers.accounts.update' => 'ویرایش حساب بانکی راننده',
+    'user.drivers.accounts.destroy' => 'حذف حساب بانکی راننده',
 
     'user.fleets.index' => 'مشاهده لیست ناوگان ها کاربر',
     'user.fleets.store' => 'ایجاد ناوگان جدید کاربر',
@@ -83,7 +89,6 @@ return [
     'user.referral-numbers.update' => 'ویرایش بازه شماره حواله',
     'user.referral-numbers.destroy' => 'حذف بازه شماره حواله',
     'user.referral-numbers.inquiry' => 'استعلام شماره حواله آزاد',
-    'user.referral-numbers.preview' => 'مشاهده شماره حواله آزاد بعدی',
 
     'user.canceled-referrals.index' => 'مشاهده فهرست حواله‌های باطل‌شده',
 
@@ -93,12 +98,6 @@ return [
     'user.addresses.update' => 'ویرایش آدرس فرستنده یا گیرنده',
     'user.addresses.destroy' => 'حذف آدرس فرستنده یا گیرنده',
 
-    'user.cargos.index' => 'مشاهده لیست محموله ها',
-    'user.cargos.store' => 'ایجاد محموله جدید',
-    'user.cargos.show' => 'مشاهده محموله',
-    'user.cargos.update' => 'ویرایش محموله',
-    'user.cargos.destroy' => 'حذف محموله',
-
     'user.product-owners.index' => 'مشاهده لیست صاحب کالا ها',
     'user.product-owners.store' => 'ایجاد صاحب کالای جدید',
     'user.product-owners.show' => 'مشاهده صاحب کالا',
@@ -107,6 +106,7 @@ return [
 
     'user.shipment-parties.index' => 'مشاهده لیست فرستنده گیرنده',
     'user.shipment-parties.inquiry' => 'استعلام فرستنده یا گیرنده با شناسه ملی',
+    'user.shipment-parties.addresses-inquiry' => 'استعلام آدرس فرستنده یا گیرنده با کد پستی',
     'user.shipment-parties.store' => 'ایجاد فرستنده گیرنده جدید',
     'user.shipment-parties.show' => 'مشاهده فرستنده گیرنده',
     'user.shipment-parties.update' => 'ویرایش فرستنده گیرنده',
@@ -120,6 +120,9 @@ return [
     'user.waybills.destroy' => 'حذف بیجک',
     'user.waybills.cancel' => 'ابطال بیجک',
     'user.waybills.referral.cancel' => 'ابطال شماره حواله بارنامه',
+    'user.waybills.view-all-users' => 'مشاهده بارنامه تمامی کاربران',
+    'user.waybills.view-peer-users' => 'مشاهده بارنامه هم‌رده کاربران',
+    'user.waybills.view-parent-user' => 'مشاهده بارنامه والد کاربر',
 
     'user.settings.show' => 'مشاهده تنظیمات شرکت',
     'user.settings.update' => 'ویرایش تنظیمات شرکت',
@@ -144,12 +147,21 @@ return [
     'user.transport-contracts.show' => 'مشاهده قرارداد حمل',
     'user.transport-contracts.update' => 'ویرایش قرارداد حمل',
     'user.transport-contracts.destroy' => 'حذف قرارداد حمل',
+    'user.transport-contracts.users' => 'مشاهده کاربران مجاز قرارداد حمل',
+    'user.transport-contracts.syncUsers' => 'ویرایش کاربران مجاز قرارداد حمل',
+
+    'user.technical-managers.index' => 'مشاهده لیست مدیران فنی',
+    'user.technical-managers.store' => 'ایجاد مدیر فنی',
+    'user.technical-managers.show' => 'مشاهده مدیر فنی',
+    'user.technical-managers.update' => 'ویرایش مدیر فنی',
+    'user.technical-managers.destroy' => 'حذف مدیر فنی',
 
     'user.insurances.index' => 'مشاهده لیست بیمه‌ها',
     'user.insurances.store' => 'ایجاد بیمه',
     'user.insurances.show' => 'مشاهده بیمه',
     'user.insurances.update' => 'ویرایش بیمه',
     'user.insurances.destroy' => 'حذف بیمه',
+    'user.insurances.inquiry' => 'استعلام و محاسبه حق بیمه',
     'user.insurances.tariffs.index' => 'مشاهده لیست تعرفه‌های بیمه',
     'user.insurances.tariffs.store' => 'ایجاد تعرفه بیمه',
     'user.insurances.tariffs.show' => 'مشاهده تعرفه بیمه',
@@ -158,5 +170,5 @@ return [
 
     'user.cargo-groups.index' => 'مشاهده لیست گروه‌بندی کالاها',
     'user.cargo-groups.show' => 'مشاهده گروه‌بندی کالا',
-    'user.cargo-groups.cargos.update' => 'ویرایش محموله‌های گروه کالا',
+    'user.cargo-groups-cargos.update' => 'ویرایش محموله‌های گروه کالا',
 ];

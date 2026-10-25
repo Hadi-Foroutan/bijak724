@@ -6,8 +6,6 @@ use App\Models\Company\Driver;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Validation\Rules\Exists;
-use Illuminate\Validation\Rules\Unique;
 
 interface DriverRepositoryInterface
 {
@@ -29,9 +27,6 @@ interface DriverRepositoryInterface
 
     public function exists(int $companyId, int $id): bool;
 
-    public function existsRule(int $companyId, string $column = 'id'): Exists;
-
     public function findByNationalCode(int $companyId, string $nationalCode): Driver;
 
-    public function uniqueNationalCodeRule(int $companyId, ?int $ignoreDriverId = null): Unique;
 }

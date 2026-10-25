@@ -14,6 +14,8 @@ use App\Interfaces\Company\DriverAccountRepositoryInterface;
 use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Interfaces\Company\FleetRepositoryInterface;
 use App\Interfaces\Company\InsuranceRepositoryInterface;
+use App\Interfaces\Company\TechnicalManagerRepositoryInterface;
+use App\Repositories\Company\TechnicalManagerRepository;
 use App\Interfaces\Company\InsuranceTariffRepositoryInterface;
 use App\Interfaces\Company\ProductOwnerRepositoryInterface;
 use App\Interfaces\Company\ReferralNumberRepositoryInterface;
@@ -93,6 +95,7 @@ class AppServiceProvider extends ServiceProvider
         DashboardRepositoryInterface::class => DashboardRepository::class,
         CargoGroupRepositoryInterface::class => CargoGroupRepository::class,
         InsuranceRepositoryInterface::class => InsuranceRepository::class,
+        TechnicalManagerRepositoryInterface::class => TechnicalManagerRepository::class,
         InsuranceTariffRepositoryInterface::class => InsuranceTariffRepository::class,
         ProductOwnerRepositoryInterface::class => ProductOwnerRepository::class,
         ReferralNumberRepositoryInterface::class => ReferralNumberRepository::class,

@@ -32,6 +32,7 @@ class GeneratePermissionsCommand extends Command
         '*.logout',
         '*.checkToken',
         'profile.*',
+        'generated::*',
     ];
 
     public function handle(): int
@@ -82,6 +83,7 @@ class GeneratePermissionsCommand extends Command
             ->map(fn($route) => $route->getName())
             ->filter(fn(?string $name): bool => filled($name))
             ->reject(fn(string $name): bool => $this->isExcludedRoute($name))
+            ->merge(config('permission_groups.extra_permissions', []))
             ->unique()
             ->sort()
             ->values();
@@ -227,8 +229,16 @@ class GeneratePermissionsCommand extends Command
     {
         $createdGroups = collect();
 
+        $patterns = array_keys($this->permissionGroupDefinitions());
+
         foreach ($this->permissionGroupDefinitions() as $pattern => $groupName) {
-            $matchedPermissions = $this->permissionsMatchingPattern($permissions, $pattern);
+            // اگر الگوی دقیق‌تری (طولانی‌تر) هم همین دسترسی را بگیرد، دسترسی فقط در همان گروه دقیق‌تر می‌آید.
+            $matchedPermissions = $this->permissionsMatchingPattern($permissions, $pattern)
+                ->reject(fn(Permission $permission, string $name): bool => collect($patterns)
+                    ->filter(fn(string $other): bool => $other !== $pattern
+                        && $this->patternSpecificity($other) > $this->patternSpecificity($pattern)
+                        && Str::is(Str::contains($other, '*') ? $other : "{$other}*", $name))
+                    ->isNotEmpty());
 
             if ($matchedPermissions->isEmpty()) {
                 continue;
@@ -247,6 +257,11 @@ class GeneratePermissionsCommand extends Command
         }
 
         return $createdGroups;
+    }
+
+    private function patternSpecificity(string $pattern): int
+    {
+        return strlen(rtrim($pattern, '*'));
     }
 
     /**

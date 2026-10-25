@@ -8,9 +8,6 @@ use App\Models\Company\ShipmentPartyAddress;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Exists;
-use Illuminate\Validation\Rules\Unique;
 
 class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryInterface
 {
@@ -22,16 +19,6 @@ class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryIn
     public function create(int $companyId, array $data): ShipmentPartyAddress
     {
         return ShipmentPartyAddress::createForCompany($companyId, $data);
-    }
-
-    public function existsRule(int $companyId, string $column = 'id'): Exists
-    {
-        $model = ShipmentPartyAddress::modelForCompany($companyId);
-        $rule = Rule::exists($model->getTable(), $column);
-
-        return $model->companyId() === $companyId
-            ? $rule
-            : $rule->where('owner_company_id', $companyId);
     }
 
     public function findOrFail(int $companyId, int $addressId): ShipmentPartyAddress
@@ -51,19 +38,6 @@ class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryIn
             fn(Builder $query): Builder => $query
                 ->where('shipment_party_id', $shipmentPartyId),
         );
-    }
-
-    public function uniquePostalCodeForPartyRule(
-        int  $companyId,
-        int  $shipmentPartyId,
-        ?int $ignoreAddressId = null,
-    ): Unique
-    {
-        $table = ShipmentPartyAddress::modelForCompany($companyId)->getTable();
-        $rule = Rule::unique($table, 'postal_code')
-            ->where('shipment_party_id', $shipmentPartyId);
-
-        return $ignoreAddressId === null ? $rule : $rule->ignore($ignoreAddressId);
     }
 
     public function findForPartyOrFail(
@@ -87,7 +61,7 @@ class ShipmentPartyAddressRepository implements ShipmentPartyAddressRepositoryIn
     {
         $roleColumn = $type === 'sender' ? 'is_sender' : 'is_receiver';
 
-        $address = ShipmentPartyAddress::queryForCompany($companyId)
+        $address = ShipmentPartyAddress::queryPreferringOwnRows($companyId)
             ->with(ShipmentPartyAddress::defaultRelationsForCompany())
             ->where('postal_code', $postalCode)
             ->whereHas(

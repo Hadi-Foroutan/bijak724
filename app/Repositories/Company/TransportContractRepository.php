@@ -10,8 +10,6 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Exists;
 
 class TransportContractRepository implements TransportContractRepositoryInterface
 {
@@ -94,11 +92,6 @@ class TransportContractRepository implements TransportContractRepositoryInterfac
             $userId,
             $canViewAll,
         )->whereKey($id)->exists();
-    }
-
-    public function existsRule(int $companyId): Exists
-    {
-        return Rule::exists(TransportContract::class, 'id')->where('company_id', $companyId);
     }
 
     public function create(int $companyId, array $data): TransportContract

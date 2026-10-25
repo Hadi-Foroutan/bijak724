@@ -6,8 +6,6 @@ use App\Models\Company\Fleet;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Validation\Rules\Exists;
-use Illuminate\Validation\Rules\Unique;
 
 interface FleetRepositoryInterface
 {
@@ -27,15 +25,11 @@ interface FleetRepositoryInterface
 
     public function delete(int $companyId, int $id): void;
 
-    public function existsRule(int $companyId, string $column = 'id'): Exists;
-
     /** @param array<string, string> $plate */
     public function findByPlate(int $companyId, array $plate): Fleet;
 
     /** @param array<string, string> $plate */
     public function plateExists(int $companyId, array $plate, ?int $ignoreFleetId = null): bool;
-
-    public function uniqueSmartCardNumberRule(int $companyId, ?int $ignoreFleetId = null): Unique;
 
     public function systemIdByCode(int $systemCode): ?int;
 

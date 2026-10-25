@@ -31,3 +31,4 @@
 | ۲۴ | اعلان‌ها (ادمین)                         | [24-admin-notifications.md](24-admin-notifications.md)         |
 | ۲۵ | بارنامه‌های همهٔ شرکت‌ها (ادمین)           | [25-admin-waybills.md](25-admin-waybills.md)                   |
 | ۲۶ | Enumها                                  | [26-enums.md](26-enums.md)                                     |
+| ۲۷ |                              مدیران فنی | [27-technical-managers.md](27-technical-managers.md)           |

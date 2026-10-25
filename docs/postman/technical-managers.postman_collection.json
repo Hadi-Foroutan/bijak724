@@ -1,0 +1,143 @@
+{
+  "info": {
+    "name": "Bijak - Technical Managers (مدیران فنی)",
+    "description": "روت‌های مدیر فنی پنل شرکت. قبل از استفاده متغیرهای base_url و token را در Postman تنظیم کنید.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8000/api" },
+    { "key": "token", "value": "" },
+    { "key": "technical_manager_id", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "لیست مدیران فنی",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/user/technical-managers?paginate=1&itemsPerPage=10&page=1",
+          "host": ["{{base_url}}"],
+          "path": ["user", "technical-managers"],
+          "query": [
+            { "key": "paginate", "value": "1", "description": "اگر ارسال شود خروجی صفحه‌بندی می‌شود" },
+            { "key": "itemsPerPage", "value": "10" },
+            { "key": "page", "value": "1" },
+            { "key": "search", "value": "", "description": "جستجو در نام، کد ملی و موبایل", "disabled": true },
+            { "key": "eq-status", "value": "active", "description": "فیلتر وضعیت: active یا inactive", "disabled": true },
+            { "key": "order_field", "value": "id", "disabled": true },
+            { "key": "order_type", "value": "DESC", "disabled": true }
+          ]
+        },
+        "description": "مجوز لازم: user.technical-managers.index\n\nخروجی هر مورد: id, company_id, full_name, national_code, mobile, status, daily_limit, issued_today, remaining_today, created_at, updated_at"
+      }
+    },
+    {
+      "name": "ایجاد مدیر فنی",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"full_name\": \"علی احمدی\",\n  \"national_code\": \"0012345678\",\n  \"mobile\": \"09121234567\",\n  \"status\": \"active\",\n  \"daily_limit\": 5\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{base_url}}/user/technical-managers",
+          "host": ["{{base_url}}"],
+          "path": ["user", "technical-managers"]
+        },
+        "description": "مجوز لازم: user.technical-managers.store\n\nهمهٔ فیلدها الزامی‌اند:\n- full_name: string، حداکثر ۲۵۵\n- national_code: ۱۰ رقم، در هر شرکت یکتا\n- mobile: قالب 09xxxxxxxxx\n- status: active | inactive\n- daily_limit: عدد صحیح ۰ تا ۱۰۰۰۰۰ (حداکثر بارنامهٔ قابل صدور در روز)\n\nپاسخ موفق: 201"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const id = pm.response.json()?.data?.id;",
+              "if (id) { pm.collectionVariables.set('technical_manager_id', id); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "جزئیات مدیر فنی",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/user/technical-managers/{{technical_manager_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["user", "technical-managers", "{{technical_manager_id}}"]
+        },
+        "description": "مجوز لازم: user.technical-managers.show"
+      }
+    },
+    {
+      "name": "ویرایش مدیر فنی",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"full_name\": \"علی احمدی\",\n  \"national_code\": \"0012345678\",\n  \"mobile\": \"09121234567\",\n  \"status\": \"active\",\n  \"daily_limit\": 8\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{base_url}}/user/technical-managers/{{technical_manager_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["user", "technical-managers", "{{technical_manager_id}}"]
+        },
+        "description": "مجوز لازم: user.technical-managers.update\n\nدر PATCH همهٔ فیلدها اختیاری‌اند و فقط فیلدهای ارسال‌شده تغییر می‌کنند. نگه داشتن کد ملی خود مدیر فنی مجاز است."
+      }
+    },
+    {
+      "name": "حذف مدیر فنی",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{base_url}}/user/technical-managers/{{technical_manager_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["user", "technical-managers", "{{technical_manager_id}}"]
+        },
+        "description": "مجوز لازم: user.technical-managers.destroy\n\nاگر مدیر فنی در بارنامهٔ صادرشده یا باطل‌شده استفاده شده باشد، خطای 422 برمی‌گردد."
+      }
+    },
+    {
+      "name": "نمونه: بخش مدیر فنی در ثبت بارنامه (فقط توضیح)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"completed\",\n  \"technical_manager_id\": {{technical_manager_id}}\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": {
+          "raw": "{{base_url}}/user/waybills",
+          "host": ["{{base_url}}"],
+          "path": ["user", "waybills"]
+        },
+        "description": "فقط نشان‌دهندهٔ فیلد مدیر فنی است؛ بدنهٔ کامل بارنامه را از کالکشن بارنامه‌ها بردارید.\n\n- technical_manager_id برای status = completed الزامی است و باید مدیر فنی فعال همین شرکت باشد.\n- اگر سقف daily_limit در روز issued_at پر شده باشد: 422 با کلید خطای technical_manager_id.\n- لیست مدیران فنی فعال با سهمیهٔ باقی‌مانده: GET {{base_url}}/user/waybills/options (کلید technical_managers)."
+      }
+    }
+  ]
+}

@@ -22,7 +22,7 @@ return new class extends Migration {
             $table->enum('parent_type', CompanyParentEnum::values())->default(CompanyParentEnum::ORIGINAL->value);
 //            $table->string('code')->unique();
             $table->string('panel_code')->unique();
-            $table->string('organization_code')->unique();
+            $table->string('organization_code')->nullable()->unique();
             $table->string('name');
 
             // Legal information

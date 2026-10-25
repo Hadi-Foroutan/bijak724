@@ -7,9 +7,6 @@ use App\Models\Company\ShipmentParty;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Exists;
-use Illuminate\Validation\Rules\Unique;
 
 class ShipmentPartyRepository implements ShipmentPartyRepositoryInterface
 {
@@ -50,16 +47,6 @@ class ShipmentPartyRepository implements ShipmentPartyRepositoryInterface
         return ShipmentParty::queryForCompany($companyId)->whereKey($id)->exists();
     }
 
-    public function existsRule(int $companyId, string $column = 'id'): Exists
-    {
-        $model = ShipmentParty::modelForCompany($companyId);
-        $rule = Rule::exists($model->getTable(), $column);
-
-        return $model->companyId() === $companyId
-            ? $rule
-            : $rule->where('owner_company_id', $companyId);
-    }
-
     public function findByNationalIdentifierAndType(
         int    $companyId,
         string $nationalIdentifier,
@@ -68,21 +55,11 @@ class ShipmentPartyRepository implements ShipmentPartyRepositoryInterface
     {
         $roleColumn = $type === 'sender' ? 'is_sender' : 'is_receiver';
 
-        return ShipmentParty::queryForCompany($companyId)
+        return ShipmentParty::queryPreferringOwnRows($companyId)
             ->with(ShipmentParty::defaultRelationsForCompany())
             ->where('national_identifier', $nationalIdentifier)
             ->where($roleColumn, true)
             ->firstOrFail();
     }
 
-    public function uniqueNationalIdentifierRule(
-        int  $companyId,
-        ?int $ignoreShipmentPartyId = null,
-    ): Unique
-    {
-        $table = ShipmentParty::modelForCompany($companyId)->getTable();
-        $rule = Rule::unique($table, 'national_identifier');
-
-        return $ignoreShipmentPartyId === null ? $rule : $rule->ignore($ignoreShipmentPartyId);
-    }
 }

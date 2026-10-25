@@ -96,6 +96,8 @@ return [
     'insurance_premium_required' => 'مبلغ ثابت یا درصد حق بیمه الزامی است.',
     'insurance_tariff_not_found' => 'تعرفه بیمه برای محموله با کد :cargo_code یافت نشد.',
     'insurance_tariff_range_exists' => 'این بازه قبلاً ثبت شده است.',
+    'technical_manager_inactive' => 'مدیر فنی انتخاب‌شده غیرفعال است.',
+    'technical_manager_daily_limit_reached' => 'حداکثر تعداد مجاز بارنامه در روز برای این مدیر فنی تمام شده است.',
     'notification_type_success' => 'موفقیت‌آمیز',
     'notification_type_error' => 'خطا',
     'notification_type_warning' => 'هشدار',

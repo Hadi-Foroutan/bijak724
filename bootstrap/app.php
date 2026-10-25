@@ -62,6 +62,7 @@ return Application::configure(basePath: dirname(__DIR__))
                     'shipmentParty' => '[0-9]+',
                     'state' => '[0-9]+',
                     'tariff' => '[0-9]+',
+                    'technicalManager' => '[0-9]+',
                     'transportContract' => '[0-9]+',
                     'user' => '[0-9]+',
                     'waybill' => '[0-9]+',

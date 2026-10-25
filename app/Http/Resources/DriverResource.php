@@ -13,6 +13,11 @@ class DriverResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'owner_company_id' => $this->owner_company_id,
+            'owner_company' => $this->whenLoaded('ownerCompany', fn(): array => [
+                'id' => $this->ownerCompany->id,
+                'name' => $this->ownerCompany->name,
+            ]),
             'national_code' => $this->national_code,
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,

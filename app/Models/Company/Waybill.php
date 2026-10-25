@@ -5,6 +5,7 @@ namespace App\Models\Company;
 use App\Enums\WaybillStatus;
 use App\Models\DynamicModel;
 use App\Models\Insurance;
+use App\Models\TechnicalManager;
 use App\Models\TransportContract;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -61,6 +62,9 @@ class Waybill extends DynamicModel
         'issued_at',
         'issued_by_print_name',
         'liability_insurance',
+        'technical_manager_id',
+        'technical_manager_full_name',
+        'technical_manager_mobile',
         'bijak_tracking_code',
         'description',
         'status',
@@ -93,7 +97,7 @@ class Waybill extends DynamicModel
         'receiver', 'receiverAddress.city', 'destination.city',
         'firstDriver', 'secondDriver', 'referralDriver',
         'fleet.driverLicenseType', 'fleet.loadingType', 'fleet.fleetBrand', 'fleet.fleetType',
-        'transportContract', 'insurance.insuranceCompany',
+        'transportContract', 'insurance.insuranceCompany', 'technicalManager',
         'cargos.cargo', 'cargos.packaging', 'cargos.productOwner',
     ];
 
@@ -148,6 +152,9 @@ class Waybill extends DynamicModel
         'issued_at',
         'issued_by_print_name',
         'liability_insurance',
+        'technical_manager_id',
+        'technical_manager_full_name',
+        'technical_manager_mobile',
         'bijak_tracking_code',
         'description',
         'status',
@@ -271,6 +278,11 @@ class Waybill extends DynamicModel
     public function insurance(): BelongsTo
     {
         return $this->belongsTo(Insurance::class, 'liability_insurance');
+    }
+
+    public function technicalManager(): BelongsTo
+    {
+        return $this->belongsTo(TechnicalManager::class, 'technical_manager_id');
     }
 
     public function cargos(): HasMany

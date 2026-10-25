@@ -7,9 +7,6 @@ use App\Models\Company\Driver;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Exists;
-use Illuminate\Validation\Rules\Unique;
 
 class DriverRepository implements DriverRepositoryInterface
 {
@@ -50,29 +47,12 @@ class DriverRepository implements DriverRepositoryInterface
         return Driver::queryForCompany($companyId)->whereKey($id)->exists();
     }
 
-    public function existsRule(int $companyId, string $column = 'id'): Exists
-    {
-        $model = Driver::modelForCompany($companyId);
-        $rule = Rule::exists($model->getTable(), $column);
-
-        return $model->companyId() === $companyId
-            ? $rule
-            : $rule->where('owner_company_id', $companyId);
-    }
-
     public function findByNationalCode(int $companyId, string $nationalCode): Driver
     {
-        return Driver::queryForCompany($companyId)
+        return Driver::queryPreferringOwnRows($companyId)
             ->with(Driver::defaultRelationsForCompany())
             ->where('national_code', $nationalCode)
             ->firstOrFail();
     }
 
-    public function uniqueNationalCodeRule(int $companyId, ?int $ignoreDriverId = null): Unique
-    {
-        $table = Driver::modelForCompany($companyId)->getTable();
-        $rule = Rule::unique($table, 'national_code');
-
-        return $ignoreDriverId === null ? $rule : $rule->ignore($ignoreDriverId);
-    }
 }

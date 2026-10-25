@@ -103,8 +103,10 @@ class CompanyTableService
 
             $table->timestamps();
 
+            $this->addOwnerUniqueIndexes($table, $tableName, $columns);
+
             if ($tableKey === 'fleets') {
-                $table->unique($this->fleetPlateColumns(), "{$tableName}_plate_unique");
+                $table->unique($this->fleetPlateUniqueColumns(), "{$tableName}_plate_unique");
             }
 
             if ($this->isNumberRangeTable($tableKey)) {
@@ -142,15 +144,57 @@ class CompanyTableService
         return in_array($tableKey, ['bijak_numbers', 'referral_numbers'], true);
     }
 
+    /**
+     * The plate is unique per owning company: a branch shares its parent's table but may register
+     * the same vehicle for itself, so owner_company_id is part of the index.
+     */
     private function ensureFleetPlateUniqueIndex(string $tableName, string $tableKey): void
     {
-        if ($tableKey !== 'fleets' || Schema::hasIndex($tableName, "{$tableName}_plate_unique")) {
+        if ($tableKey !== 'fleets') {
             return;
         }
 
-        Schema::table($tableName, function (Blueprint $table) use ($tableName): void {
-            $table->unique($this->fleetPlateColumns(), "{$tableName}_plate_unique");
+        $indexName = "{$tableName}_plate_unique";
+        $wantedColumns = $this->fleetPlateUniqueColumns();
+        $currentIndex = collect(Schema::getIndexes($tableName))->firstWhere('name', $indexName);
+
+        if ($currentIndex !== null && array_values($currentIndex['columns']) === $wantedColumns) {
+            return;
+        }
+
+        Schema::table($tableName, function (Blueprint $table) use ($tableName, $indexName, $wantedColumns, $currentIndex): void {
+            if ($currentIndex !== null) {
+                $table->dropUnique($indexName);
+            }
+
+            $table->unique($wantedColumns, $indexName);
         });
+    }
+
+    /**
+     * Columns with `'unique' => 'owner'` are unique together with owner_company_id, not on their own.
+     *
+     * @param list<array<string, mixed>> $columns
+     */
+    private function addOwnerUniqueIndexes(Blueprint $table, string $tableName, array $columns): void
+    {
+        foreach ($columns as $column) {
+            if (($column['unique'] ?? false) === 'owner') {
+                $table->unique(['owner_company_id', $column['name']], $this->ownerUniqueIndexName($tableName, $column['name']));
+            }
+        }
+    }
+
+    private function ownerUniqueIndexName(string $tableName, string $columnName): string
+    {
+        // Short suffix: MySQL index names are limited to 64 characters.
+        return strtolower("{$tableName}_{$columnName}_owner_uq");
+    }
+
+    /** @return list<string> */
+    private function fleetPlateUniqueColumns(): array
+    {
+        return ['owner_company_id', ...$this->fleetPlateColumns()];
     }
 
     private function ensureWaybillNumberUniqueIndexes(string $tableName, string $tableKey): void
@@ -514,7 +558,9 @@ class CompanyTableService
         foreach ($columns as $column) {
             $uniqueIndex = strtolower("{$tableName}_{$column['name']}_unique");
             $plainIndex = strtolower("{$tableName}_{$column['name']}_index");
-            $wantsUnique = (bool)($column['unique'] ?? false);
+            $wantsUnique = ($column['unique'] ?? false) === true;
+            $ownerUniqueIndex = $this->ownerUniqueIndexName($tableName, $column['name']);
+            $addOwnerUnique = ($column['unique'] ?? false) === 'owner' && !in_array($ownerUniqueIndex, $indexNames, true);
             $wantsIndex = !$wantsUnique && (bool)($column['index'] ?? false);
             $hasUnique = in_array($uniqueIndex, $indexNames, true);
             $hasIndex = in_array($plainIndex, $indexNames, true);
@@ -527,13 +573,18 @@ class CompanyTableService
             $dropUnique = $hasUnique && !$wantsUnique && $mayDropIndex;
             $dropIndex = $hasIndex && !$wantsIndex && $mayDropIndex;
 
-            if (!$addUnique && !$addIndex && !$dropUnique && !$dropIndex) {
+            if (!$addUnique && !$addIndex && !$dropUnique && !$dropIndex && !$addOwnerUnique) {
                 continue;
             }
 
             Schema::table($tableName, function (Blueprint $table) use (
                 $column, $uniqueIndex, $plainIndex, $addUnique, $addIndex, $dropUnique, $dropIndex,
+                $addOwnerUnique, $ownerUniqueIndex,
             ): void {
+                if ($addOwnerUnique) {
+                    $table->unique(['owner_company_id', $column['name']], $ownerUniqueIndex);
+                }
+
                 if ($addUnique) {
                     $table->unique($column['name'], $uniqueIndex);
                 }
@@ -570,8 +621,10 @@ class CompanyTableService
     {
         $definition = $this->columnDefinition($table, $column);
 
-        if ($column['unique'] ?? false) {
+        if (($column['unique'] ?? false) === true) {
             $definition->unique();
+        } elseif (($column['unique'] ?? false) === 'owner') {
+            // composite (owner_company_id, column) index is added with the table, see addOwnerUniqueIndexes()
         } elseif ($column['index'] ?? false) {
             $definition->index();
         }

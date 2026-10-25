@@ -28,6 +28,7 @@ class WaybillResource extends CompanyDynamicResource
                     WaybillStatus::Referral,
                 ], true)),
             'insurance' => InsuranceResource::make($this->whenLoaded('insurance')),
+            'technical_manager' => TechnicalManagerResource::make($this->whenLoaded('technicalManager')),
             'cargos' => WaybillCargoResource::collection($this->whenLoaded('cargos')),
         ];
     }

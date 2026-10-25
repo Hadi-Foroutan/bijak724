@@ -14,7 +14,9 @@ use App\Models\TransportContract;
 use App\Models\User;
 use App\Services\Company\BijakNumber\BijakNumberService;
 use App\Services\Company\ReferralNumber\ReferralNumberService;
+use App\Services\Company\TechnicalManager\TechnicalManagerService;
 use App\Services\Company\TransportContract\TransportContractAccessService;
+use Carbon\Carbon;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -48,18 +50,19 @@ class WaybillService
         protected SharedWaybillRepositoryInterface     $sharedWaybillRepository,
         protected TransportContractAccessService       $transportContractAccessService,
         protected CanceledReferralRepositoryInterface  $canceledReferralRepository,
+        protected TechnicalManagerService              $technicalManagerService,
     )
     {
     }
 
-    public function index(int $companyId, array $params): ServiceResult
+    public function index(int $companyId, array $params, ?User $viewer = null): ServiceResult
     {
-        return ServiceResult::success($this->waybillRepository->search($companyId, $params));
+        return ServiceResult::success($this->waybillRepository->search($companyId, $params, $viewer));
     }
 
-    public function show(int $companyId, int $id): ServiceResult
+    public function show(int $companyId, int $id, ?User $viewer = null): ServiceResult
     {
-        return ServiceResult::success($this->waybillRepository->findOrFail($companyId, $id));
+        return ServiceResult::success($this->waybillRepository->findOrFail($companyId, $id, $viewer));
     }
 
     public function options(int $companyId, User $user): ServiceResult
@@ -75,6 +78,15 @@ class WaybillService
                 'value' => $status->value,
                 'label' => $status->label(),
             ])->values(),
+            'technical_managers' => $this->technicalManagerService->activeOptions($companyId)
+                ->map(fn($manager): array => [
+                    'id' => $manager->id,
+                    'full_name' => $manager->full_name,
+                    'mobile' => $manager->mobile,
+                    'daily_limit' => $manager->daily_limit,
+                    'issued_today' => $manager->getAttribute('issued_today'),
+                    'remaining_today' => $manager->remainingToday(),
+                ])->values(),
             'transport_contracts' => $contracts->map(fn(TransportContract $contract): array => [
                 'id' => $contract->id,
                 'title' => $contract->title,
@@ -113,6 +125,7 @@ class WaybillService
                 ], true)) {
                     $data = $this->clearIssuanceFields($data);
                 } else {
+                    $this->consumeTechnicalManagerQuota($companyId, $data);
                     $data = $this->prepareIssuance($companyId, $data);
                 }
 
@@ -169,6 +182,7 @@ class WaybillService
                 if (in_array($status, [WaybillStatus::Incomplete, WaybillStatus::Referral], true)) {
                     $data = $this->clearIssuanceFields($data);
                 } else {
+                    $this->consumeTechnicalManagerQuota($companyId, $data, $waybill);
                     $data = $this->prepareIssuance($companyId, $data, $waybill);
                 }
 
@@ -245,6 +259,32 @@ class WaybillService
 
             return ServiceResult::success($this->waybillRepository->findOrFail($companyId, $id));
         });
+    }
+
+    /**
+     * Issuing a waybill needs an active technical manager that still has quota on the issue day.
+     * The manager row is locked here, and the count (derived from the issued waybills) includes this one
+     * once it is saved, so the quota is used up exactly once per issued waybill.
+     *
+     * @param array<string, mixed> $data
+     */
+    private function consumeTechnicalManagerQuota(int $companyId, array $data, ?Waybill $waybill = null): void
+    {
+        $technicalManagerId = $data['technical_manager_id'] ?? $waybill?->technical_manager_id;
+
+        if ($technicalManagerId === null) {
+            throw ValidationException::withMessages([
+                'technical_manager_id' => __('validation.required', ['attribute' => 'مدیر فنی']),
+            ]);
+        }
+
+        $issuedAt = $waybill?->issued_at ?? ($data['issued_at'] ?? null);
+
+        $this->technicalManagerService->ensureCanIssue(
+            $companyId,
+            (int)$technicalManagerId,
+            $issuedAt === null ? now() : Carbon::parse($issuedAt),
+        );
     }
 
     /** @param array<string, mixed> $data */

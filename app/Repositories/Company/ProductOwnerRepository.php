@@ -7,8 +7,6 @@ use App\Models\Company\ProductOwner;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Exists;
 
 class ProductOwnerRepository implements ProductOwnerRepositoryInterface
 {
@@ -44,13 +42,4 @@ class ProductOwnerRepository implements ProductOwnerRepositoryInterface
         ProductOwner::deleteForCompany($companyId, $id);
     }
 
-    public function existsRule(int $companyId, string $column = 'id'): Exists
-    {
-        $model = ProductOwner::modelForCompany($companyId);
-        $rule = Rule::exists($model->getTable(), $column);
-
-        return $model->companyId() === $companyId
-            ? $rule
-            : $rule->where('owner_company_id', $companyId);
-    }
 }

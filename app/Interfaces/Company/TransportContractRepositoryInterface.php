@@ -6,7 +6,6 @@ use App\Models\TransportContract;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
-use Illuminate\Validation\Rules\Exists;
 
 interface TransportContractRepositoryInterface
 {
@@ -42,8 +41,6 @@ interface TransportContractRepositoryInterface
         int  $userId,
         bool $canViewAll,
     ): bool;
-
-    public function existsRule(int $companyId): Exists;
 
     public function create(int $companyId, array $data): TransportContract;
 

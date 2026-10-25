@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Helpers\ResponseHandler;
+use App\Http\Requests\Concerns\ScopesRulesToCompany;
 use App\Models\Company;
 use App\Services\Company\CompanyContextService;
 use Illuminate\Contracts\Validation\Validator;
@@ -12,6 +13,8 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 class BaseRequest extends FormRequest
 {
+    use ScopesRulesToCompany;
+
     public function authorize(): bool
     {
         return true;

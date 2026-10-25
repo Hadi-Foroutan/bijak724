@@ -21,15 +21,27 @@ return [
         'user.canceled-referrals.' => 'مشاهده حواله‌های باطل‌شده',
         'user.shipment-parties.' => 'مدیریت فرستندگان و گیرندگان',
         'user.addresses.' => 'مدیریت آدرس‌های فرستندگان و گیرندگان',
+        'user.waybills.view-' => 'نمایش بارنامه',
         'user.waybills.' => 'مدیریت بارنامه‌ها',
         'user.cargos.' => 'مدیریت محموله‌ها',
         'user.product-owners.' => 'مدیریت صاحبان کالا',
         'user.transport-contracts.' => 'مدیریت قراردادهای حمل',
         'user.insurances.' => 'مدیریت بیمه‌ها و تعرفه‌ها',
+        'user.technical-managers.' => 'مدیریت مدیران فنی',
         'user.cargo-groups*' => 'مدیریت گروه‌بندی کالاها',
         'user.general.' => 'اطلاعات عمومی کاربران',
         'profile.' => 'مدیریت پروفایل کاربر',
         'user.permissions.' => 'مدیریت دسترسی ها',
+    ],
+
+    /*
+     * دسترسی‌هایی که مسیر (route) ندارند و شرط‌های داخل کد هستند.
+     * توضیح فارسی هر کدام باید در lang/fa/permissions_description.php باشد.
+     */
+    'extra_permissions' => [
+        'user.waybills.view-all-users',
+        'user.waybills.view-peer-users',
+        'user.waybills.view-parent-user',
     ],
 
     'roles' => [
@@ -45,6 +57,9 @@ return [
 
     'non_default_permissions' => [
         'user.users.*',
+        'user.technical-managers.*',
+        // فقط با تیک دستی مدیر داده می‌شوند؛ کاربر ساده به‌صورت پیش‌فرض آن‌ها را ندارد.
+        'user.waybills.view-*',
         //        'user.fleets.*'
     ],
 ];

@@ -7,8 +7,6 @@ use App\Models\Company;
 use App\Models\Insurance;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Exists;
 
 class InsuranceRepository implements InsuranceRepositoryInterface
 {
@@ -32,11 +30,6 @@ class InsuranceRepository implements InsuranceRepositoryInterface
             ->where('company_id', $companyId)
             ->with(['insuranceCompany', 'tariffs.cargoGroup'])
             ->findOrFail($id);
-    }
-
-    public function existsRule(int $companyId): Exists
-    {
-        return Rule::exists(Insurance::class, 'id')->where('company_id', $companyId);
     }
 
     public function create(int $companyId, array $data): Insurance

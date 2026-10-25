@@ -9,9 +9,6 @@ use App\Models\FleetType;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Exists;
-use Illuminate\Validation\Rules\Unique;
 
 class FleetRepository implements FleetRepositoryInterface
 {
@@ -47,16 +44,6 @@ class FleetRepository implements FleetRepositoryInterface
         Fleet::deleteForCompany($companyId, $id);
     }
 
-    public function existsRule(int $companyId, string $column = 'id'): Exists
-    {
-        $model = Fleet::modelForCompany($companyId);
-        $rule = Rule::exists($model->getTable(), $column);
-
-        return $model->companyId() === $companyId
-            ? $rule
-            : $rule->where('owner_company_id', $companyId);
-    }
-
     public function findByPlate(int $companyId, array $plate): Fleet
     {
         return $this->plateQuery($companyId, $plate)
@@ -66,21 +53,13 @@ class FleetRepository implements FleetRepositoryInterface
 
     public function plateExists(int $companyId, array $plate, ?int $ignoreFleetId = null): bool
     {
-        $query = $this->plateQuery($companyId, $plate, true);
+        $query = $this->plateQuery($companyId, $plate);
 
         if ($ignoreFleetId !== null) {
             $query->whereKeyNot($ignoreFleetId);
         }
 
         return $query->exists();
-    }
-
-    public function uniqueSmartCardNumberRule(int $companyId, ?int $ignoreFleetId = null): Unique
-    {
-        $table = Fleet::modelForCompany($companyId)->getTable();
-        $rule = Rule::unique($table, 'smart_card_number');
-
-        return $ignoreFleetId === null ? $rule : $rule->ignore($ignoreFleetId);
     }
 
     public function systemIdByCode(int $systemCode): ?int
@@ -107,13 +86,10 @@ class FleetRepository implements FleetRepositoryInterface
             ->exists();
     }
 
-    private function plateQuery(int $companyId, array $plate, bool $shared = false): Builder
+    private function plateQuery(int $companyId, array $plate): Builder
     {
-        $query = $shared
-            ? Fleet::sharedQueryForCompany($companyId)
-            : Fleet::queryForCompany($companyId);
-
-        return $query
+        // A plate is unique per owning company (a branch may register the same vehicle for itself).
+        return Fleet::ownedQueryForCompany($companyId)
             ->where('plate_first_number', $plate['plate_first_number'])
             ->where('plate_second_letter', $plate['plate_second_letter'])
             ->where('plate_third_number', $plate['plate_third_number'])

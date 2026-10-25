@@ -34,6 +34,7 @@ class Driver extends DynamicModel
     ];
 
     protected array $defaultRelations = [
+        'ownerCompany',
         'licenseType',
         'defaultAccount',
     ];

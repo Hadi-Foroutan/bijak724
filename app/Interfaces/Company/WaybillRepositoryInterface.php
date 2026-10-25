@@ -3,6 +3,7 @@
 namespace App\Interfaces\Company;
 
 use App\Models\Company\Waybill;
+use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -13,12 +14,12 @@ interface WaybillRepositoryInterface
     public function query(int $companyId): Builder;
 
     /** @return Collection<int, Waybill>|LengthAwarePaginator */
-    public function search(int $companyId, array $filters): Collection|LengthAwarePaginator;
+    public function search(int $companyId, array $filters, ?User $viewer = null): Collection|LengthAwarePaginator;
 
     /** @param array<string, mixed> $data */
     public function create(int $companyId, array $data): Waybill;
 
-    public function findOrFail(int $companyId, int $id): Waybill;
+    public function findOrFail(int $companyId, int $id, ?User $viewer = null): Waybill;
 
     public function findOrFailForUpdate(int $companyId, int $id): Waybill;
 

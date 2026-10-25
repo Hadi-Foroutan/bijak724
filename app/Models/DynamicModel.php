@@ -110,6 +110,40 @@ abstract class DynamicModel extends Model
         return (new static)->newQueryForCompany($companyId);
     }
 
+    /**
+     * Only the rows this company itself owns. A data-owner (parent) company's normal query also
+     * returns its branches' rows, so lookups by a natural key (national code, plate...) use this one:
+     * the same key may legitimately exist once per owner.
+     *
+     * @return Builder<static>
+     */
+    public static function ownedQueryForCompany(int $companyId): Builder
+    {
+        $model = (new static)->newInstanceForCompany($companyId);
+
+        return $model->newQuery()->where($model->qualifyColumn('owner_company_id'), $companyId);
+    }
+
+    /**
+     * Same rows as queryForCompany(), with the company's own rows first. Used by lookups by a natural key:
+     * a parent can still find its branches' records, but when it owns one too, that one wins.
+     *
+     * @return Builder<static>
+     */
+    public static function queryPreferringOwnRows(int $companyId): Builder
+    {
+        $model = (new static)->newInstanceForCompany($companyId);
+
+        return $model->newQueryForCompany($companyId)
+            ->orderByRaw('(' . $model->qualifyColumn('owner_company_id') . ' = ?) DESC', [$companyId]);
+    }
+
+    /** The company (parent or branch) that owns this row; useful to tell same-named rows apart. */
+    public function ownerCompany(): BelongsTo
+    {
+        return $this->belongsTo(Company::class, 'owner_company_id');
+    }
+
     public static function modelForCompany(int $companyId): static
     {
         return (new static)->newInstanceForCompany($companyId);

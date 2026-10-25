@@ -6,8 +6,9 @@ use App\Enums\WaybillStatus;
 use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Interfaces\Company\ShipmentPartyAddressRepositoryInterface;
 use App\Interfaces\Company\ShipmentPartyRepositoryInterface;
+use App\Interfaces\Company\TechnicalManagerRepositoryInterface;
 use App\Models\Company\Waybill;
-use App\Models\DynamicModel;
+use Illuminate\Database\Eloquent\Model;
 
 class WaybillReferenceSnapshotBuilder
 {
@@ -51,12 +52,17 @@ class WaybillReferenceSnapshotBuilder
             'full_name' => 'full_name',
             'phone' => 'phone_number_1',
         ]],
+        'technical_manager_id' => ['technical_manager', 'technical_manager', [
+            'full_name' => 'full_name',
+            'mobile' => 'mobile',
+        ]],
     ];
 
     public function __construct(
         protected ShipmentPartyRepositoryInterface        $shipmentPartyRepository,
         protected ShipmentPartyAddressRepositoryInterface $shipmentPartyAddressRepository,
         protected DriverRepositoryInterface               $driverRepository,
+        protected TechnicalManagerRepositoryInterface     $technicalManagerRepository,
     )
     {
     }
@@ -135,12 +141,13 @@ class WaybillReferenceSnapshotBuilder
             : (int)$currentId === (int)$newId;
     }
 
-    private function findReference(int $companyId, string $referenceType, int $id): DynamicModel
+    private function findReference(int $companyId, string $referenceType, int $id): Model
     {
         return match ($referenceType) {
             'shipment_party' => $this->shipmentPartyRepository->findOrFail($companyId, $id),
             'shipment_party_address' => $this->shipmentPartyAddressRepository->findOrFail($companyId, $id),
             'driver' => $this->driverRepository->findOrFail($companyId, $id),
+            'technical_manager' => $this->technicalManagerRepository->findOrFail($companyId, $id),
         };
     }
 }

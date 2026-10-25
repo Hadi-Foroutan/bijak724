@@ -19,7 +19,11 @@ use App\Models\Insurance;
 use App\Models\LoadingType;
 use App\Models\Packaging;
 use App\Models\State;
+use App\Models\TechnicalManager;
 use App\Models\User;
+use App\Services\Company\BijakNumber\BijakNumberService;
+use App\Services\Company\ReferralNumber\ReferralNumberService;
+use App\Services\Company\TransportContract\DefaultTransportContractService;
 use App\Services\Company\Waybill\WaybillService;
 use App\Services\Company\Waybill\WaybillTrackingCodeGenerator;
 use Carbon\CarbonImmutable;
@@ -45,6 +49,17 @@ beforeEach(function (): void {
 
     $this->cargo = Cargo::query()->create(['name' => 'گندم', 'code' => 1200000]);
     $this->packaging = Packaging::query()->create(['unit_name' => 'کیسه', 'code' => 8]);
+    // پیش‌فرض‌های شرکت (قرارداد، بازه‌های شماره) را مستقل از فعال بودن observer مطمئن می‌شویم.
+    if ($this->company->transportContracts()->doesntExist()) {
+        app(DefaultTransportContractService::class)->createForCompany($this->company);
+        app(BijakNumberService::class)->ensureDefaultForCompany($this->company->id);
+        app(ReferralNumberService::class)->ensureDefaultForCompany($this->company->id);
+    }
+    $this->technicalManager = TechnicalManager::factory()->for($this->company)->create([
+        'full_name' => 'مدیر فنی نمونه',
+        'mobile' => '09125550000',
+        'daily_limit' => 100,
+    ]);
     $this->contract = $this->company->transportContracts()->with('items')->sole();
     $this->contract->items->firstWhere('name', TransportContractItemName::WeighbridgeCost)
         ->update(['primary_value' => 5]);
@@ -1556,6 +1571,118 @@ test('editing a referral waybill keeps its referral status when incomplete is re
     ]);
 });
 
+test('issuing a waybill requires an active technical manager of the same company', function () {
+    $payload = completeWaybillPayload($this);
+    unset($payload['technical_manager_id']);
+
+    $this->postJson('/api/user/waybills', $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['technical_manager_id']);
+
+    $foreignManager = TechnicalManager::factory()->create();
+    $this->postJson('/api/user/waybills', [...$payload, 'technical_manager_id' => $foreignManager->id])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['technical_manager_id']);
+
+    $this->technicalManager->update(['status' => 'inactive']);
+    $this->postJson('/api/user/waybills', [...$payload, 'technical_manager_id' => $this->technicalManager->id])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['technical_manager_id']);
+
+    // برای ناتمام و حواله انتخاب مدیر فنی لازم نیست.
+    $this->postJson('/api/user/waybills', ['status' => WaybillStatus::Incomplete->value])->assertCreated();
+});
+
+test('an issued waybill is linked to the technical manager and keeps a snapshot of the name and mobile', function () {
+    $id = $this->postJson('/api/user/waybills', completeWaybillPayload($this))
+        ->assertCreated()
+        ->assertJsonPath('data.technical_manager_id', $this->technicalManager->id)
+        ->assertJsonPath('data.technical_manager_full_name', 'مدیر فنی نمونه')
+        ->assertJsonPath('data.technical_manager_mobile', '09125550000')
+        ->assertJsonPath('data.technical_manager.id', $this->technicalManager->id)
+        ->json('data.id');
+
+    $this->technicalManager->update(['full_name' => 'نام جدید', 'mobile' => '09129999999']);
+
+    $this->getJson("/api/user/waybills/{$id}")
+        ->assertSuccessful()
+        ->assertJsonPath('data.technical_manager_full_name', 'مدیر فنی نمونه')
+        ->assertJsonPath('data.technical_manager_mobile', '09125550000');
+});
+
+test('the daily limit of a technical manager is used up per issued waybill and recharges the next day', function () {
+    $this->technicalManager->update(['daily_limit' => 2]);
+    $issue = fn (string $issuedAt, int $bijakNumber) => $this->postJson('/api/user/waybills', [
+        ...completeWaybillPayload($this),
+        'issued_at' => $issuedAt,
+        'bijak_number' => $bijakNumber,
+    ]);
+
+    $issue('2026-09-07 09:00:00', 1001)->assertCreated();
+
+    $this->getJson("/api/user/technical-managers/{$this->technicalManager->id}")->assertSuccessful();
+
+    $issue('2026-09-07 10:00:00', 1002)->assertCreated();
+
+    $issue('2026-09-07 11:00:00', 1003)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['technical_manager_id'])
+        ->assertJsonPath(
+            'errors.technical_manager_id.0',
+            'حداکثر تعداد مجاز بارنامه در روز برای این مدیر فنی تمام شده است.',
+        );
+
+    // روز بعد سهمیه دوباره شارژ شده است.
+    $issue('2026-09-08 09:00:00', 1003)->assertCreated();
+});
+
+test('canceled waybills still count against the day and a draft does not', function () {
+    $this->technicalManager->update(['daily_limit' => 1]);
+
+    $this->postJson('/api/user/waybills', [
+        'status' => WaybillStatus::Incomplete->value,
+        'technical_manager_id' => $this->technicalManager->id,
+    ])->assertCreated();
+
+    $id = $this->postJson('/api/user/waybills', completeWaybillPayload($this))
+        ->assertCreated()
+        ->json('data.id');
+
+    $this->patchJson("/api/user/waybills/{$id}/cancel")->assertSuccessful();
+
+    $this->postJson('/api/user/waybills', [...completeWaybillPayload($this), 'bijak_number' => 1002])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['technical_manager_id']);
+});
+
+test('completing an incomplete waybill consumes the technical manager quota and takes the snapshot', function () {
+    $this->technicalManager->update(['daily_limit' => 1]);
+
+    $draftId = $this->postJson('/api/user/waybills', [
+        'status' => WaybillStatus::Incomplete->value,
+        'technical_manager_id' => $this->technicalManager->id,
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.technical_manager_full_name', 'مدیر فنی نمونه')
+        ->json('data.id');
+
+    $this->patchJson("/api/user/waybills/{$draftId}", completeWaybillPayload($this))
+        ->assertSuccessful()
+        ->assertJsonPath('data.status', WaybillStatus::Completed->value)
+        ->assertJsonPath('data.technical_manager_id', $this->technicalManager->id);
+
+});
+
+test('waybill options list active technical managers with their remaining quota', function () {
+    TechnicalManager::factory()->for($this->company)->create(['status' => 'inactive']);
+
+    $this->getJson('/api/user/waybills/options')
+        ->assertSuccessful()
+        ->assertJsonCount(1, 'data.technical_managers')
+        ->assertJsonPath('data.technical_managers.0.id', $this->technicalManager->id)
+        ->assertJsonPath('data.technical_managers.0.remaining_today', 100);
+});
+
 /** @return array<string, mixed> */
 function completeWaybillPayload(object $test): array
 {
@@ -1578,6 +1705,7 @@ function completeWaybillPayload(object $test): array
         'serial_number' => 'SERIAL-1',
         'issued_at' => '2026-09-07 11:00:00',
         'liability_insurance' => $test->insurance->id,
+        'technical_manager_id' => $test->technicalManager->id,
         'bijak_tracking_code' => 'FRONT-CODE',
         'description' => 'توضیحات بارنامه',
         'transport_contract_id' => $test->contract->id,

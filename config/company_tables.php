@@ -62,6 +62,9 @@ return [
         ['name' => 'issued_at', 'type' => 'dateTime'],
         ['name' => 'issued_by_print_name', 'type' => 'string', 'nullable' => true],
         ['name' => 'liability_insurance', 'type' => 'unsignedBigInteger', 'change' => true, 'index' => true, 'foreign' => ['table' => 'insurances', 'column' => 'id', 'on_delete' => 'null']],
+        ['name' => 'technical_manager_id', 'type' => 'unsignedBigInteger', 'index' => true, 'foreign' => ['table' => 'technical_managers', 'column' => 'id', 'on_delete' => 'null']],
+        ['name' => 'technical_manager_full_name', 'type' => 'string'],
+        ['name' => 'technical_manager_mobile', 'type' => 'string'],
         ['name' => 'bijak_tracking_code', 'type' => 'string', 'length' => 25, 'unique' => true, 'change' => true],
         ['name' => 'description', 'type' => 'text'],
         ['name' => 'status', 'type' => 'enum', 'values' => WaybillStatus::values(), 'default' => WaybillStatus::Incomplete->value, 'nullable' => false, 'index' => true],
@@ -171,7 +174,7 @@ return [
         ['name' => 'active_slot', 'type' => 'unsignedInteger', 'api' => false, 'searchable' => false],
     ],
     'shipment_parties' => [
-        ['name' => 'national_identifier', 'type' => 'string', 'length' => 20, 'nullable' => false, 'unique' => true],
+        ['name' => 'national_identifier', 'type' => 'string', 'length' => 20, 'nullable' => false, 'unique' => 'owner'],
         ['name' => 'is_sender', 'type' => 'boolean', 'default' => false, 'nullable' => false],
         ['name' => 'is_receiver', 'type' => 'boolean', 'default' => false, 'nullable' => false],
         [
@@ -217,7 +220,7 @@ return [
         ['name' => 'description', 'type' => 'text'],
     ],
     'fleets' => [
-        ['name' => 'smart_card_number', 'type' => 'string', 'nullable' => true, 'unique' => true, 'change' => true],
+        ['name' => 'smart_card_number', 'type' => 'string', 'nullable' => true, 'unique' => 'owner', 'change' => true],
         [
             'name' => 'status',
             'type' => 'enum',

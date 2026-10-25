@@ -23,6 +23,11 @@ abstract class CompanyDynamicResource extends JsonResource
 
         return [
             'id' => $this->resource->getKey(),
+            'owner_company_id' => $this->resource->getAttribute('owner_company_id'),
+            'owner_company' => $this->whenLoaded('ownerCompany', fn(): array => [
+                'id' => $this->resource->ownerCompany->id,
+                'name' => $this->resource->ownerCompany->name,
+            ]),
             ...$this->resource->only($fieldNames),
             ...$this->relations($request),
             'created_at' => $this->created_at,

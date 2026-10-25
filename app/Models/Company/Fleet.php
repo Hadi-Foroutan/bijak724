@@ -41,6 +41,7 @@ class Fleet extends DynamicModel
     ];
 
     protected array $defaultRelations = [
+        'ownerCompany',
         'driverLicenseType',
         'loadingType',
         'fleetBrand',

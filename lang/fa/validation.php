@@ -282,6 +282,9 @@ return [
         'order_type' => 'نوع مرتب‌سازی',
         'issued_at' => 'زمان صدور',
         'liability_insurance' => 'بیمه مسئولیت',
+        'technical_manager_id' => 'مدیر فنی',
+        'full_name' => 'نام و نام خانوادگی',
+        'daily_limit' => 'تعداد مجاز در روز',
         'insurance_id' => 'بیمه',
         'cargo_group_id' => 'گروه محموله',
         'cargo_value_from' => 'حداقل ارزش محموله',
@@ -328,6 +331,8 @@ return [
         'license_number' => 'شماره گواهینامه',
         'license_expire_date' => 'اعتبار گواهینامه',
         'organization_code' => 'کد سازمانی',
+        'parent_type' => 'شعبه',
+        'city_code' => 'کد شهر'
     ],
 
 ];

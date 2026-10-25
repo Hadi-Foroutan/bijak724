@@ -5,10 +5,10 @@ namespace App\Http\Requests\Fleet;
 use App\Enums\FleetOwnershipType;
 use App\Enums\StatusEnum;
 use App\Http\Requests\BaseRequest;
-use App\Interfaces\Company\FleetRepositoryInterface;
 use App\Models\DriverLicenseType;
 use App\Models\LoadingType;
 use Illuminate\Validation\Rule;
+use App\Models\Company\Fleet;
 
 class StoreFleetRequest extends BaseRequest
 {
@@ -20,14 +20,14 @@ class StoreFleetRequest extends BaseRequest
     ];
 
     /** @return array<string, array<int, mixed>> */
-    public function rules(FleetRepositoryInterface $fleetRepository): array
+    public function rules(): array
     {
         return [
             'smart_card_number' => [
                 'nullable',
                 'string',
                 'max:50',
-                $fleetRepository->uniqueSmartCardNumberRule($this->companyId()),
+                $this->uniqueInCompany(Fleet::class, 'smart_card_number'),
             ],
             'status' => ['nullable', Rule::enum(StatusEnum::class)],
             'ownership_type' => ['nullable', Rule::enum(FleetOwnershipType::class)],

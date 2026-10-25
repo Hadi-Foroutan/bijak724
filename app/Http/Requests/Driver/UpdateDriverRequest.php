@@ -4,16 +4,16 @@ namespace App\Http\Requests\Driver;
 
 use App\Enums\StatusEnum;
 use App\Http\Requests\BaseRequest;
-use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Models\DriverLicenseType;
 use Illuminate\Validation\Rule;
+use App\Models\Company\Driver;
 
 class UpdateDriverRequest extends BaseRequest
 {
     /**
      * @return array<string, array<int, mixed>>
      */
-    public function rules(DriverRepositoryInterface $driverRepository): array
+    public function rules(): array
     {
         return [
             'national_code' => [
@@ -21,10 +21,7 @@ class UpdateDriverRequest extends BaseRequest
                 'required',
                 'string',
                 //                new NationalCodeRule,
-                $driverRepository->uniqueNationalCodeRule(
-                    $this->companyId(),
-                    $this->routeModelId('driver'),
-                ),
+                $this->uniqueInCompany(Driver::class, 'national_code', $this->routeModelId('driver')),
             ],
             'first_name' => ['sometimes', 'required', 'string', 'max:255'],
             'last_name' => ['sometimes', 'required', 'string', 'max:255'],
