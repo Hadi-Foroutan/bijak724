@@ -35,7 +35,7 @@ class StoreCompanyRequest extends BaseRequest
                 Rule::prohibitedIf(fn() => $this->parent_type !== CompanyParentEnum::BRANCH->value),
             ],
 
-            'organization_code' => ['required', 'string', 'max:255', Rule::unique(Company::class)],
+            'organization_code' => ['nullable', 'string', 'max:255', Rule::unique(Company::class)],
             //            'panel_code' => ['required', 'string', 'max:255', Rule::unique(Company::class)],
 
             'name' => ['required', 'string', 'max:255'],
