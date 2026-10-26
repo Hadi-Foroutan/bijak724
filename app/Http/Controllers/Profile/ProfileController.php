@@ -8,6 +8,7 @@ use App\Http\Requests\Profile\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
 use App\Services\User\ProfileService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ProfileController extends Controller
 {
@@ -15,6 +16,11 @@ class ProfileController extends Controller
         protected ProfileService $profileService,
     )
     {
+    }
+
+    public function show(Request $request): JsonResponse
+    {
+        return ResponseHandler::success(UserResource::make($request->user()));
     }
 
     public function update(UpdateProfileRequest $request): JsonResponse

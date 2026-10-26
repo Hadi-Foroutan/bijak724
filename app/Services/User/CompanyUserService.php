@@ -7,13 +7,18 @@ use App\Enums\UserStatusEnum;
 use App\Helpers\ServiceResult;
 use App\Interfaces\RoleInterface;
 use App\Interfaces\UserInterface;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Services\Permission\PermissionService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 class CompanyUserService
 {
+    /** Permissions only an admin may give; they never appear in the company's permission list. */
+    private const ADMIN_ONLY_PERMISSIONS = ['profile.*'];
+
     public function __construct(
         protected UserService       $userService,
         protected UserInterface     $userRepository,
@@ -74,7 +79,7 @@ class CompanyUserService
     {
         $user = $this->userRepository->findVisibleForCompany($companyId, $userId);
 
-        return $this->permissionService->forUser($user, $this->companyManagerRole());
+        return $this->permissionService->forUser($user, $this->companyManagerRole(), self::ADMIN_ONLY_PERMISSIONS);
     }
 
     /**
@@ -85,9 +90,17 @@ class CompanyUserService
         $user = $this->userRepository->findVisibleForCompany($companyId, $userId);
         $managerRole = $this->companyManagerRole();
 
-        $user->permissions()->sync($permissions);
+        // Admin-only permissions are not shown to the company, so saving the list must neither add nor drop them.
+        $adminOnly = Permission::query()->get(['id', 'name'])
+            ->filter(fn(Permission $permission): bool => Str::is(self::ADMIN_ONLY_PERMISSIONS, $permission->name))
+            ->pluck('id');
+        $kept = $user->permissions()->whereIn('permissions.id', $adminOnly)->pluck('permissions.id');
 
-        return $this->permissionService->forUser($user, $managerRole);
+        $user->permissions()->sync(
+            collect($permissions)->reject(fn(int $id): bool => $adminOnly->contains($id))->merge($kept)->unique()->values()->all(),
+        );
+
+        return $this->permissionService->forUser($user, $managerRole, self::ADMIN_ONLY_PERMISSIONS);
     }
 
     public function destroy(int $companyId, int $userId, int $actorId): ServiceResult

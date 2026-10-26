@@ -39,6 +39,13 @@ return [
     'admin.roles.update' => 'ویرایش اطلاعات نقش ادمین',
     'admin.roles.destroy' => 'حذف نقش از سیستم ادمین',
 
+    'admin.report-fields.index' => 'مشاهده فیلدهای گزارش‌ساز ادمین',
+    'admin.report-fields.store' => 'ایجاد فیلد گزارش‌ساز ادمین',
+    'admin.report-fields.show' => 'مشاهده فیلد گزارش‌ساز ادمین',
+    'admin.report-fields.update' => 'ویرایش فیلد گزارش‌ساز ادمین',
+    'admin.report-fields.destroy' => 'حذف فیلد گزارش‌ساز ادمین',
+    'admin.settings.show' => 'مشاهده تنظیمات کلی سیستم ادمین',
+    'admin.settings.update' => 'ویرایش تنظیمات کلی سیستم ادمین',
     'admin.waybills.index' => 'مشاهده بارنامه‌های تمامی شرکت‌ها ادمین',
 
     // User Permissions
@@ -155,6 +162,23 @@ return [
     'user.technical-managers.show' => 'مشاهده مدیر فنی',
     'user.technical-managers.update' => 'ویرایش مدیر فنی',
     'user.technical-managers.destroy' => 'حذف مدیر فنی',
+
+    // Profile (admin-only permissions: not shown in the company's permission list)
+    'profile.show' => 'مشاهده پروفایل',
+    'profile.update' => 'ویرایش پروفایل',
+
+    // Report builder
+    'user.reports.fields' => 'مشاهده فیلدهای قابل انتخاب در گزارش‌ساز',
+    'user.reports.index' => 'مشاهده لیست گزارش‌های ذخیره‌شده',
+    'user.reports.store' => 'ایجاد گزارش جدید در گزارش‌ساز',
+    'user.reports.show' => 'مشاهده گزارش ذخیره‌شده',
+    'user.reports.update' => 'ویرایش گزارش ذخیره‌شده',
+    'user.reports.destroy' => 'حذف گزارش ذخیره‌شده',
+    'user.reports.waybills' => 'مشاهده بارنامه‌ها با فیلدهای انتخابی گزارش',
+    'user.reports.exports.store' => 'درخواست خروجی اکسل یا PDF گزارش',
+    'user.report-exports.index' => 'مشاهده لیست گزارش‌های اخیر',
+    'user.report-exports.show' => 'مشاهده وضعیت و لینک دانلود گزارش',
+    'user.report-exports.destroy' => 'حذف گزارش اخیر',
 
     'user.insurances.index' => 'مشاهده لیست بیمه‌ها',
     'user.insurances.store' => 'ایجاد بیمه',

@@ -9,6 +9,7 @@ use App\Models\PermissionGroup;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 class PermissionService
 {
@@ -58,12 +59,19 @@ class PermissionService
         return ServiceResult::success(__('public.update_success', ['attribute' => 'دسترسی ها']));
     }
 
-    public function forUser(User $user, ?Role $availableRole = null): ServiceResult
+    /** @param list<string> $hiddenPatterns permission name patterns left out of the list (e.g. `profile.*`) */
+    public function forUser(User $user, ?Role $availableRole = null, array $hiddenPatterns = []): ServiceResult
     {
         /** @var Collection<int, Permission> $availablePermissions */
         $availablePermissions = $availableRole === null
             ? Permission::query()->with('groups:id,name')->orderBy('id')->get()
             : $availableRole->permissions()->with('groups:id,name')->orderBy('permissions.id')->get();
+
+        if ($hiddenPatterns !== []) {
+            $availablePermissions = $availablePermissions
+                ->reject(fn(Permission $permission): bool => Str::is($hiddenPatterns, $permission->name))
+                ->values();
+        }
 
         return ServiceResult::success($this->permissionData($user, $availablePermissions));
     }

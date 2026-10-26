@@ -31,7 +31,8 @@ class GeneratePermissionsCommand extends Command
         '*.login',
         '*.logout',
         '*.checkToken',
-        'profile.*',
+//        'profile.*',
+        'report-exports.download',
         'generated::*',
     ];
 

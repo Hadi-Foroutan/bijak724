@@ -6,6 +6,8 @@ return [
         'admin.cities.' => 'مدیریت شهرهای ادمین',
         'admin.notifications.' => 'مدیریت اعلان‌های ادمین',
         'admin.waybills.' => 'مشاهده بارنامه‌های شرکت‌ها',
+        'admin.report-fields.' => 'مدیریت فیلدهای گزارش‌ساز',
+        'admin.settings.' => 'تنظیمات کلی سیستم',
         'admin.users.' => 'مدیریت کاربران ادمین',
         'admin.permissions.' => 'مدیریت پرمیشن‌های ادمین',
         'admin.roles.' => 'مدیریت نقش‌های ادمین',
@@ -28,6 +30,8 @@ return [
         'user.transport-contracts.' => 'مدیریت قراردادهای حمل',
         'user.insurances.' => 'مدیریت بیمه‌ها و تعرفه‌ها',
         'user.technical-managers.' => 'مدیریت مدیران فنی',
+        'user.reports.' => 'گزارش‌ساز',
+        'user.report-exports.' => 'گزارش‌های اخیر و خروجی‌ها',
         'user.cargo-groups*' => 'مدیریت گروه‌بندی کالاها',
         'user.general.' => 'اطلاعات عمومی کاربران',
         'profile.' => 'مدیریت پروفایل کاربر',
@@ -46,7 +50,7 @@ return [
 
     'roles' => [
         'superAdmin' => ['*'],
-        'admin' => ['admin.*'],
+        'admin' => ['admin.*', 'profile.*'],
         'companyManager' => ['user.*', 'profile.*'],
         'user' => ['user.*', 'profile.*'],
     ],
