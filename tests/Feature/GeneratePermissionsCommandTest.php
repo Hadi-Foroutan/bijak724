@@ -22,6 +22,7 @@ test('every permission route belongs to a configured group', function () {
         '*.login',
         '*.logout',
         '*.checkToken',
+        'report-exports.download',
     ];
     $groupPatterns = array_keys(config('permission_groups.groups', []));
 

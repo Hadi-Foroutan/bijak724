@@ -4,6 +4,8 @@ use App\Http\Controllers\User\BijakNumberController;
 use App\Http\Controllers\User\CanceledReferralController;
 use App\Http\Controllers\User\CargoGroupController;
 use App\Http\Controllers\User\CompanySettingController;
+use App\Http\Controllers\User\Report\ReportController;
+use App\Http\Controllers\User\Report\ReportExportController;
 use App\Http\Controllers\User\CompanyUserController;
 use App\Http\Controllers\User\Dashboard\DashboardController;
 use App\Http\Controllers\User\Driver\DriverAccountController;
@@ -149,6 +151,17 @@ Route::prefix('transport-contracts')->name('transport-contracts.')->group(functi
 });
 Route::apiResource('transport-contracts', TransportContractController::class)
     ->parameters(['transport-contracts' => 'transportContract']);
+
+// Report builder
+Route::prefix('reports')->name('reports.')->group(function () {
+    Route::get('/fields', [ReportController::class, 'fields'])->name('fields');
+    Route::get('{report}/waybills', [ReportController::class, 'waybills'])->name('waybills');
+    Route::post('{report}/exports', [ReportExportController::class, 'store'])->name('exports.store');
+});
+Route::apiResource('reports', ReportController::class)->parameters(['reports' => 'report']);
+Route::apiResource('report-exports', ReportExportController::class)
+    ->only(['index', 'show', 'destroy'])
+    ->parameters(['report-exports' => 'reportExport']);
 
 // Technical managers
 Route::apiResource('technical-managers', TechnicalManagerController::class)

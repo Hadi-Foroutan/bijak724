@@ -23,26 +23,6 @@ return new class extends Migration {
 
             $table->unique(['company_id', 'key']);
         });
-
-        $now = now();
-
-        DB::table('companies')
-            ->select('id')
-            ->orderBy('id')
-            ->chunkById(500, function ($companies) use ($now): void {
-                $rows = $companies->map(fn($company): array => [
-                    'company_id' => (int)$company->id,
-                    'group_name' => 'general',
-                    'key' => 'general.assign_first_available_waybill_number',
-                    'value_type' => 'boolean',
-                    'value' => '0',
-                    'last_updated_by' => null,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ])->all();
-
-                DB::table('company_settings')->insertOrIgnore($rows);
-            });
     }
 
     /**

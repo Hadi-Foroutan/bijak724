@@ -10,11 +10,14 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
+        "ext-zip": "*",
         "dedoc/scramble": "^0.13.33",
         "laravel/framework": "^12.0",
         "laravel/reverb": "^1.0",
         "laravel/sanctum": "^4.0",
-        "laravel/tinker": "^2.10.1"
+        "laravel/tinker": "^2.10.1",
+        "maatwebsite/excel": "*",
+        "mpdf/mpdf": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

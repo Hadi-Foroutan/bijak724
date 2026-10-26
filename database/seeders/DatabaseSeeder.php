@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             PackagingSeeder::class,
             DriverLicenseTypeSeeder::class,
             SettingsSeeder::class,
+            ReportFieldSeeder::class,
             RoleSeeder::class,
             CompanySeeder::class,
             CompanySettingsSeeder::class,
@@ -31,6 +32,7 @@ class DatabaseSeeder extends Seeder
 //            ProductOwnerSeeder::class,
             ShipmentPartiesSeeder::class,
             AddressesSeeder::class,
+            CargoGroupsSeeder::class,
         ]);
     }
 }

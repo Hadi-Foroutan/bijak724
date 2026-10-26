@@ -5,7 +5,9 @@ use App\Http\Controllers\Admin\Company\CompanyController;
 use App\Http\Controllers\Admin\Company\CompanySupportTokenController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\Permission\PermissionController;
+use App\Http\Controllers\Admin\Report\ReportFieldController;
 use App\Http\Controllers\Admin\Permission\RoleController;
+use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\User\UserController;
 use App\Http\Controllers\Admin\WaybillController;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +25,13 @@ Route::apiResource('notifications', NotificationController::class)
     ->only(['index', 'store', 'show']);
 
 Route::apiResource('waybills', WaybillController::class)->only(['index']);
+
+Route::apiResource('report-fields', ReportFieldController::class)->parameters(['report-fields' => 'reportField']);
+
+Route::prefix('settings')->name('settings.')->group(function () {
+    Route::get('/', [SettingController::class, 'show'])->name('show');
+    Route::match(['put', 'patch'], '/', [SettingController::class, 'update'])->name('update');
+});
 
 Route::apiResource('users', UserController::class);
 Route::prefix('users')->name('users.')->group(function () {

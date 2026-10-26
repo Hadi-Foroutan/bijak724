@@ -19,20 +19,6 @@ return new class extends Migration {
             $table->enum('status', StatusEnum::values())->default(StatusEnum::ACTIVE->value);
             $table->timestamps();
         });
-
-        $timestamp = now();
-
-        DB::table('cargo_groups')->insert(
-            collect(range(1, 5))
-                ->map(fn(int $number): array => [
-                    'name' => "گروه {$number}",
-                    'group_number' => $number,
-                    'status' => StatusEnum::ACTIVE->value,
-                    'created_at' => $timestamp,
-                    'updated_at' => $timestamp,
-                ])
-                ->all(),
-        );
     }
 
     /**

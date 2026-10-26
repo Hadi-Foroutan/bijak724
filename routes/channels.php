@@ -20,3 +20,9 @@ Broadcast::channel(
     fn(User $user, int $companyId): bool => $user->company_id !== null && $user->company_id === $companyId,
     ['guards' => ['sanctum']],
 );
+
+Broadcast::channel(
+    'users.{userId}.reports',
+    fn(User $user, int $userId): bool => $user->getKey() === $userId,
+    ['guards' => ['sanctum']],
+);

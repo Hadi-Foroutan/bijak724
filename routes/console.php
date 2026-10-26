@@ -11,3 +11,5 @@ Artisan::command('inspire', function () {
 /*Schedule::command('db:backup')
     ->dailyAt(config('database_backup.daily_at'))
     ->withoutOverlapping();*/
+
+Schedule::command('reports:prune')->everyFiveMinutes()->withoutOverlapping();

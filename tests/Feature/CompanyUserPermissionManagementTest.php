@@ -269,3 +269,23 @@ function permissionManagementAuthenticate(object $testCase, User $user): void
 
     $testCase->withToken($token);
 }
+
+test('profile permissions are admin only: hidden from the company list and kept when it saves permissions', function () {
+    $profile = permissionManagementPermission('profile.update', 'ویرایش پروفایل');
+    $profileGroup = PermissionGroup::query()->create(['name' => 'مدیریت پروفایل کاربر']);
+    $profileGroup->permissions()->attach($profile);
+    $this->managerRole->permissions()->attach($profile);
+    $this->targetUser->permissions()->attach($profile);
+
+    $this->getJson("/api/user/{$this->targetUser->id}/permissions")
+        ->assertSuccessful()
+        ->assertJsonCount(2, 'data.permission_groups')
+        ->assertJsonMissing(['id' => $profile->id])
+        ->assertJsonMissing(['name' => 'مدیریت پروفایل کاربر']);
+
+    // حتی اگر شناسه‌اش در درخواست باشد یا نباشد، تغییری نمی‌کند.
+    $this->putJson("/api/user/{$this->targetUser->id}/permissions", ['permissions' => [$this->fleetPermission->id]])
+        ->assertSuccessful();
+    expect($this->targetUser->permissions()->pluck('permissions.id')->sort()->values()->all())
+        ->toBe(collect([$this->fleetPermission->id, $profile->id])->sort()->values()->all());
+});

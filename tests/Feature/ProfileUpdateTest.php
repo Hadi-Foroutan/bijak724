@@ -2,6 +2,7 @@
 
 use App\Enums\RoleEnum;
 use App\Models\Company;
+use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -40,12 +41,18 @@ beforeEach(function (): void {
     ]);
     $this->user->roles()->attach($role);
 
+    foreach (['profile.show', 'profile.update'] as $name) {
+        $this->user->permissions()->attach(
+            Permission::query()->create(['name' => $name, 'display_name' => $name, 'description' => $name])->id,
+        );
+    }
+
     $this->withToken(
         $this->user->createToken('company-session', ["company:{$company->id}"])->plainTextToken,
     );
 });
 
-test('user updates own profile fields and profile image without permission', function () {
+test('user updates own profile fields and profile image with the profile permission', function () {
     $response = $this->post('/api/user/profile', [
         ...profilePayload(),
         'profile_image' => profileImage(),
@@ -144,3 +151,15 @@ function profileImage(): UploadedFile
         ),
     );
 }
+
+test('the profile routes now need their own permissions', function () {
+    $this->user->permissions()->detach();
+
+    $this->getJson('/api/user/profile')->assertForbidden();
+    $this->postJson('/api/user/profile', ['first_name' => 'رضا'])->assertForbidden();
+
+    $this->user->permissions()->attach(Permission::query()->where('name', 'profile.show')->value('id'));
+
+    $this->getJson('/api/user/profile')->assertSuccessful()->assertJsonPath('data.username', 'profile-user');
+    $this->postJson('/api/user/profile', ['first_name' => 'رضا'])->assertForbidden();
+});

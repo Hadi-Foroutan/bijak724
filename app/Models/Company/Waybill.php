@@ -102,6 +102,10 @@ class Waybill extends DynamicModel
     ];
 
     protected array $searchableFields = [
+        'id',
+        'owner_company_id',
+        'created_at',
+        'updated_at',
         'created_by',
         'sender_id',
         'sender_address_id',

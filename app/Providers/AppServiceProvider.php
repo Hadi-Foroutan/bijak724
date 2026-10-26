@@ -66,6 +66,7 @@ use App\Repositories\Permission\RoleRepository;
 use App\Repositories\User\UserRepository;
 use App\Repositories\WaybillRepository as SharedWaybillRepository;
 use App\Services\Company\CompanyDataOwnerResolver;
+use App\Services\Company\Report\WaybillReportFieldCatalog;
 use App\Services\Company\Settings\CompanySettingService;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
@@ -116,6 +117,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->scoped(CompanyDataOwnerResolver::class);
         $this->app->scoped(CompanySettingService::class);
+        // One shared instance so every part of a report load/export reads the same admin-managed fields.
+        $this->app->singleton(WaybillReportFieldCatalog::class);
     }
 
     /**

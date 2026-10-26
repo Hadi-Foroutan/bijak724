@@ -32,3 +32,5 @@
 | ۲۵ | بارنامه‌های همهٔ شرکت‌ها (ادمین)           | [25-admin-waybills.md](25-admin-waybills.md)                   |
 | ۲۶ | Enumها                                  | [26-enums.md](26-enums.md)                                     |
 | ۲۷ |                              مدیران فنی | [27-technical-managers.md](27-technical-managers.md)           |
+| ۲۸ | گزارش‌ساز | [28-report-builder.md](28-report-builder.md) |
+| ۲۹ | وب‌سوکت (اتصال، کانال‌ها، رویدادها، React) | [29-socket.md](29-socket.md) |

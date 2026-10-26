@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-    private const TITLES = [1 => 'اول', 2 => 'دوم', 3 => 'سوم', 4 => 'چهارم', 5 => 'پنجم', 6 => 'ششم'];
 
     /**
      * Run the migrations.
@@ -31,34 +30,6 @@ return new class extends Migration {
 
             $table->unique(['company_id', 'number']);
         });
-
-        $now = now();
-
-        // Existing companies get their six default fields; insertOrIgnore keeps a re-run harmless.
-        DB::table('companies')
-            ->select('id')
-            ->orderBy('id')
-            ->chunkById(500, function ($companies) use ($now): void {
-                $rows = $companies->flatMap(fn($company): array => array_map(
-                    fn(int $number): array => [
-                        'company_id' => (int)$company->id,
-                        'number' => $number,
-                        'title' => self::TITLES[$number],
-                        'is_visible' => false,
-                        'is_visible_in_print' => false,
-                        'field_type' => 'text',
-                        'length' => 1,
-                        'layout' => 'rtl',
-                        'default_value' => null,
-                        'description' => null,
-                        'created_at' => $now,
-                        'updated_at' => $now,
-                    ],
-                    array_keys(self::TITLES),
-                ))->all();
-
-                DB::table('shared_additional_fields')->insertOrIgnore($rows);
-            });
     }
 
     /**

@@ -36,14 +36,23 @@ class RoleSeeder extends Seeder
                 'display_name' => 'کاربر حمل و نقل',
                 'description' => 'کاربر عادی شرکت',
             ],
+            [
+                'name' => 'demo',
+                'display_name' => 'دمو',
+                'description' => 'نقش دمو برای کاربرانی که قصد تست کردن سایت رو دارن',
+            ],
         ];
 
         foreach ($roles as $role) {
             Role::updateOrCreate(
-                ['name' => $role['name']], // شرط جستجو
-                $role // داده‌هایی که باید insert یا update بشه
+                ['name' => $role['name']],
+                $role,
             );
         }
+
+        $excludedPermissions = [
+            'profile.*',
+        ];
 
         $companyManagerRole = Role::query()
             ->where('name', RoleEnum::COMPANY_MANAGER->value)
@@ -59,5 +68,25 @@ class RoleSeeder extends Seeder
             ->all();
 
         $companyManagerRole->permissions()->sync($companyPermissionIds);
+
+        $demoRole = Role::query()
+            ->where('name', RoleEnum::DEMO->value)
+            ->firstOrFail();
+
+        $demoPermissionIds = Permission::query()
+            ->where('status', StatusEnum::ACTIVE->value)
+            ->where(function ($query): void {
+                $query->where('name', 'like', 'user.%')
+                    ->orWhere('name', 'like', 'profile.%');
+            })
+            ->whereNot(function ($query) use ($excludedPermissions): void {
+                foreach ($excludedPermissions as $permission) {
+                    $query->orWhere('name', 'like', str_replace('*', '%', $permission));
+                }
+            })
+            ->pluck('id')
+            ->all();
+
+        $demoRole->permissions()->sync($demoPermissionIds);
     }
 }
