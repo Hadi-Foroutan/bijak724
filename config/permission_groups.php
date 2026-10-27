@@ -55,8 +55,6 @@ return [
         'user' => ['user.*', 'profile.*'],
         // دمو: همهٔ دسترسی‌های پنل شرکت، به‌جز موارد `role_exclusions` پایین.
         'demo' => ['user.*', 'profile.*'],
-        // در دیتابیس فعلی نقش دمو با نام فارسی «دمو» ساخته شده است؛ همین الگو برای آن هم اعمال شود.
-        'دمو' => ['user.*', 'profile.*'],
     ],
 
     /*
@@ -66,15 +64,6 @@ return [
      */
     'role_exclusions' => [
         'demo' => [
-            'profile.update',
-            'user.settings.update',
-            'user.users.store',
-            'user.users.update',
-            'user.users.destroy',
-            'user.permissions.update',
-            '*.destroy',
-        ],
-        'دمو' => [
             'profile.update',
             'user.settings.update',
             'user.users.store',

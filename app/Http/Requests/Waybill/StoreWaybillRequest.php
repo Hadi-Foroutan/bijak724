@@ -24,21 +24,48 @@ class StoreWaybillRequest extends BaseRequest
     protected function prepareForValidation(): void
     {
         $this->normalizeBooleanStrings(['freight_at_origin', 'is_fixed']);
+
         $waybillStatus = WaybillStatus::tryFrom((string)$this->input('status'));
 
-        if ($waybillStatus === WaybillStatus::Completed) {
-            return;
+        if ($waybillStatus !== WaybillStatus::Completed) {
+            $defaults = [];
+
+            foreach (['freight_at_origin', 'is_fixed'] as $field) {
+                if ($this->exists($field) && $this->input($field) === null) {
+                    $defaults[$field] = false;
+                }
+            }
+
+            $this->merge($defaults);
         }
 
-        $defaults = [];
+        $amountFields = [
+            'base_freight_amount',
+            'advance_freight_amount',
+            'weighbridge_amount',
+            'loading_amount',
+            'warehousing_amount',
+            'unloading_amount',
+            'excess_tonnage_amount',
+            'commission_amount',
+            'insurance_amount',
+            'insurance_tax_amount',
+            'detention_amount',
+            'driver_receivable_amount',
+            'payable_amount',
+        ];
 
-        foreach (['freight_at_origin', 'is_fixed'] as $field) {
-            if ($this->exists($field) && $this->input($field) === null) {
-                $defaults[$field] = false;
+        $normalized = [];
+
+        foreach ($amountFields as $field) {
+            $value = $this->input($field);
+
+            if (is_string($value)) {
+                $normalized[$field] = str_replace(',', '', $value);
             }
         }
 
-        $this->merge($defaults);
+        $this->merge($normalized);
     }
 
     /** @return array<string, array<int, mixed>> */
