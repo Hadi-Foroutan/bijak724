@@ -25,7 +25,7 @@ class StoreWaybillRequest extends BaseRequest
     {
         $this->normalizeBooleanStrings(['freight_at_origin', 'is_fixed']);
 
-        $waybillStatus = WaybillStatus::tryFrom((string)$this->input('status'));
+        $waybillStatus = WaybillStatus::tryFrom((string) $this->input('status'));
 
         if ($waybillStatus !== WaybillStatus::Completed) {
             $defaults = [];
@@ -39,7 +39,20 @@ class StoreWaybillRequest extends BaseRequest
             $this->merge($defaults);
         }
 
-        $amountFields = [
+        $normalized = [];
+
+        foreach ($this->all() as $field => $value) {
+            if (
+                is_string($value)
+                && preg_match('/(?:amount|price|cost)$/i', (string) $field)
+            ) {
+                $normalized[$field] = str_replace(',', '', $value);
+            }
+        }
+
+        $this->merge($normalized);
+
+        /*$amountFields = [
             'base_freight_amount',
             'advance_freight_amount',
             'weighbridge_amount',
@@ -65,7 +78,7 @@ class StoreWaybillRequest extends BaseRequest
             }
         }
 
-        $this->merge($normalized);
+        $this->merge($normalized);*/
     }
 
     /** @return array<string, array<int, mixed>> */
@@ -73,13 +86,13 @@ class StoreWaybillRequest extends BaseRequest
     {
         $companyId = $this->companyId();
         $requiredWhenCompleted = Rule::requiredIf(
-            fn(): bool => $this->hasStatus(WaybillStatus::Completed),
+            fn (): bool => $this->hasStatus(WaybillStatus::Completed),
         );
         $requiredWhenReferral = Rule::requiredIf(
-            fn(): bool => $this->hasStatus(WaybillStatus::Referral),
+            fn (): bool => $this->hasStatus(WaybillStatus::Referral),
         );
         $requiredWhenCompletedOrReferral = Rule::requiredIf(
-            fn(): bool => $this->hasStatus(WaybillStatus::Completed)
+            fn (): bool => $this->hasStatus(WaybillStatus::Completed)
                 || $this->hasStatus(WaybillStatus::Referral),
         );
 
@@ -106,12 +119,11 @@ class StoreWaybillRequest extends BaseRequest
      */
     private function additionalFieldRules(
         SharedAdditionalFieldRepositoryInterface $sharedAdditionalFieldRepository,
-        int                                      $companyId,
-    ): array
-    {
+        int $companyId,
+    ): array {
         $fieldTypes = $sharedAdditionalFieldRepository->all($companyId)->pluck('field_type', 'number');
         $rules = [
-            'additional_fields' => ['sometimes', 'nullable', 'array:' . implode(',', SharedAdditionalField::numbers())],
+            'additional_fields' => ['sometimes', 'nullable', 'array:'.implode(',', SharedAdditionalField::numbers())],
         ];
 
         foreach (SharedAdditionalField::numbers() as $number) {
@@ -170,7 +182,7 @@ class StoreWaybillRequest extends BaseRequest
             'loading_ended_at' => [$requiredWhenReferral, 'nullable', 'date', 'after_or_equal:loading_started_at'],
             'bijak_number' => [$requiredWhenCompleted, 'nullable', 'integer'],
             'serial_number' => [
-                'exclude_unless:status,' . WaybillStatus::Completed->value,
+                'exclude_unless:status,'.WaybillStatus::Completed->value,
                 $requiredWhenCompleted,
                 'nullable',
                 'string',
