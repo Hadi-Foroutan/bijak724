@@ -55,6 +55,8 @@ return [
         'user' => ['user.*', 'profile.*'],
         // دمو: همهٔ دسترسی‌های پنل شرکت، به‌جز موارد `role_exclusions` پایین.
         'demo' => ['user.*', 'profile.*'],
+        // در دیتابیس فعلی نقش دمو با نام فارسی «دمو» ساخته شده است؛ همین الگو برای آن هم اعمال شود.
+        'دمو' => ['user.*', 'profile.*'],
     ],
 
     /*
@@ -72,6 +74,15 @@ return [
             'user.permissions.update',
             '*.destroy',
         ],
+        'دمو' => [
+            'profile.update',
+            'user.settings.update',
+            'user.users.store',
+            'user.users.update',
+            'user.users.destroy',
+            'user.permissions.update',
+            '*.destroy',
+        ],
     ],
 
     'default_only_roles' => [
@@ -81,6 +92,8 @@ return [
     'non_default_permissions' => [
         'user.users.*',
         'user.technical-managers.*',
+        // مدیریت دسترسی‌ها فقط با تیک دستی مدیر داده می‌شود، نه به هر کاربر ساده.
+        'user.permissions.*',
         // فقط با تیک دستی مدیر داده می‌شوند؛ کاربر ساده به‌صورت پیش‌فرض آن‌ها را ندارد.
         'user.waybills.view-*',
         //        'user.fleets.*'

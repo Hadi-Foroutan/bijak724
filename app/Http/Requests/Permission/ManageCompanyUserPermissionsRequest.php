@@ -23,7 +23,12 @@ class ManageCompanyUserPermissionsRequest extends BaseRequest
         $isCompanyManager = $actor->hasRole(RoleEnum::COMPANY_MANAGER->value);
         $isCompanySupport = app(CompanySupportTokenService::class)->isSupportToken($actor);
 
-        if (!$isCompanyManager && !$isCompanySupport) {
+        // Anyone who was given the permission-management permission may use it (the route middleware checks it too),
+        // not only the company manager role: that is how a manager delegates who sees which waybills.
+        $routePermission = $this->isMethod('GET') ? 'user.permissions.index' : 'user.permissions.update';
+        $hasRoutePermission = $actor->permissions()->where('permissions.name', $routePermission)->exists();
+
+        if (!$isCompanyManager && !$isCompanySupport && !$hasRoutePermission) {
             return false;
         }
 
