@@ -339,8 +339,13 @@ class GeneratePermissionsCommand extends Command
                 $rolePermissions = $rolePermissions->where('is_default', true);
             }
 
+            // Permissions this role must not get even though a pattern above matches them (e.g. demo: no deletes).
+            $exclusions = config("permission_groups.role_exclusions.{$roleName}", []);
+
             $permissionIds = collect($patterns)
-                ->flatMap(fn(string $pattern): Collection => $this->permissionsMatchingPattern($rolePermissions, $pattern)->pluck('id'))
+                ->flatMap(fn(string $pattern): Collection => $this->permissionsMatchingPattern($rolePermissions, $pattern)
+                    ->reject(fn(Permission $permission, string $name): bool => $exclusions !== [] && Str::is($exclusions, $name))
+                    ->pluck('id'))
                 ->unique()
                 ->values()
                 ->all();
@@ -380,6 +385,18 @@ class GeneratePermissionsCommand extends Command
 
                 if ($hasDefaultOnlyRole) {
                     $existingPermissions = $existingPermissions->where('is_default', true);
+                }
+
+                // A user whose every role is restricted (e.g. demo) does not keep an excluded permission it had before.
+                $exclusions = $user->roles->isNotEmpty() && $user->roles->every(
+                    fn(Role $role): bool => config("permission_groups.role_exclusions.{$role->name}", []) !== [],
+                )
+                    ? $user->roles->flatMap(fn(Role $role): array => config("permission_groups.role_exclusions.{$role->name}", []))->all()
+                    : [];
+
+                if ($exclusions !== []) {
+                    $existingPermissions = $existingPermissions
+                        ->reject(fn(Permission $permission, string $name): bool => Str::is($exclusions, $name));
                 }
 
                 $existingPermissionIds = $existingPermissions

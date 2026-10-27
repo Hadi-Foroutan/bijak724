@@ -53,6 +53,25 @@ return [
         'admin' => ['admin.*', 'profile.*'],
         'companyManager' => ['user.*', 'profile.*'],
         'user' => ['user.*', 'profile.*'],
+        // دمو: همهٔ دسترسی‌های پنل شرکت، به‌جز موارد `role_exclusions` پایین.
+        'demo' => ['user.*', 'profile.*'],
+    ],
+
+    /*
+     * دسترسی‌هایی که یک نقش با وجود الگوی بالا **نمی‌گیرد** (الگوها مثل `roles`؛ `*` برای هر مقدار).
+     * دمو فقط مشاهده و ایجاد/ویرایش داده‌های کاری را دارد؛ تغییر پروفایل، اطلاعات شرکت، مدیریت کاربران و
+     * دسترسی‌ها و هر نوع حذف را ندارد.
+     */
+    'role_exclusions' => [
+        'demo' => [
+            'profile.update',
+            'user.settings.update',
+            'user.users.store',
+            'user.users.update',
+            'user.users.destroy',
+            'user.permissions.update',
+            '*.destroy',
+        ],
     ],
 
     'default_only_roles' => [

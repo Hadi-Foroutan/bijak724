@@ -50,9 +50,8 @@ class RoleSeeder extends Seeder
             );
         }
 
-        $excludedPermissions = [
-            'profile.*',
-        ];
+        // Same exclusions the generate-permissions command applies to the demo role (config/permission_groups.php).
+        $excludedPermissions = config('permission_groups.role_exclusions.demo', []);
 
         $companyManagerRole = Role::query()
             ->where('name', RoleEnum::COMPANY_MANAGER->value)
