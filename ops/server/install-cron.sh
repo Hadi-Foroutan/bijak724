@@ -13,10 +13,14 @@ set -eu
 APP_PATH="${1:?usage: install-cron.sh /path/to/app /path/to/php}"
 PHP_BIN="${2:?usage: install-cron.sh /path/to/app /path/to/php}"
 
+# Exit 1 (the deploy then uses ops/server/service-loop.sh instead) when cron cannot be used on this server.
 if ! command -v crontab >/dev/null 2>&1; then
-    echo "crontab is not available for this user; add these two lines to the cron jobs of the host panel yourself:" >&2
-    echo "* * * * * cd ${APP_PATH} && ${PHP_BIN} artisan schedule:run >> /dev/null 2>&1" >&2
-    echo "* * * * * bash ${APP_PATH}/ops/server/keep-services-alive.sh ${APP_PATH} ${PHP_BIN} >> /dev/null 2>&1" >&2
+    echo "crontab is not available for this user" >&2
+    exit 1
+fi
+
+if command -v pgrep >/dev/null 2>&1 && ! pgrep -x 'cron|crond|cronie' >/dev/null 2>&1; then
+    echo "no cron daemon is running on this server, so cron jobs would never fire" >&2
     exit 1
 fi
 
@@ -26,6 +30,8 @@ block="# BEGIN bijak (managed by the deploy workflow)
 # END bijak"
 
 others="$(crontab -l 2>/dev/null | sed '/^# BEGIN bijak/,/^# END bijak/d' || true)"
+
+# A server without a crontab spool (cron not installed) fails here: the caller falls back to the loop.
 
 if [ -n "${others}" ]; then
     printf '%s\n%s\n' "${others}" "${block}" | crontab -

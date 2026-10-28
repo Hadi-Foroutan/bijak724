@@ -333,3 +333,8 @@ php artisan schedule:work   # یا cron: * * * * * php artisan schedule:run
 `keep-services-alive.sh` هر پروسه‌ای (worker صف و Reverb) که در حال اجرا نباشد را راه می‌اندازد و هر کدام که در حال اجراست
 را دست نمی‌زند؛ پس اگر پروسه‌ای crash کند یا بعد از دپلوی خارج شود، حداکثر تا یک دقیقه بعد دوباره بالا می‌آید.
 لاگ‌ها در `storage/logs/queue-worker.log` و `storage/logs/reverb.log` است.
+
+اگر روی سرور cron قابل استفاده نباشد (مثلاً cron نصب نیست و `/var/spool/cron` وجود ندارد)، دپلوی خودکار به‌جای آن
+`ops/server/service-loop.sh` را اجرا می‌کند: یک حلقهٔ پس‌زمینه که هر دقیقه همان دو کار را انجام می‌دهد (scheduler و
+نگهبان worker/Reverb). این حلقه بعد از ریبوت سرور خودش بالا نمی‌آید؛ دپلوی بعدی (یا اجرای دستی اسکریپت) دوباره آن را شروع می‌کند.
+لاگ حلقه: `storage/logs/service-loop.log`.

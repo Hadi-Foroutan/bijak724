@@ -132,6 +132,11 @@ jobs:
           php_bin="$(command -v php)"
           php artisan queue:restart
           php artisan reverb:restart || true
-          bash ops/server/install-cron.sh "${deployment_path}" "${php_bin}"
-          bash ops/server/keep-services-alive.sh "${deployment_path}" "${php_bin}"
+          # Cron when the server has it; otherwise a small background loop does the same (see ops/server/service-loop.sh).
+          if bash ops/server/install-cron.sh "${deployment_path}" "${php_bin}"; then
+            bash ops/server/keep-services-alive.sh "${deployment_path}" "${php_bin}"
+          else
+            echo "cron is not usable on this server; using the background loop instead"
+            bash ops/server/service-loop.sh "${deployment_path}" "${php_bin}"
+          fi
           REMOTE
