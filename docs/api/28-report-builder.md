@@ -326,8 +326,8 @@ php artisan schedule:work   # یا cron: * * * * * php artisan schedule:run
 نیازی به استارت دستی نیست. workflow دپلوی (`.github/workflows/deploy-production.yml`) بعد از هر push روی `main`:
 
 1. دستور `queue:restart` و `reverb:restart` را می‌زند تا worker و Reverb با کد جدید برگردند.
-2. با `deploy/bin/install-cron.sh` دو cron در crontab کاربر دپلوی می‌گذارد (تکراری نمی‌شوند): `schedule:run` هر دقیقه، و
-   `deploy/bin/keep-services-alive.sh` هر دقیقه.
+2. با `ops/server/install-cron.sh` دو cron در crontab کاربر دپلوی می‌گذارد (تکراری نمی‌شوند): `schedule:run` هر دقیقه، و
+   `ops/server/keep-services-alive.sh` هر دقیقه.
 3. `keep-services-alive.sh` را یک‌بار همان لحظه اجرا می‌کند.
 
 `keep-services-alive.sh` هر پروسه‌ای (worker صف و Reverb) که در حال اجرا نباشد را راه می‌اندازد و هر کدام که در حال اجراست

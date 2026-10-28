@@ -132,6 +132,6 @@ jobs:
           php_bin="$(command -v php)"
           php artisan queue:restart
           php artisan reverb:restart || true
-          bash deploy/bin/install-cron.sh "${deployment_path}" "${php_bin}"
-          bash deploy/bin/keep-services-alive.sh "${deployment_path}" "${php_bin}"
+          bash ops/server/install-cron.sh "${deployment_path}" "${php_bin}"
+          bash ops/server/keep-services-alive.sh "${deployment_path}" "${php_bin}"
           REMOTE
