@@ -45,6 +45,17 @@ class WaybillVisibilityService
         return $query->whereIn('created_by', $creatorIds);
     }
 
+    /**
+     * The creators whose waybills the user sees, or null for everyone's. Unlike scope() the answer is plain data, so it
+     * can be taken in the request (where the support token is known) and used later by a queue worker.
+     *
+     * @return list<int>|null
+     */
+    public function creatorIds(User $user): ?array
+    {
+        return $this->canViewAll($user) ? null : $this->visibleCreatorIds($user);
+    }
+
     public function canView(Waybill $waybill, User $user): bool
     {
         if ($this->canViewAll($user)) {

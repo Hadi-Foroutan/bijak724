@@ -18,4 +18,15 @@ class WaybillService
     {
         return ServiceResult::success($this->waybillRepository->search($filters));
     }
+
+    /** @param array<string, mixed> $filters */
+    public function trashed(array $filters): ServiceResult
+    {
+        return ServiceResult::success($this->waybillRepository->searchTrashed($filters));
+    }
+
+    public function restore(int $id): ServiceResult
+    {
+        return ServiceResult::success($this->waybillRepository->restore($id));
+    }
 }

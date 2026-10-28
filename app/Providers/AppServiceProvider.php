@@ -14,7 +14,17 @@ use App\Interfaces\Company\DriverAccountRepositoryInterface;
 use App\Interfaces\Company\DriverRepositoryInterface;
 use App\Interfaces\Company\FleetRepositoryInterface;
 use App\Interfaces\Company\InsuranceRepositoryInterface;
+use App\Interfaces\Company\ReportExportRepositoryInterface;
+use App\Interfaces\Company\ReportRepositoryInterface;
+use App\Interfaces\Company\ReportWaybillRepositoryInterface;
+use App\Interfaces\GlobalSettingRepositoryInterface;
+use App\Interfaces\ReportFieldRepositoryInterface;
 use App\Interfaces\Company\TechnicalManagerRepositoryInterface;
+use App\Repositories\Company\ReportExportRepository;
+use App\Repositories\Company\ReportRepository;
+use App\Repositories\Company\ReportWaybillRepository;
+use App\Repositories\GlobalSettingRepository;
+use App\Repositories\ReportFieldRepository;
 use App\Repositories\Company\TechnicalManagerRepository;
 use App\Interfaces\Company\InsuranceTariffRepositoryInterface;
 use App\Interfaces\Company\ProductOwnerRepositoryInterface;
@@ -108,6 +118,11 @@ class AppServiceProvider extends ServiceProvider
         PermissionInterface::class => PermissionRepository::class,
         RoleInterface::class => RoleRepository::class,
         SharedWaybillRepositoryInterface::class => SharedWaybillRepository::class,
+        ReportRepositoryInterface::class => ReportRepository::class,
+        ReportExportRepositoryInterface::class => ReportExportRepository::class,
+        ReportWaybillRepositoryInterface::class => ReportWaybillRepository::class,
+        ReportFieldRepositoryInterface::class => ReportFieldRepository::class,
+        GlobalSettingRepositoryInterface::class => GlobalSettingRepository::class,
     ];
 
     /**
@@ -119,6 +134,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(CompanySettingService::class);
         // One shared instance so every part of a report load/export reads the same admin-managed fields.
         $this->app->singleton(WaybillReportFieldCatalog::class);
+
+        // `php artisan reverb:start` prints who connects, subscribes and leaves (see LoggingPusherServer).
+        $this->app->bind(\Laravel\Reverb\Protocols\Pusher\Server::class, \App\Support\Reverb\LoggingPusherServer::class);
     }
 
     /**

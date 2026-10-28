@@ -22,6 +22,9 @@ class ReportDefinitionResource extends JsonResource
                 'label' => $field->label,
                 'group' => $field->group,
                 'is_active' => $field->is_active,
+                // right | left | center, and the width in pixels (null = fit the content)
+                'align' => $field->pivot->align,
+                'width' => $field->pivot->width === null ? null : (int)$field->pivot->width,
             ])->values(),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

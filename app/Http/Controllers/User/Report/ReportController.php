@@ -27,7 +27,7 @@ class ReportController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $result = $this->reportService->index($this->companyId($request), (int)$request->user()->getKey(), $request->all());
+        $result = $this->reportService->index($this->companyId($request), $request->all());
 
         return ResponseHandler::success(
             $this->resourceCollection($result->data, ReportDefinitionResource::class, $request),
@@ -51,7 +51,7 @@ class ReportController extends Controller
 
     public function show(Request $request, int $report): JsonResponse
     {
-        $result = $this->reportService->show($this->companyId($request), (int)$request->user()->getKey(), $report);
+        $result = $this->reportService->show($this->companyId($request), $report);
 
         return ResponseHandler::success(ReportDefinitionResource::make($result->data)->resolve($request));
     }
@@ -60,7 +60,6 @@ class ReportController extends Controller
     {
         $result = $this->reportService->update(
             $this->companyId($request),
-            (int)$request->user()->getKey(),
             $report,
             $request->validated(),
         );
@@ -73,7 +72,7 @@ class ReportController extends Controller
 
     public function destroy(Request $request, int $report): JsonResponse
     {
-        $result = $this->reportService->destroy($this->companyId($request), (int)$request->user()->getKey(), $report);
+        $result = $this->reportService->destroy($this->companyId($request), $report);
 
         return ResponseHandler::success([], $result->data);
     }

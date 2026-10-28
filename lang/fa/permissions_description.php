@@ -46,6 +46,8 @@ return [
     'admin.report-fields.destroy' => 'حذف فیلد گزارش‌ساز ادمین',
     'admin.settings.show' => 'مشاهده تنظیمات کلی سیستم ادمین',
     'admin.settings.update' => 'ویرایش تنظیمات کلی سیستم ادمین',
+    'admin.waybills.trashed' => 'مشاهده بارنامه‌های حذف‌شده ادمین',
+    'admin.waybills.restore' => 'بازگردانی بارنامه حذف‌شده ادمین',
     'admin.waybills.index' => 'مشاهده بارنامه‌های تمامی شرکت‌ها ادمین',
 
     // User Permissions

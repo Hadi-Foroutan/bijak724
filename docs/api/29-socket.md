@@ -12,9 +12,9 @@
 |------|-----------|------------------------|
 | سرور API | `http://localhost:8000` | `https://api.example.com` |
 | پایهٔ API (`API_BASE`) | `http://localhost:8000/api` | `https://api.example.com/api` |
-| سرور وب‌سوکت (Reverb) | `ws://localhost:8080` | `wss://ws.example.com` (پورت 443 پشت Nginx) |
+| سرور وب‌سوکت (Reverb) | `ws://localhost:8080` | `ws://api.example.com:8080` (همان دامنه، پورت جدا) |
 | احراز هویت کانال خصوصی | `POST http://localhost:8000/api/broadcasting/auth` | `POST https://api.example.com/api/broadcasting/auth` |
-| آدرس خام اتصال | `ws://localhost:8080/app/{APP_KEY}` | `wss://ws.example.com/app/{APP_KEY}` |
+| آدرس خام اتصال | `ws://localhost:8080/app/{APP_KEY}` | `ws://api.example.com:8080/app/{APP_KEY}` |
 
 مقدارهای `REVERB_APP_KEY`، `REVERB_HOST`، `REVERB_PORT` و `REVERB_SCHEME` را بک‌اند می‌دهد (همان‌هایی که در `.env` سرور هست).
 `REVERB_APP_SECRET` **سری است و هرگز در فرانت قرار نمی‌گیرد**؛ فقط `APP_KEY` عمومی است.
@@ -449,45 +449,23 @@ curl -X POST http://localhost:8000/api/user/reports/1/exports \
 
 ## ۸. نکتهٔ استقرار (برای DevOps)
 
-- Reverb جدا از وب‌سرور اجرا می‌شود و باید با Supervisor زنده بماند: `php artisan reverb:start --host=0.0.0.0 --port=8080`.
-- پشت Nginx با TLS: روی `wss://ws.example.com` به `http://127.0.0.1:8080` پروکسی شود و هدرهای `Upgrade $http_upgrade` و
-  `Connection "upgrade"` ست شوند. در این حالت در `.env` سرور `REVERB_HOST=ws.example.com`، `REVERB_PORT=443`، `REVERB_SCHEME=https`.
+- Reverb روی همان دامنهٔ برنامه و با یک پورت جدا اجرا می‌شود (بدون پروکسی و بدون ساب‌دامین): مثلاً `api.example.com:8080`.
+  در `.env` سرور: `REVERB_HOST=api.example.com`، `REVERB_PORT=8080`، `REVERB_SCHEME=http` (یا `https` اگر خود Reverb TLS دارد).
+- پروسه را با `php artisan reverb:start` (ترجیحاً با Supervisor) بالا نگه دارید و پورت انتخابی را در فایروال باز کنید.
+- فرانت با همان `host` و `port` وصل می‌شود: `ws://api.example.com:8080/app/{APP_KEY}`. اگر سایت روی `https` است مرورگر اتصال
+  `ws://` را به‌عنوان mixed content مسدود می‌کند؛ در آن حالت Reverb باید خودش TLS داشته باشد (`wss`) یا از پروکسی استفاده شود.
 - Worker صف گزارش‌ها جداست (`queue:work --queue=reports`) و scheduler برای پاک‌سازی فایل‌ها لازم است ([28-report-builder.md](28-report-builder.md)).
 - اگر چند سرور Reverb دارید، `REVERB_SCALING_ENABLED=true` (به Redis نیاز دارد).
 
-### ۸.۱ تنظیم خودکار روی سرور با GitHub Actions
+## لاگ اتصال‌ها در ترمینال سرور
 
-فایل `.env` سرور با هر پوش بازنویسی **نمی‌شود** (در rsync مستثنا است)؛ workflow فقط مقدارهای Reverb را این‌طور مدیریت می‌کند:
+با `php artisan reverb:start` (و در لاگ `storage/logs/reverb.log` وقتی با cron بالا می‌آید) هر اتصال چاپ می‌شود:
 
-1. اگر در GitHub مقدار داده شده باشد، همان در `.env` سرور نوشته می‌شود.
-2. وگرنه مقدار فعلی `.env` سرور دست نمی‌خورد.
-3. فقط اگر کلیدی هرگز وجود نداشته باشد یک‌بار ساخته می‌شود. بنابراین با پوش‌های بعدی کلید/سکرت عوض نمی‌شود.
+```
+[2026-10-28 16:24:50] connected · socket 38124259.75973579 · origin: https://app.example.com · online: 1
+[2026-10-28 16:24:51] user subscribed · socket 38124259.75973579 · user #12 (علی احمدی) company #3 · channel: private-users.12.reports · online: 1
+[2026-10-28 16:24:52] disconnected · socket 38124259.75973579 · user #12 (علی احمدی) company #3 · online: 0
+```
 
-در GitHub → Settings → Environments → `production`:
-
-| نوع | نام | نمونه |
-|-----|-----|-------|
-| Secret | `REVERB_APP_ID`، `REVERB_APP_KEY`، `REVERB_APP_SECRET` | مقدارهای تصادفی ثابت |
-| Variable | `REVERB_HOST` | `ws.example.com` (آدرسی که مرورگر وصل می‌شود) |
-| Variable | `REVERB_PORT` / `REVERB_SCHEME` | `443` / `https` |
-| Variable (اختیاری) | `REVERB_SERVER_HOST` / `REVERB_SERVER_PORT` | `127.0.0.1` / `8080` (جایی که پروسهٔ reverb روی سرور گوش می‌دهد) |
-
-مقدارهای `REVERB_APP_KEY` و `REVERB_HOST/PORT/SCHEME` همان‌هایی‌اند که فرانت در `VITE_REVERB_*` می‌گذارد. نمونهٔ supervisor و nginx در
-پوشهٔ `deploy/` است. با هر دیپلوی `queue:restart` و `reverb:restart` اجرا می‌شود و supervisor پروسه‌ها را با کد و `.env` جدید بالا می‌آورد.
-
-### ۸.۲ راه‌اندازی خودکار supervisor و nginx (اختیاری)
-
-اگر سرور VPS است و کاربر SSH دسترسی root یا `sudo` بدون رمز دارد، workflow می‌تواند کارهای دستی را هم انجام دهد؛ در GitHub
-Environment `production` این Variableها را بگذارید:
-
-| Variable | مقدار | توضیح |
-|----------|-------|-------|
-| `PROVISION_SERVER` | `true` | فعال‌سازی این مرحله (بدون آن هیچ‌چیز روی سرور نصب نمی‌شود) |
-| `REVERB_HOST` | `ws.example.com` | دامنهٔ سوکت؛ رکورد DNS آن باید قبلاً به IP سرور اشاره کند |
-| `CERTBOT_EMAIL` | `you@example.com` | برای گرفتن خودکار گواهی SSL (certbot باید نصب باشد) |
-| `SERVER_WEB_USER` | `www-data` | کاربری که صف و reverb با آن اجرا می‌شوند (پیش‌فرض `www-data`) |
-
-این مرحله با هر پوش اجرا می‌شود ولی idempotent است: فایل‌های supervisor فقط وقتی تغییر کرده باشند بازنویسی و `reread/update`
-می‌شوند؛ فایل nginx فقط یک‌بار ساخته می‌شود (بعدش certbot خودش آن را ویرایش می‌کند، پس دیگر بازنویسی نمی‌شود). برای تغییر
-تنظیم nginx، فایل `/etc/nginx/conf.d/bijak-reverb.conf` را روی سرور پاک کنید تا پوش بعدی دوباره بسازد.
-اگر `supervisor` یا `nginx` نصب نباشد فقط هشدار چاپ می‌شود و دیپلوی ادامه پیدا می‌کند؛ نصب خود بسته‌ها (`apt install supervisor nginx certbot python3-certbot-nginx`) یک‌بار دستی است.
+شناسهٔ کاربر از کانال خصوصی او (`private-users.{id}.reports`) خوانده می‌شود، و فقط وقتی چاپ می‌شود که اشتراک واقعاً تأیید شده باشد.
+`online` تعداد اتصال‌های باز است. کلاس: `app/Support/Reverb/LoggingPusherServer.php`.

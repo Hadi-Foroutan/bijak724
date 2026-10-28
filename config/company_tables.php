@@ -66,6 +66,8 @@ return [
         ['name' => 'technical_manager_full_name', 'type' => 'string'],
         ['name' => 'technical_manager_mobile', 'type' => 'string'],
         ['name' => 'bijak_tracking_code', 'type' => 'string', 'length' => 25, 'unique' => true, 'change' => true],
+        // Soft delete marker (only incomplete waybills can be deleted). Not part of the API output or of searches.
+        ['name' => 'deleted_at', 'type' => 'dateTime', 'api' => false, 'searchable' => false, 'index' => true],
         ['name' => 'description', 'type' => 'text'],
         ['name' => 'status', 'type' => 'enum', 'values' => WaybillStatus::values(), 'default' => WaybillStatus::Incomplete->value, 'nullable' => false, 'index' => true],
         ['name' => 'transport_contract_id', 'type' => 'unsignedBigInteger', 'index' => true, 'foreign' => ['table' => 'transport_contracts', 'column' => 'id', 'on_delete' => 'null']],

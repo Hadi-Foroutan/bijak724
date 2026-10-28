@@ -33,6 +33,7 @@ class AdminWaybillResource extends JsonResource
             'status_label' => $status?->label(),
             'created_by' => $companyWaybill?->created_by,
             'username' => $companyWaybill?->creator?->username,
+            'deleted_at' => $this->deleted_at,
             'created_at' => $companyWaybill?->created_at ?? $this->created_at,
             'updated_at' => $companyWaybill?->updated_at ?? $this->updated_at,
         ];

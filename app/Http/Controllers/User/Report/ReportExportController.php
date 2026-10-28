@@ -23,7 +23,6 @@ class ReportExportController extends Controller
     {
         $result = $this->reportExportService->index(
             $this->companyId($request),
-            (int)$request->user()->getKey(),
             $request->all(),
         );
 
@@ -37,7 +36,7 @@ class ReportExportController extends Controller
     {
         $result = $this->reportExportService->queue(
             $this->companyId($request),
-            (int)$request->user()->getKey(),
+            $request->user(),
             $report,
             ReportExportFormat::from($request->validated('format')),
             $request->input('filters', []),
@@ -54,7 +53,6 @@ class ReportExportController extends Controller
     {
         $result = $this->reportExportService->show(
             $this->companyId($request),
-            (int)$request->user()->getKey(),
             $reportExport,
         );
 
@@ -65,7 +63,6 @@ class ReportExportController extends Controller
     {
         $result = $this->reportExportService->destroy(
             $this->companyId($request),
-            (int)$request->user()->getKey(),
             $reportExport,
         );
 

@@ -2,9 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Enums\ReportExportStatus;
-use App\Events\ReportExportStatusChanged;
-use App\Models\ReportExport;
+use App\Interfaces\Company\ReportExportRepositoryInterface;
 use App\Services\Company\Report\ReportExportGenerator;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
@@ -23,9 +21,9 @@ class GenerateReportExport implements ShouldQueue
         $this->timeout = (int)config('waybill_report.job_timeout');
     }
 
-    public function handle(ReportExportGenerator $generator): void
+    public function handle(ReportExportRepositoryInterface $reportExportRepository, ReportExportGenerator $generator): void
     {
-        $export = ReportExport::query()->find($this->reportExportId);
+        $export = $reportExportRepository->find($this->reportExportId);
 
         // Deleted by the user while it was waiting in the queue.
         if ($export !== null) {
@@ -36,18 +34,10 @@ class GenerateReportExport implements ShouldQueue
     /** The worker was killed (timeout, memory) before the generator could record a result. */
     public function failed(?Throwable $exception): void
     {
-        $export = ReportExport::query()->find($this->reportExportId);
+        $export = app(ReportExportRepositoryInterface::class)->find($this->reportExportId);
 
-        if ($export === null || in_array($export->status, [ReportExportStatus::Completed, ReportExportStatus::Failed], true)) {
-            return;
+        if ($export !== null) {
+            app(ReportExportGenerator::class)->fail($export);
         }
-
-        $export->update([
-            'status' => ReportExportStatus::Failed,
-            'error' => 'ساخت گزارش با خطا مواجه شد.',
-            'completed_at' => now(),
-        ]);
-
-        ReportExportStatusChanged::dispatch($export->refresh());
     }
 }

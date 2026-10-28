@@ -66,96 +66,6 @@ jobs:
             -e "ssh -i ~/.ssh/deploy_key -p ${SERVER_PORT} -o IdentitiesOnly=yes" \
             ./ "${SERVER_USER}@${SERVER_HOST}:${SERVER_PATH}/"
 
-      # Optional: sets up supervisor (queue worker + reverb) and the nginx wss proxy from the files in deploy/.
-      # Needs a VPS/server where the SSH user is root or has passwordless sudo; turn it on with the GitHub
-      # variable PROVISION_SERVER=true. Safe to run on every push: nothing is touched when nothing changed,
-      # and the nginx file is created once (certbot edits it afterwards, so it is never overwritten).
-      - name: Provision server (supervisor and nginx)
-        if: ${{ vars.PROVISION_SERVER == 'true' }}
-        env:
-          SERVER_HOST: ${{ vars.SERVER_HOST }}
-          SERVER_PORT: ${{ vars.SERVER_PORT }}
-          SERVER_USER: ${{ vars.SERVER_USER }}
-          SERVER_PATH: ${{ vars.SERVER_PATH }}
-          SERVER_WEB_USER: ${{ vars.SERVER_WEB_USER }}
-          REVERB_HOST: ${{ vars.REVERB_HOST }}
-          REVERB_SERVER_PORT: ${{ vars.REVERB_SERVER_PORT }}
-          CERTBOT_EMAIL: ${{ vars.CERTBOT_EMAIL }}
-        run: |
-          {
-            printf 'web_user=%q\n' "${SERVER_WEB_USER:-www-data}"
-            printf 'reverb_host=%q\n' "${REVERB_HOST}"
-            printf 'server_port=%q\n' "${REVERB_SERVER_PORT:-8080}"
-            printf 'certbot_email=%q\n' "${CERTBOT_EMAIL}"
-            cat <<'REMOTE'
-          set -e
-
-          deployment_path="$1"
-          etc="${provision_etc:-/etc}"
-          cd "${deployment_path}"
-
-          SUDO=""
-          if [ "$(id -u)" -ne 0 ]; then
-            SUDO="sudo -n"
-          fi
-
-          render() {
-            sed -e "s|{{PATH}}|${deployment_path}|g" \
-                -e "s|{{USER}}|${web_user}|g" \
-                -e "s|{{HOST}}|${reverb_host}|g" \
-                -e "s|{{PORT}}|${server_port}|g" "$1"
-          }
-
-          # Install a rendered file when it is missing or different. Sets changed=1 when it wrote something.
-          install_rendered() {
-            tmp="$(mktemp)"
-            render "$1" > "${tmp}"
-
-            if ! cmp -s "${tmp}" "$2"; then
-              ${SUDO} install -m 644 "${tmp}" "$2"
-              changed=1
-            fi
-
-            rm -f "${tmp}"
-          }
-
-          # ---- supervisor: queue worker and reverb ----
-          if command -v supervisorctl >/dev/null 2>&1; then
-            changed=0
-            install_rendered deploy/supervisor/bijak-queue.conf "${etc}/supervisor/conf.d/bijak-queue.conf"
-            install_rendered deploy/supervisor/bijak-reverb.conf "${etc}/supervisor/conf.d/bijak-reverb.conf"
-
-            if [ "${changed}" -eq 1 ]; then
-              ${SUDO} supervisorctl reread
-              ${SUDO} supervisorctl update
-            fi
-          else
-            echo "supervisor is not installed: install it (apt install supervisor) so the queue and reverb stay running." >&2
-          fi
-
-          # ---- nginx: wss proxy for reverb ----
-          nginx_file="${etc}/nginx/conf.d/bijak-reverb.conf"
-
-          if [ -n "${reverb_host}" ] && command -v nginx >/dev/null 2>&1 && [ ! -e "${nginx_file}" ]; then
-            changed=0
-            install_rendered deploy/nginx/bijak-reverb.conf "${nginx_file}"
-            ${SUDO} nginx -t
-            ${SUDO} systemctl reload nginx
-
-            # The DNS record of REVERB_HOST must already point to this server for certbot to succeed.
-            if [ -n "${certbot_email}" ] && command -v certbot >/dev/null 2>&1; then
-              ${SUDO} certbot --nginx -d "${reverb_host}" --non-interactive --agree-tos -m "${certbot_email}" --redirect
-            else
-              echo "no CERTBOT_EMAIL or certbot: ${reverb_host} is served over http only until you add a certificate." >&2
-            fi
-          fi
-          REMOTE
-          } | ssh -i ~/.ssh/deploy_key \
-            -p "${SERVER_PORT}" \
-            -o IdentitiesOnly=yes \
-            "${SERVER_USER}@${SERVER_HOST}" \
-            "bash -s -- '${SERVER_PATH}'"
-
       - name: Finalize Laravel deployment
         env:
           APP_URL: ${{ vars.APP_URL }}
@@ -163,16 +73,6 @@ jobs:
           SERVER_PORT: ${{ vars.SERVER_PORT }}
           SERVER_USER: ${{ vars.SERVER_USER }}
           SERVER_PATH: ${{ vars.SERVER_PATH }}
-          # Reverb. All optional: a value that is not set here is left as it already is in the server .env
-          # (and generated once if it never existed), so a push never rotates keys or changes the setup.
-          REVERB_APP_ID: ${{ secrets.REVERB_APP_ID }}
-          REVERB_APP_KEY: ${{ secrets.REVERB_APP_KEY }}
-          REVERB_APP_SECRET: ${{ secrets.REVERB_APP_SECRET }}
-          REVERB_HOST: ${{ vars.REVERB_HOST }}
-          REVERB_PORT: ${{ vars.REVERB_PORT }}
-          REVERB_SCHEME: ${{ vars.REVERB_SCHEME }}
-          REVERB_SERVER_HOST: ${{ vars.REVERB_SERVER_HOST }}
-          REVERB_SERVER_PORT: ${{ vars.REVERB_SERVER_PORT }}
         run: |
           DEPLOY_APP_URL="${APP_URL}"
 
@@ -181,74 +81,34 @@ jobs:
           fi
 
           test -n "${DEPLOY_APP_URL}"
-
-          # The Reverb values travel on stdin (not as ssh arguments) so secrets never show in a process list.
-          {
-            printf 'deployment_app_url=%q\n' "${DEPLOY_APP_URL}"
-            for name in REVERB_APP_ID REVERB_APP_KEY REVERB_APP_SECRET REVERB_HOST REVERB_PORT REVERB_SCHEME REVERB_SERVER_HOST REVERB_SERVER_PORT; do
-              printf 'given_%s=%q\n' "${name}" "${!name}"
-            done
-            cat <<'REMOTE'
+          ssh -i ~/.ssh/deploy_key \
+            -p "${SERVER_PORT}" \
+            -o IdentitiesOnly=yes \
+            "${SERVER_USER}@${SERVER_HOST}" \
+            "bash -s -- '${SERVER_PATH}' '${DEPLOY_APP_URL}'" <<'REMOTE'
           set -e
 
           deployment_path="$1"
+          deployment_app_url="$2"
           cd "${deployment_path}"
 
           test -f .env
           grep -Eq '^APP_KEY=base64:.+' .env
 
-          # Always set the key to this value (escapes the characters sed treats specially).
           update_env_value() {
             key="$1"
-            value="$(printf '%s' "$2" | sed -e 's/[&|\\]/\\&/g')"
+            value="$2"
 
             if grep -q "^${key}=" .env; then
               sed -i "s|^${key}=.*|${key}=${value}|" .env
             else
-              printf '\n%s=%s\n' "${key}" "$2" >> .env
-            fi
-          }
-
-          # Set the key only when the server .env has no value for it yet.
-          ensure_env_value() {
-            current="$(sed -n "s/^$1=//p" .env | head -n 1 | tr -d '"')"
-            [ -n "${current}" ] || update_env_value "$1" "$2"
-          }
-
-          # Use the GitHub value when one is given, otherwise keep what the server has, otherwise the default.
-          env_from_github() {
-            key="$1"
-            given="$(eval "printf '%s' \"\${given_${key}}\"")"
-            default="$2"
-
-            if [ -n "${given}" ]; then
-              update_env_value "${key}" "${given}"
-            else
-              ensure_env_value "${key}" "${default}"
+              printf '\n%s=%s\n' "${key}" "${value}" >> .env
             fi
           }
 
           update_env_value APP_ENV production
           update_env_value APP_DEBUG false
           update_env_value APP_URL "${deployment_app_url}"
-
-          # ---- Reverb (websocket) ----
-          app_scheme="${deployment_app_url%%://*}"
-          app_host="${deployment_app_url#*://}"
-          app_host="${app_host%%/*}"
-          app_host="${app_host%%:*}"
-          if [ "${app_scheme}" = "https" ]; then default_port=443; else default_port=8080; fi
-
-          update_env_value BROADCAST_CONNECTION reverb
-          env_from_github REVERB_APP_ID "$(od -An -N4 -tu4 /dev/urandom | tr -d ' ')"
-          env_from_github REVERB_APP_KEY "$(openssl rand -hex 16)"
-          env_from_github REVERB_APP_SECRET "$(openssl rand -hex 24)"
-          env_from_github REVERB_HOST "${app_host}"
-          env_from_github REVERB_PORT "${default_port}"
-          env_from_github REVERB_SCHEME "${app_scheme}"
-          # Where the reverb process listens on the server (a reverse proxy forwards wss://REVERB_HOST:REVERB_PORT to it).
-          env_from_github REVERB_SERVER_HOST "127.0.0.1"
-          env_from_github REVERB_SERVER_PORT "8080"
 
           mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
           chmod -R ug+rwX storage bootstrap/cache
@@ -258,17 +118,20 @@ jobs:
           php artisan optimize:clear
           php artisan migrate --force
           php artisan company-tables:sync --no-interaction
+          # Adds the report-builder fields that are missing; fields an admin edited or turned off are left alone.
+          php artisan db:seed --class=ReportFieldSeeder --force --no-interaction
           php artisan generate-permissions --no-interaction
           php artisan storage:link || true
           php artisan optimize
-          php artisan queue:restart
-          # Workers (queue + reverb) are kept alive by supervisor, which starts them again with the new code and .env.
-          php artisan reverb:restart || true
           php artisan up
           trap - EXIT
+
+          # Background processes (no manual start needed): cron runs the scheduler and a watchdog that keeps the queue
+          # worker and Reverb alive. The restart signals make running processes exit after their current job/connection;
+          # the watchdog then starts them again with the new code.
+          php_bin="$(command -v php)"
+          php artisan queue:restart
+          php artisan reverb:restart || true
+          bash deploy/bin/install-cron.sh "${deployment_path}" "${php_bin}"
+          bash deploy/bin/keep-services-alive.sh "${deployment_path}" "${php_bin}"
           REMOTE
-          } | ssh -i ~/.ssh/deploy_key \
-            -p "${SERVER_PORT}" \
-            -o IdentitiesOnly=yes \
-            "${SERVER_USER}@${SERVER_HOST}" \
-            "bash -s -- '${SERVER_PATH}'"

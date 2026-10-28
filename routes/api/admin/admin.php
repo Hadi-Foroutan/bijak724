@@ -24,6 +24,10 @@ Route::apiResource('cities', CityController::class);
 Route::apiResource('notifications', NotificationController::class)
     ->only(['index', 'store', 'show']);
 
+Route::prefix('waybills')->name('waybills.')->group(function () {
+    Route::get('trashed', [WaybillController::class, 'trashed'])->name('trashed');
+    Route::patch('{waybill}/restore', [WaybillController::class, 'restore'])->whereNumber('waybill')->name('restore');
+});
 Route::apiResource('waybills', WaybillController::class)->only(['index']);
 
 Route::apiResource('report-fields', ReportFieldController::class)->parameters(['report-fields' => 'reportField']);

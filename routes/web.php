@@ -9,5 +9,6 @@ Route::get('/', function () {
 
 // Temporary signed download link of a finished report export (see ReportExportResource::download_url).
 Route::get('/report-exports/{reportExport}/download', ReportExportDownloadController::class)
+    ->whereNumber('reportExport')
     ->middleware('signed')
     ->name('report-exports.download');

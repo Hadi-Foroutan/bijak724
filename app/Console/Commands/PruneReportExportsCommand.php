@@ -2,10 +2,8 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\ReportExportStatus;
-use App\Models\ReportExport;
+use App\Services\Company\Report\ReportExportService;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
 
 class PruneReportExportsCommand extends Command
 {
@@ -13,24 +11,9 @@ class PruneReportExportsCommand extends Command
 
     protected $description = 'Delete the files of report exports whose retention time is over and mark them expired';
 
-    public function handle(): int
+    public function handle(ReportExportService $reportExportService): int
     {
-        $disk = Storage::disk(config('waybill_report.disk'));
-        $pruned = 0;
-
-        ReportExport::query()
-            ->where('status', ReportExportStatus::Completed)
-            ->where('expires_at', '<=', now())
-            ->each(function (ReportExport $export) use ($disk, &$pruned): void {
-                if ($export->file_path !== null) {
-                    $disk->delete($export->file_path);
-                }
-
-                $export->update(['status' => ReportExportStatus::Expired, 'file_path' => null]);
-                $pruned++;
-            });
-
-        $this->info("Expired {$pruned} report export(s).");
+        $this->info("Expired {$reportExportService->pruneExpired()} report export(s).");
 
         return self::SUCCESS;
     }

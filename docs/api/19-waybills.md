@@ -15,7 +15,7 @@
 | ۱۹.۳ | GET        | `/api/user/waybills/options`                   | query string | `user.waybills.options`         | وضعیت‌ها و گزینه‌های فرم                   |
 | ۱۹.۴ | GET        | `/api/user/waybills/{waybill}`                 | query string | `user.waybills.show`            | جزئیات بارنامه                           |
 | ۱۹.۵ | PUT\|PATCH | `/api/user/waybills/{waybill}`                 | JSON         | `user.waybills.update`          | ویرایش بارنامه                           |
-| ۱۹.۶ | DELETE     | `/api/user/waybills/{waybill}`                 | ندارد        | `user.waybills.destroy`         | حذف بارنامه (سرور وضعیت را بررسی نمی‌کند) |
+| ۱۹.۶ | DELETE     | `/api/user/waybills/{waybill}`                 | ندارد        | `user.waybills.destroy`         | حذف بارنامه؛ فقط وضعیت `incomplete` (غیر از آن `422`). حذف نرم است: ردیف پاک نمی‌شود، فقط از لیست کاربر کنار می‌رود و ادمین می‌تواند بازگردانی کند |
 | ۱۹.۷ | PATCH      | `/api/user/waybills/{waybill}/cancel`          | ندارد        | `user.waybills.cancel`          | ابطال بارنامهٔ صادرشده                    |
 | ۱۹.۸ | PATCH      | `/api/user/waybills/{waybill}/referral/cancel` | ندارد        | `user.waybills.referral.cancel` | ابطال شمارهٔ حوالهٔ آن                     |
 

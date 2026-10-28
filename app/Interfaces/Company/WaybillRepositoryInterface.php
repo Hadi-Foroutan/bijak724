@@ -26,7 +26,10 @@ interface WaybillRepositoryInterface
     /** @param array<string, mixed> $data */
     public function update(int $companyId, int $id, array $data): Waybill;
 
+    /** Soft delete. */
     public function delete(int $companyId, int $id): void;
+
+    public function restore(int $companyId, int $id): Waybill;
 
     /** @param list<string> $columns */
     public function hasIssuedReference(int $companyId, array $columns, int $referenceId): bool;

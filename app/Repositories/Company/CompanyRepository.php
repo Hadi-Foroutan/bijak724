@@ -122,6 +122,11 @@ class CompanyRepository implements CompanyInterface
         $company->delete();
     }
 
+    public function find(int $id): ?Company
+    {
+        return Company::query()->find($id);
+    }
+
     public function findByOrganizationCode(string $code): ?Company
     {
         return Company::query()->where('organization_code', $code)->first();
@@ -228,6 +233,7 @@ class CompanyRepository implements CompanyInterface
                 }
 
                 return DB::table($tableName)
+                    ->when(Schema::hasColumn($tableName, 'deleted_at'), fn(QueryBuilder $query) => $query->whereNull('deleted_at'))
                     ->selectRaw('owner_company_id as company_id, COUNT(*) as waybills_count, MAX(created_at) as last_waybill_at')
                     ->whereIn('owner_company_id', Company::query()->select('id'))
                     ->groupBy('owner_company_id');

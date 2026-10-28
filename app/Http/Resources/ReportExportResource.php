@@ -21,6 +21,7 @@ class ReportExportResource extends JsonResource
             'status' => $this->status->value,
             'status_label' => $this->status->label(),
             'fields' => $this->fields,
+            'column_options' => $this->column_options,
             'filters' => $this->filters,
             'rows_count' => $this->rows_count,
             'file_size' => $this->file_size,

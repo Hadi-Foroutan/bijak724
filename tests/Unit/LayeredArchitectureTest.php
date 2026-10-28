@@ -24,6 +24,7 @@ test('generic company data service and repository are not available', function (
         ->and(file_exists($applicationPath . 'Services/Company/DynamicRelationLoader.php'))->toBeFalse();
 });
 
+// The models appear in controllers only as route-model-binding type hints (`Cargo $cargo`); querying is the repositories' job.
 arch('dynamic domain controllers do not query models directly')
     ->expect([
         'App\Http\Controllers\User\Cargo',
@@ -33,4 +34,23 @@ arch('dynamic domain controllers do not query models directly')
         'App\Http\Controllers\User\ShipmentParty',
         'App\Http\Controllers\User\Waybill',
     ])
+    ->not->toUse([
+        'Illuminate\Database\Eloquent\Builder',
+        'Illuminate\Database\Query\Builder',
+        'Illuminate\Support\Facades\DB',
+    ]);
+
+arch('report controllers do not query models directly')
+    ->expect([
+        'App\Http\Controllers\User\Report',
+        'App\Http\Controllers\Admin\Report',
+    ])
     ->not->toUse('App\Models');
+
+arch('report services read data through repository interfaces, not Eloquent builders')
+    ->expect([
+        'App\Services\Company\Report',
+        'App\Services\Admin\Report',
+        'App\Services\Setting',
+    ])
+    ->not->toUse(['Illuminate\Database\Eloquent\Builder', 'Illuminate\Database\Query\Builder']);

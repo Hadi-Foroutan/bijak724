@@ -31,6 +31,8 @@ interface CompanyInterface
 
     public function delete(Company $company): void;
 
+    public function find(int $id): ?Company;
+
     public function findByOrganizationCode(string $code): ?Company;
 
     public function findByNationalCode(string $code): ?Company;

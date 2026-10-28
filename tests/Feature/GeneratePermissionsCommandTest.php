@@ -27,12 +27,12 @@ test('every permission route belongs to a configured group', function () {
     $groupPatterns = array_keys(config('permission_groups.groups', []));
 
     $ungroupedRoutes = collect(Route::getRoutes())
-        ->map(fn($route) => $route->getName())
-        ->filter(fn(?string $name): bool => filled($name))
-        ->reject(fn(string $name): bool => collect($excludedRoutes)
-            ->contains(fn(string $pattern): bool => Str::is($pattern, $name)))
-        ->reject(fn(string $name): bool => collect($groupPatterns)
-            ->contains(fn(string $pattern): bool => Str::is(
+        ->map(fn ($route) => $route->getName())
+        ->filter(fn (?string $name): bool => filled($name))
+        ->reject(fn (string $name): bool => collect($excludedRoutes)
+            ->contains(fn (string $pattern): bool => Str::is($pattern, $name)))
+        ->reject(fn (string $name): bool => collect($groupPatterns)
+            ->contains(fn (string $pattern): bool => Str::is(
                 Str::contains($pattern, '*') ? $pattern : "{$pattern}*",
                 $name,
             )))
@@ -278,7 +278,7 @@ test('every generated permission has a real persian description and no unnamed p
 
     $unnamed = Permission::query()
         ->get(['name', 'display_name', 'description'])
-        ->filter(fn(Permission $permission): bool => blank($permission->display_name)
+        ->filter(fn (Permission $permission): bool => blank($permission->display_name)
             || blank($permission->description)
             || str_starts_with($permission->display_name, 'دسترسی به '))
         ->pluck('name')
@@ -303,4 +303,48 @@ test('plain users do not receive the waybill visibility permissions by default',
     expect($user->permissions()->where('name', 'like', 'user.waybills.view-%')->exists())->toBeFalse()
         ->and($user->permissions()->where('name', 'user.waybills.index')->exists())->toBeTrue()
         ->and($manager->permissions()->where('name', 'like', 'user.waybills.view-%')->count())->toBe(3);
+});
+
+test('after a permission reset the demo role gets the company permissions except profile, company info, user management and deletes', function () {
+    $demo = Role::query()->create(['name' => RoleEnum::DEMO->value, 'display_name' => 'دمو']);
+
+    $this->artisan('generate-permissions', ['--force' => true])->assertSuccessful();
+
+    $names = $demo->fresh()->permissions()->pluck('name');
+
+    expect($names)->toContain('user.waybills.index', 'user.waybills.store', 'user.waybills.update', 'user.reports.store',
+        'user.drivers.index', 'user.fleets.store', 'user.users.index', 'user.users.show', 'user.permissions.index',
+        'user.technical-managers.store', 'profile.show')
+        ->and($names)->not->toContain('profile.update', 'user.settings.update', 'user.users.store', 'user.users.update',
+            'user.users.destroy', 'user.permissions.update', 'user.waybills.destroy', 'user.drivers.destroy',
+            'user.reports.destroy', 'user.technical-managers.destroy')
+        ->and($names->filter(fn (string $name): bool => str_ends_with($name, '.destroy')))->toBeEmpty()
+        ->and($names->filter(fn (string $name): bool => str_starts_with($name, 'admin.')))->toBeEmpty();
+});
+
+test('a demo user keeps its other permissions but loses an excluded one it held before the reset', function () {
+    $demo = Role::query()->create(['name' => RoleEnum::DEMO->value, 'display_name' => 'دمو']);
+    $user = User::query()->forceCreate([
+        'national_code' => '1234567891', 'first_name' => 'د', 'last_name' => 'مو', 'phone' => '09120000001',
+        'username' => 'demo-user', 'password' => 'password',
+    ]);
+    $user->roles()->attach($demo);
+    foreach (['user.waybills.destroy', 'user.waybills.index'] as $name) {
+        $user->permissions()->attach(Permission::query()->create(['name' => $name, 'display_name' => $name])->id);
+    }
+
+    $this->artisan('generate-permissions', ['--force' => true])->assertSuccessful();
+
+    $names = $user->fresh()->permissions()->pluck('name');
+    expect($names)->toContain('user.waybills.index', 'user.waybills.store')->not->toContain('user.waybills.destroy');
+});
+
+test('a demo role that was created with the persian name gets the same restricted permissions', function () {
+    $demo = Role::query()->create(['name' => 'demo', 'display_name' => 'دمو']);
+
+    $this->artisan('generate-permissions', ['--force' => true])->assertSuccessful();
+
+    $names = $demo->fresh()->permissions()->pluck('name');
+    expect($names)->toContain('user.waybills.store', 'profile.show')
+        ->and($names)->not->toContain('profile.update', 'user.waybills.destroy', 'user.settings.update');
 });

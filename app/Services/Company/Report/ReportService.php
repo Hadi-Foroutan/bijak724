@@ -3,19 +3,21 @@
 namespace App\Services\Company\Report;
 
 use App\Helpers\ServiceResult;
-use App\Models\ReportDefinition;
+use App\Interfaces\Company\ReportRepositoryInterface;
+use App\Interfaces\Company\ReportWaybillRepositoryInterface;
 use App\Models\User;
+use App\Services\Company\Waybill\WaybillVisibilityService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
-/** Saved report definitions: a name and the waybill fields the user picked. Every user only sees their own. */
+/** Saved report definitions of a company: a name and the waybill fields chosen for it. Every user of the company sees them all. */
 class ReportService
 {
     public function __construct(
-        protected WaybillReportFieldCatalog $catalog,
-        protected WaybillReportQuery        $query,
+        protected ReportRepositoryInterface         $reportRepository,
+        protected ReportWaybillRepositoryInterface  $reportWaybillRepository,
+        protected WaybillReportFieldCatalog         $catalog,
+        protected WaybillVisibilityService          $visibility,
     )
     {
     }
@@ -26,57 +28,53 @@ class ReportService
     }
 
     /** @param array<string, mixed> $filters */
-    public function index(int $companyId, int $userId, array $filters): ServiceResult
+    public function index(int $companyId, array $filters): ServiceResult
     {
-        return ServiceResult::success(ReportDefinition::searchRecords(
-            $filters,
-            fn(Builder $query): Builder => $query->where('company_id', $companyId)->where('user_id', $userId)->with('fields'),
-        ));
+        return ServiceResult::success($this->reportRepository->search($companyId, $filters));
     }
 
-    public function show(int $companyId, int $userId, int $id): ServiceResult
+    public function show(int $companyId, int $id): ServiceResult
     {
-        return ServiceResult::success($this->findOrFail($companyId, $userId, $id));
+        return ServiceResult::success($this->reportRepository->findOrFail($companyId, $id));
     }
 
     /** @param array{name: string, field_ids: list<int>} $data */
     public function store(int $companyId, int $userId, array $data): ServiceResult
     {
-        $report = DB::transaction(function () use ($companyId, $userId, $data): ReportDefinition {
-            $report = ReportDefinition::query()->create([
-                'company_id' => $companyId,
-                'user_id' => $userId,
-                'name' => $data['name'],
-            ]);
-            $report->syncFields($data['field_ids']);
+        return ServiceResult::success(DB::transaction(function () use ($companyId, $userId, $data) {
+            $report = $this->reportRepository->create($companyId, $userId, $data['name']);
 
-            return $report;
-        });
-
-        return ServiceResult::success($report->load('fields'));
+            return $this->reportRepository->syncFields($report, $data['field_ids'], $this->options($data['field_options'] ?? []));
+        }));
     }
 
     /** @param array{name?: string, field_ids?: list<int>} $data */
-    public function update(int $companyId, int $userId, int $id, array $data): ServiceResult
+    public function update(int $companyId, int $id, array $data): ServiceResult
     {
-        $report = $this->findOrFail($companyId, $userId, $id);
+        $report = $this->reportRepository->findOrFail($companyId, $id);
 
-        DB::transaction(function () use ($report, $data): void {
+        return ServiceResult::success(DB::transaction(function () use ($report, $data) {
             if (isset($data['name'])) {
-                $report->update(['name' => $data['name']]);
+                $report = $this->reportRepository->update($report, ['name' => $data['name']]);
             }
 
-            if (isset($data['field_ids'])) {
-                $report->syncFields($data['field_ids']);
+            if (isset($data['field_ids']) || isset($data['field_options'])) {
+                $ids = $data['field_ids'] ?? $report->fields->pluck('id')->map(fn($id): int => (int)$id)->all();
+                // Fields whose options are not sent again keep the layout they already had.
+                $kept = $report->fields->mapWithKeys(fn($field): array => [(int)$field->id => [
+                    'align' => $field->pivot->align,
+                    'width' => $field->pivot->width === null ? null : (int)$field->pivot->width,
+                ]])->all();
+                $report = $this->reportRepository->syncFields($report, $ids, $this->options($data['field_options'] ?? []) + $kept);
             }
-        });
 
-        return ServiceResult::success($report->refresh()->load('fields'));
+            return $report;
+        }));
     }
 
-    public function destroy(int $companyId, int $userId, int $id): ServiceResult
+    public function destroy(int $companyId, int $id): ServiceResult
     {
-        $this->findOrFail($companyId, $userId, $id)->delete();
+        $this->reportRepository->delete($this->reportRepository->findOrFail($companyId, $id));
 
         return ServiceResult::success(__('public.delete_success', ['attribute' => 'گزارش']));
     }
@@ -85,35 +83,41 @@ class ReportService
      * The company's waybills with only the report's fields.
      *
      * @param array<string, mixed> $filters
-     * @return array{columns: list<array{key: string, label: string}>, records: Collection<int, array<string, mixed>>|LengthAwarePaginator}
+     * @return ServiceResult data: `columns` and `records` (paginated unless `paginate` is turned off)
      */
     public function waybills(int $companyId, User $user, int $id, array $filters): ServiceResult
     {
         $this->catalog->refresh();
-        $report = $this->findOrFail($companyId, (int)$user->getKey(), $id);
-        $fields = $report->fieldKeys();
-        $query = $this->query->build($companyId, $user, $fields, $filters);
 
-        $records = $query->getModel()->advancedSearchResults(
-            $query,
-            ['paginate' => true, ...$filters],
+        $report = $this->reportRepository->findOrFail($companyId, $id);
+        $fields = $report->fieldKeys();
+        $records = $this->reportWaybillRepository->search(
+            $companyId,
+            $this->visibility->creatorIds($user),
+            $this->catalog->relationsFor($fields),
+            $filters,
         );
         $transform = fn($waybill): array => ['id' => $waybill->getKey(), ...$this->catalog->row($waybill, $fields)];
 
         return ServiceResult::success([
-            'columns' => $this->catalog->columns($fields),
+            'columns' => $this->catalog->columns($fields, $report->columnOptions()),
             'records' => $records instanceof LengthAwarePaginator
                 ? $records->through($transform)
                 : $records->map($transform),
         ]);
     }
 
-    private function findOrFail(int $companyId, int $userId, int $id): ReportDefinition
+    /**
+     * @param list<array<string, mixed>> $options as sent by the user: `width` is a number of pixels or "auto"
+     * @return array<int, array{align: string, width: int|null}> keyed by field id
+     */
+    private function options(array $options): array
     {
-        return ReportDefinition::query()
-            ->where('company_id', $companyId)
-            ->where('user_id', $userId)
-            ->with('fields')
-            ->findOrFail($id);
+        return collect($options)
+            ->mapWithKeys(fn(array $option): array => [(int)$option['field_id'] => [
+                'align' => $option['align'] ?? 'right',
+                'width' => is_numeric($option['width'] ?? null) ? (int)$option['width'] : null,
+            ]])
+            ->all();
     }
 }

@@ -9,6 +9,7 @@ use App\Models\Waybill;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 
 class WaybillRepository implements WaybillRepositoryInterface
 {
@@ -20,19 +21,49 @@ class WaybillRepository implements WaybillRepositoryInterface
 
     public function search(array $filters): Collection|LengthAwarePaginator
     {
+        return $this->searchRecords($filters, false);
+    }
+
+    public function searchTrashed(array $filters): Collection|LengthAwarePaginator
+    {
+        return $this->searchRecords($filters, true);
+    }
+
+    public function restore(int $id): Waybill
+    {
+        return DB::transaction(function () use ($id): Waybill {
+            $index = Waybill::onlyTrashed()->findOrFail($id);
+
+            $this->companyWaybillRepository->restore((int)$index->company_id, (int)$index->waybill_id);
+            $index->restore();
+
+            $index->load('company');
+            $this->loadCompanyWaybills($index->newCollection([$index]), false);
+
+            return $index;
+        });
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     * @return Collection<int, Waybill>|LengthAwarePaginator
+     */
+    private function searchRecords(array $filters, bool $trashed): Collection|LengthAwarePaginator
+    {
         [$sharedFilters, $dynamicFilters] = $this->prepareFilters($filters);
 
         $records = Waybill::searchRecords(
             $sharedFilters,
-            function (Builder $query) use ($dynamicFilters): Builder {
+            function (Builder $query) use ($dynamicFilters, $trashed): Builder {
+                $trashed && $query->onlyTrashed();
                 $query->with('company');
-                $this->applyDynamicFilters($query, $dynamicFilters);
+                $this->applyDynamicFilters($query, $dynamicFilters, $trashed);
 
                 return $query;
             },
         );
 
-        $this->loadCompanyWaybills($records);
+        $this->loadCompanyWaybills($records, $trashed);
 
         return $records;
     }
@@ -103,7 +134,7 @@ class WaybillRepository implements WaybillRepositoryInterface
     }
 
     /** @param array<string, mixed> $dynamicFilters */
-    private function applyDynamicFilters(Builder $query, array $dynamicFilters): void
+    private function applyDynamicFilters(Builder $query, array $dynamicFilters, bool $trashed = false): void
     {
         if ($dynamicFilters === []) {
             return;
@@ -121,10 +152,11 @@ class WaybillRepository implements WaybillRepositoryInterface
             return;
         }
 
-        $query->where(function (Builder $query) use ($companyIds, $dynamicFilters): void {
+        $query->where(function (Builder $query) use ($companyIds, $dynamicFilters, $trashed): void {
             foreach ($companyIds as $companyId) {
                 $waybillIds = $this->companyWaybillRepository
                     ->query((int)$companyId)
+                    ->when($trashed, fn(Builder $query) => $query->onlyTrashed())
                     ->advancedSearch($dynamicFilters)
                     ->reorder()
                     ->select('id');
@@ -138,7 +170,7 @@ class WaybillRepository implements WaybillRepositoryInterface
     }
 
     /** @param Collection<int, Waybill>|LengthAwarePaginator $records */
-    private function loadCompanyWaybills(Collection|LengthAwarePaginator $records): void
+    private function loadCompanyWaybills(Collection|LengthAwarePaginator $records, bool $trashed = false): void
     {
         $collection = $records instanceof LengthAwarePaginator
             ? $records->getCollection()
@@ -146,9 +178,10 @@ class WaybillRepository implements WaybillRepositoryInterface
 
         $collection
             ->groupBy('company_id')
-            ->each(function (Collection $indexes, int|string $companyId): void {
+            ->each(function (Collection $indexes, int|string $companyId) use ($trashed): void {
                 $companyWaybills = $this->companyWaybillRepository
                     ->query((int)$companyId)
+                    ->when($trashed, fn(Builder $query) => $query->withTrashed())
                     ->with('creator')
                     ->whereKey($indexes->pluck('waybill_id'))
                     ->get()

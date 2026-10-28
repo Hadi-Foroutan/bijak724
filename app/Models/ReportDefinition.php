@@ -21,7 +21,7 @@ class ReportDefinition extends Model
     public function fields(): BelongsToMany
     {
         return $this->belongsToMany(ReportField::class, 'report_definition_fields')
-            ->withPivot('sort_order')
+            ->withPivot('sort_order', 'align', 'width')
             ->orderByPivot('sort_order');
     }
 
@@ -35,12 +35,19 @@ class ReportDefinition extends Model
         return $this->fields->where('is_active', true)->pluck('key')->values()->all();
     }
 
-    /** @param list<int> $fieldIds in the order they should appear */
-    public function syncFields(array $fieldIds): void
+    /**
+     * Alignment and width of the active fields' columns.
+     *
+     * @return array<string, array{align: string, width: int|null}> field key => layout
+     */
+    public function columnOptions(): array
     {
-        $this->fields()->sync(collect(array_values($fieldIds))
-            ->mapWithKeys(fn(int $id, int $position): array => [$id => ['sort_order' => $position]])
-            ->all());
+        return $this->fields->where('is_active', true)
+            ->mapWithKeys(fn(ReportField $field): array => [$field->key => [
+                'align' => $field->pivot->align ?? 'right',
+                'width' => $field->pivot->width === null ? null : (int)$field->pivot->width,
+            ]])
+            ->all();
     }
 
     public function exports(): HasMany

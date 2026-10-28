@@ -10,9 +10,12 @@ use App\Models\TransportContract;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Waybill extends DynamicModel
 {
+    use SoftDeletes;
+
     protected string $companyTableKey = 'waybills';
 
     protected $fillable = [

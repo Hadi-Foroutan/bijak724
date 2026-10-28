@@ -242,11 +242,10 @@ function permissionManagementPermission(string $name, string $displayName): Perm
 
 function permissionManagementUser(
     Company $company,
-    string  $username,
-    string  $nationalCode,
-    string  $phone,
-): User
-{
+    string $username,
+    string $nationalCode,
+    string $phone,
+): User {
     return User::query()->forceCreate([
         'company_id' => $company->id,
         'national_code' => $nationalCode,
@@ -288,4 +287,29 @@ test('profile permissions are admin only: hidden from the company list and kept 
         ->assertSuccessful();
     expect($this->targetUser->permissions()->pluck('permissions.id')->sort()->values()->all())
         ->toBe(collect([$this->fleetPermission->id, $profile->id])->sort()->values()->all());
+});
+
+test('anyone holding the permission management permission sees the waybill visibility group and can assign it', function () {
+    $visibilityGroup = PermissionGroup::query()->create(['name' => 'نمایش بارنامه']);
+    $viewAll = permissionManagementPermission('user.waybills.view-all-users', 'مشاهده بارنامه همه کاربران');
+    $visibilityGroup->permissions()->attach($viewAll);
+    $this->managerRole->permissions()->attach($viewAll);
+
+    $delegate = permissionManagementUser($this->company, 'permission-delegate', '2234567892', '09122222222');
+    app(RoleInterface::class)->assignRoleToUser($this->userRole, $delegate);
+    permissionManagementAuthenticate($this, $delegate);
+
+    // بدون دسترسی مدیریت دسترسی‌ها: ممنوع
+    $this->getJson("/api/user/{$this->targetUser->id}/permissions")->assertForbidden();
+
+    $delegate->permissions()->attach([
+        permissionManagementPermission('user.permissions.index', 'مشاهده دسترسی‌ها')->id,
+        permissionManagementPermission('user.permissions.update', 'ویرایش دسترسی‌ها')->id,
+    ]);
+
+    $groups = collect($this->getJson("/api/user/{$this->targetUser->id}/permissions")->assertSuccessful()->json('data.permission_groups'));
+    expect($groups->pluck('name'))->toContain('نمایش بارنامه');
+
+    $this->putJson("/api/user/{$this->targetUser->id}/permissions", ['permissions' => [$viewAll->id]])->assertSuccessful();
+    expect($this->targetUser->permissions()->pluck('permissions.name')->all())->toContain('user.waybills.view-all-users');
 });

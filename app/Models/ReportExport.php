@@ -19,7 +19,7 @@ class ReportExport extends Model
     protected array $globalSearchFields = ['name'];
 
     protected $fillable = [
-        'company_id', 'user_id', 'report_definition_id', 'name', 'fields', 'filters', 'format', 'status',
+        'company_id', 'user_id', 'report_definition_id', 'name', 'fields', 'column_options', 'filters', 'visible_creator_ids', 'format', 'status',
         'file_path', 'file_size', 'rows_count', 'error', 'started_at', 'completed_at', 'expires_at',
     ];
 
@@ -28,7 +28,9 @@ class ReportExport extends Model
     {
         return [
             'fields' => 'array',
+            'column_options' => 'array',
             'filters' => 'array',
+            'visible_creator_ids' => 'array',
             'format' => ReportExportFormat::class,
             'status' => ReportExportStatus::class,
             'started_at' => 'datetime',

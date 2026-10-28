@@ -36,6 +36,7 @@ test('creating and deleting a company waybill keeps the shared index synchronize
         'waybill_id',
         'created_at',
         'updated_at',
+        'deleted_at',
     ]);
 
     $sharedWaybill = Waybill::query()->sole();
@@ -65,10 +66,9 @@ test('creating and deleting a company waybill keeps the shared index synchronize
         ->deleteJson("/api/user/waybills/{$waybillId}")
         ->assertSuccessful();
 
-    $this->assertDatabaseMissing('waybills', [
-        'company_id' => $this->firstCompany->id,
-        'waybill_id' => $waybillId,
-    ]);
+    // حذف نرم است: ردیف شاخص می‌ماند ولی از لیست عادی کنار می‌رود و در سطل بازیافت ادمین دیده می‌شود.
+    expect(Waybill::query()->where('waybill_id', $waybillId)->exists())->toBeFalse()
+        ->and(Waybill::onlyTrashed()->where('waybill_id', $waybillId)->exists())->toBeTrue();
 });
 
 test('admin filters shared waybills by company status date and dynamic document fields', function () {

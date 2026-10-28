@@ -79,6 +79,8 @@ return [
     'waybill_number_duplicate' => 'ترکیب سریال و شماره بارنامه قبلاً استفاده شده است.',
     'waybill_bijak_range_invalid' => 'بازه شماره بیجک انتخاب شده معتبر نیست.',
     'waybill_first_available_bijak_required' => 'ابتدا باید شماره بیجک آزاد :number صادر شود.',
+    'waybill_delete_forbidden' => 'فقط بارنامه ناتمام قابل حذف است.',
+    'waybill_restored_success' => 'بارنامه با موفقیت بازگردانی شد.',
     'waybill_edit_forbidden' => 'بارنامه صادرشده یا باطل‌شده قابل ویرایش نیست.',
     'waybill_direct_cancel_forbidden' => 'برای ابطال بارنامه باید از عملیات ابطال استفاده کنید.',
     'waybill_cancel_status_invalid' => 'فقط بارنامه صادرشده قابل ابطال است.',

@@ -78,6 +78,14 @@ class WaybillRepository implements WaybillRepositoryInterface
         Waybill::deleteForCompany($companyId, $id);
     }
 
+    public function restore(int $companyId, int $id): Waybill
+    {
+        $waybill = Waybill::queryForCompany($companyId)->onlyTrashed()->findOrFail($id);
+        $waybill->restore();
+
+        return $this->findOrFail($companyId, $id);
+    }
+
     /** @param list<string> $columns */
     public function hasIssuedReference(int $companyId, array $columns, int $referenceId): bool
     {

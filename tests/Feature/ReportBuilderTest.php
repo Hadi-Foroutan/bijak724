@@ -25,6 +25,7 @@ uses(LazilyRefreshDatabase::class);
 beforeEach(function (): void {
     $this->withoutMiddleware(CheckPermission::class);
     Storage::fake('local');
+    $this->seed(Database\Seeders\ReportFieldSeeder::class);
 
     $this->company = Company::factory()->create();
     $this->user = User::factory()->create(['company_id' => $this->company->id]);
@@ -65,7 +66,7 @@ test('the field catalog lists the selectable fields with group and type', functi
         ->and($fields->firstWhere('key', 'cargo_names')['multiple'])->toBeTrue();
 });
 
-test('a report keeps only catalog fields in the chosen order and is private to its user', function () {
+test('a report keeps only catalog fields in the chosen order and is visible to the whole company', function () {
     ($this->as)($this->user)->postJson('/api/user/reports', ['name' => 'x', 'field_ids' => [($this->fieldIds)(['status'])[0], 999999]])
         ->assertUnprocessable()->assertJsonValidationErrors(['field_ids.1']);
     ($this->makeReport)(['bijak_number', 'bijak_number'])->assertUnprocessable();
@@ -83,8 +84,13 @@ test('a report keeps only catalog fields in the chosen order and is private to i
         ->assertJsonPath('data.fields.0.label', 'نام فرستنده')
         ->assertJsonPath('data.fields.1.key', 'bijak_number');
 
-    ($this->as)($this->otherUser)->getJson("/api/user/reports/{$id}")->assertNotFound();
-    ($this->as)($this->otherUser)->getJson('/api/user/reports')->assertJsonCount(0, 'data');
+    // همهٔ کاربران شرکت همهٔ گزارش‌ها را می‌بینند؛ فقط شرکت دیگر نمی‌بیند.
+    ($this->as)($this->otherUser)->getJson("/api/user/reports/{$id}")->assertSuccessful()->assertJsonPath('data.id', $id);
+    ($this->as)($this->otherUser)->getJson('/api/user/reports')->assertJsonCount(1, 'data');
+    $stranger = User::factory()->create(['company_id' => Company::factory()->create()->id]);
+    $this->app['auth']->forgetGuards();
+    $this->withToken($stranger->createToken('t', ["company:{$stranger->company_id}"])->plainTextToken)
+        ->getJson("/api/user/reports/{$id}")->assertNotFound();
     ($this->as)($this->user)->getJson('/api/user/reports?search=گزارش')->assertJsonCount(1, 'data');
 
     ($this->as)($this->user)->patchJson("/api/user/reports/{$id}", ['field_ids' => ($this->fieldIds)(['status'])])
@@ -105,7 +111,7 @@ test('loading a report returns only the selected fields, reads relations and hon
         ->toBe(['id', 'bijak_number', 'sender_full_name', 'cargo_names', 'status', 'base_freight_amount'])
         ->and($rows->firstWhere('bijak_number', '555')['cargo_names'])->toBe(['سیمان'])
         ->and($rows->firstWhere('bijak_number', '555')['base_freight_amount'])->toBe(1200000)
-        ->and($response->json('data.columns.2'))->toBe(['key' => 'cargo_names', 'label' => 'نام کالا']);
+        ->and($response->json('data.columns.2'))->toBe(['key' => 'cargo_names', 'label' => 'نام کالا', 'align' => 'right', 'width' => null]);
 
     ($this->as)($this->user)->getJson("/api/user/reports/{$id}/waybills?eq-status=completed")
         ->assertJsonCount(1, 'data.records.data');
@@ -131,7 +137,8 @@ test('an export request is queued at once, announced on the users private channe
 
     ($this->as)($this->user)->getJson('/api/user/report-exports')->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.id', $response->json('data.id'));
-    ($this->as)($this->otherUser)->getJson('/api/user/report-exports')->assertJsonCount(0, 'data');
+    ($this->as)($this->otherUser)->getJson('/api/user/report-exports')->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $response->json('data.id'));
     ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'csv'])->assertUnprocessable();
 });
 
@@ -189,6 +196,24 @@ test('the pdf export is built too', function () {
     $export = ReportExport::query()->findOrFail($exportId);
     expect($export->status)->toBe(ReportExportStatus::Completed)
         ->and(Storage::disk('local')->get($export->file_path))->toStartWith('%PDF');
+});
+
+test('what the requester may see is decided when the export is asked for, not by the worker that has no token', function () {
+    Event::fake([ReportExportStatusChanged::class]);
+    $id = ($this->makeReport)()->json('data.id');
+
+    $this->app['auth']->forgetGuards();
+    $token = $this->user->createToken('s', ["company:{$this->company->id}", 'company-support'])->plainTextToken;
+    $exportId = $this->withToken($token)->postJson("/api/user/reports/{$id}/exports", ['format' => 'xlsx'])->json('data.id');
+
+    expect(ReportExport::query()->findOrFail($exportId)->visible_creator_ids)->toBeNull();
+
+    app(ReportExportGenerator::class)->generate(ReportExport::query()->findOrFail($exportId));
+
+    expect(ReportExport::query()->findOrFail($exportId)->rows_count)->toBe(3);
+
+    $own = ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'xlsx'])->json('data.id');
+    expect(ReportExport::query()->findOrFail($own)->visible_creator_ids)->toBe([$this->user->id]);
 });
 
 test('an export over the row limit fails with a message instead of exhausting the worker', function () {
@@ -377,4 +402,149 @@ test('the filter dialog keys narrow the loaded report and the export the same wa
 
     ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'xlsx', 'filters' => ['status' => 'bogus']])
         ->assertUnprocessable();
+});
+
+test('a websocket server that is down does not break queuing or building an export', function () {
+    Queue::fake();
+    Event::listen(ReportExportStatusChanged::class, fn() => throw new Illuminate\Broadcasting\BroadcastException('Pusher error: connection refused'));
+    $id = ($this->makeReport)()->json('data.id');
+
+    $exportId = ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'xlsx'])
+        ->assertStatus(202)->json('data.id');
+
+    // کار در صف هم ثبت شده و ساخت فایل با وجود خطای سوکت کامل می‌شود.
+    Queue::assertPushed(GenerateReportExport::class);
+    app(ReportExportGenerator::class)->generate(ReportExport::query()->findOrFail($exportId));
+    expect(ReportExport::query()->findOrFail($exportId)->status)->toBe(ReportExportStatus::Completed);
+});
+
+test('blank filters sent by the filter dialog are ignored by the list and the export', function () {
+    Event::fake([ReportExportStatusChanged::class]);
+    $id = ($this->makeReport)()->json('data.id');
+    $blank = ['eq-status' => '', 'search' => '', 'status' => '', 'bijak_number_from' => ''];
+
+    ($this->as)($this->user)->getJson("/api/user/reports/{$id}/waybills?" . http_build_query($blank))
+        ->assertSuccessful()->assertJsonCount(2, 'data.records.data');
+
+    $exportId = ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'xlsx', 'filters' => $blank])->json('data.id');
+    app(ReportExportGenerator::class)->generate(ReportExport::query()->findOrFail($exportId));
+
+    expect(ReportExport::query()->findOrFail($exportId)->rows_count)->toBe(2);
+});
+
+test('each field of a report keeps its alignment and width, which the load and the export use', function () {
+    Event::fake([ReportExportStatusChanged::class]);
+    $ids = ($this->fieldIds)(['bijak_number', 'sender_full_name']);
+
+    $id = ($this->as)($this->user)->postJson('/api/user/reports', [
+        'name' => 'چیدمان', 'field_ids' => $ids,
+        'field_options' => [
+            ['field_id' => $ids[0], 'align' => 'center', 'width' => 120],
+            ['field_id' => $ids[1], 'align' => 'left', 'width' => 'auto'],
+        ],
+    ])->assertSuccessful()->json('data.id');
+
+    $fields = ($this->as)($this->user)->getJson("/api/user/reports/{$id}")->json('data.fields');
+    expect($fields[0])->toMatchArray(['align' => 'center', 'width' => 120])
+        ->and($fields[1])->toMatchArray(['align' => 'left', 'width' => null]);
+
+    ($this->as)($this->user)->getJson("/api/user/reports/{$id}/waybills")
+        ->assertJsonPath('data.columns.0.align', 'center')->assertJsonPath('data.columns.0.width', 120);
+
+    // Changing only the name keeps the layout; unknown values are rejected.
+    ($this->as)($this->user)->patchJson("/api/user/reports/{$id}", ['name' => 'جدید'])->assertSuccessful();
+    expect(($this->as)($this->user)->getJson("/api/user/reports/{$id}")->json('data.fields.0.align'))->toBe('center');
+    ($this->as)($this->user)->patchJson("/api/user/reports/{$id}", ['field_options' => [['field_id' => $ids[0], 'align' => 'up']]])
+        ->assertUnprocessable();
+    ($this->as)($this->user)->patchJson("/api/user/reports/{$id}", ['field_options' => [['field_id' => $ids[0], 'width' => 5]]])
+        ->assertUnprocessable();
+
+    $exportId = ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'xlsx'])->json('data.id');
+    app(ReportExportGenerator::class)->generate(ReportExport::query()->findOrFail($exportId));
+
+    $export = ReportExport::query()->findOrFail($exportId);
+    $sheet = \PhpOffice\PhpSpreadsheet\IOFactory::load(Storage::disk('local')->path($export->file_path))->getActiveSheet();
+    expect($sheet->getStyle('A2')->getAlignment()->getHorizontal())->toBe('center')
+        ->and($sheet->getStyle('B2')->getAlignment()->getHorizontal())->toBe('left')
+        ->and(round($sheet->getColumnDimension('A')->getWidth()))->toBe(17.0);
+});
+
+test('a font file dropped in the font folder is used by the pdf and a missing one falls back to the bundled font', function () {
+    Event::fake([ReportExportStatusChanged::class]);
+    $directory = storage_path('framework/testing/report-fonts-' . uniqid());
+    mkdir($directory, 0775, true);
+    config(['waybill_report.pdf_font_directory' => $directory]);
+
+    $build = function () {
+        $id = ($this->makeReport)()->json('data.id');
+        $exportId = ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'pdf'])->json('data.id');
+        app(ReportExportGenerator::class)->generate(ReportExport::query()->findOrFail($exportId));
+
+        return Storage::disk('local')->get(ReportExport::query()->findOrFail($exportId)->file_path);
+    };
+
+    $default = $build();
+    expect($default)->toStartWith('%PDF')->toContain('DejaVuSans')->not->toContain('DejaVuSerif');
+
+    copy(base_path('vendor/mpdf/mpdf/ttfonts/DejaVuSerif.ttf'), $directory . '/MyReportFont.ttf');
+    $custom = $build();
+    expect($custom)->toStartWith('%PDF')->toContain('DejaVuSerif');
+
+    // A broken font file does not break the export: the bundled font is used.
+    file_put_contents($directory . '/Broken.ttf', 'not a font');
+    touch($directory . '/Broken.ttf', time() + 10);
+    expect($build())->toStartWith('%PDF');
+
+    array_map('unlink', glob($directory . '/*'));
+    rmdir($directory);
+});
+
+test('dates are shamsi in the printed files and stay machine readable on screen', function () {
+    $key = ReportField::query()->where('format', 'datetime')->value('key');
+    expect($key)->not->toBeNull();
+
+    $waybill = Waybill::queryForCompany($this->company->id)->findOrFail($this->waybill->id);
+    $waybill->forceFill(['issued_at' => '2026-10-28 14:30:05', 'created_at' => '2026-10-28 14:30:05', 'updated_at' => '2026-10-28 14:30:05', 'loading_started_at' => '2026-10-28 14:30:05', 'loading_ended_at' => '2026-10-28 14:30:05']);
+    $catalog = app(App\Services\Company\Report\WaybillReportFieldCatalog::class)->refresh();
+
+    expect($catalog->row($waybill, [$key], display: true)[$key])->toBe('1405/08/06 14:30:05')
+        ->and($catalog->row($waybill, [$key])[$key])->toBe('2026-10-28 14:30:05');
+});
+
+test('the file is headed by the company name and panel code and ends with the sum of the numeric fields', function () {
+    Event::fake([ReportExportStatusChanged::class]);
+    $keys = ['bijak_number', 'base_freight_amount', 'quantity'];
+    Waybill::queryForCompany($this->company->id)->whereKey($this->waybill->id)->update(['quantity' => 3, 'base_freight_amount' => 1000]);
+    Waybill::queryForCompany($this->company->id)->where('bijak_number', '556')->update(['quantity' => 4, 'base_freight_amount' => 500]);
+    $id = ($this->makeReport)($keys)->json('data.id');
+    $exportId = ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'xlsx'])->json('data.id');
+
+    app(ReportExportGenerator::class)->generate(ReportExport::query()->findOrFail($exportId));
+
+    $export = ReportExport::query()->findOrFail($exportId);
+    $sheet = \PhpOffice\PhpSpreadsheet\IOFactory::load(Storage::disk('local')->path($export->file_path))->getActiveSheet();
+    $rows = $sheet->toArray();
+
+    expect($rows[0][0])->toBe("{$this->company->name} - کد پنل: {$this->company->panel_code}")
+        ->and($rows[1][0])->toBe('شماره بیجک')
+        ->and(count($rows))->toBe(2 + 2 + 1)
+        ->and($rows[count($rows) - 1])->toBe(['جمع', '1,500', '7']);
+
+    $pdfId = ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'pdf'])->json('data.id');
+    app(ReportExportGenerator::class)->generate(ReportExport::query()->findOrFail($pdfId));
+    expect(ReportExport::query()->findOrFail($pdfId)->status)->toBe(ReportExportStatus::Completed);
+});
+
+test('the totals digits are grouped by three in both files', function () {
+    Event::fake([ReportExportStatusChanged::class]);
+    Waybill::queryForCompany($this->company->id)->whereKey($this->waybill->id)->update(['base_freight_amount' => 1250000]);
+    $id = ($this->makeReport)(['bijak_number', 'base_freight_amount'])->json('data.id');
+    $exportId = ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'xlsx'])->json('data.id');
+    app(ReportExportGenerator::class)->generate(ReportExport::query()->findOrFail($exportId));
+
+    $sheet = \PhpOffice\PhpSpreadsheet\IOFactory::load(Storage::disk('local')->path(ReportExport::query()->findOrFail($exportId)->file_path))->getActiveSheet();
+    $last = $sheet->getHighestRow();
+
+    expect($sheet->getCell("B{$last}")->getFormattedValue())->toBe('1,250,000')
+        ->and($sheet->getCell("B{$last}")->getValue())->toEqual(1250000);
 });

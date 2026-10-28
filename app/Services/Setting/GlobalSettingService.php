@@ -4,15 +4,19 @@ namespace App\Services\Setting;
 
 use App\Enums\GlobalSettingKey;
 use App\Helpers\ServiceResult;
-use App\Models\Setting;
+use App\Interfaces\GlobalSettingRepositoryInterface;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 
 class GlobalSettingService
 {
+    public function __construct(protected GlobalSettingRepositoryInterface $globalSettingRepository)
+    {
+    }
+
     public function value(GlobalSettingKey $key): bool|int|float|string|null
     {
-        $stored = Setting::query()->where('key', $key->value)->value('value');
+        $stored = $this->globalSettingRepository->value($key->value);
 
         return $stored === null ? $key->defaultValue() : $key->valueType()->cast($stored);
     }
@@ -37,12 +41,10 @@ class GlobalSettingService
                     continue;
                 }
 
-                Setting::query()->updateOrCreate(
-                    ['key' => $key->value],
-                    [
-                        'value' => $key->valueType()->serialize(data_get($data, $key->value)),
-                        'last_updated_by' => $updatedBy,
-                    ],
+                $this->globalSettingRepository->upsert(
+                    $key->value,
+                    $key->valueType()->serialize(data_get($data, $key->value)),
+                    $updatedBy,
                 );
             }
         });

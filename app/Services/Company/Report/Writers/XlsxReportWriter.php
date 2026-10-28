@@ -2,6 +2,8 @@
 
 namespace App\Services\Company\Report\Writers;
 
+use App\Support\Excel\ColumnLayoutExcelDesign;
+use App\Support\Excel\DefaultExcelDesign;
 use App\Support\Excel\ExcelDesign;
 use App\Support\Excel\ExcelExporter;
 
@@ -16,11 +18,11 @@ class XlsxReportWriter
     }
 
     /**
-     * @param list<array{key: string, label: string}> $columns
+     * @param list<array{key: string, label: string, align?: string, width?: int|null}> $columns
      * @param iterable<array<string, mixed>> $rows
      */
-    public function write(string $disk, string $relativePath, array $columns, iterable $rows, ?ExcelDesign $design = null): void
+    public function write(string $disk, string $relativePath, array $columns, iterable $rows, ?ExcelDesign $design = null, ?string $title = null, bool $totalsRow = false): void
     {
-        $this->exporter->store($rows, $relativePath, $disk, $columns, $design);
+        $this->exporter->store($rows, $relativePath, $disk, $columns, new ColumnLayoutExcelDesign($design ?? new DefaultExcelDesign, $columns, $title, $totalsRow));
     }
 }

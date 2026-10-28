@@ -143,6 +143,15 @@ class WaybillService
     public function delete(int $companyId, int $id): ServiceResult
     {
         return DB::transaction(function () use ($companyId, $id): ServiceResult {
+            $waybill = $this->waybillRepository->findOrFailForUpdate($companyId, $id);
+
+            if ($waybill->status !== WaybillStatus::Incomplete) {
+                ServiceResult::error(
+                    __('public.waybill_delete_forbidden'),
+                    Response::HTTP_UNPROCESSABLE_ENTITY,
+                );
+            }
+
             $this->waybillRepository->delete($companyId, $id);
             $this->sharedWaybillRepository->delete($companyId, $id);
 

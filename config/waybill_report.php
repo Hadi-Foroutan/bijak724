@@ -8,6 +8,9 @@ return [
     'disk' => env('REPORT_DISK', 'local'),
     'directory' => 'report-exports',
 
+    // Put a .ttf/.otf file here to change the font of the PDF files (the newest file wins; empty = the bundled font).
+    'pdf_font_directory' => env('REPORT_PDF_FONT_DIRECTORY', storage_path('app/report-fonts')),
+
     // How many rows are loaded from the database at a time.
     'chunk_size' => 500,
 

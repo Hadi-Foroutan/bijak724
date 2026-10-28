@@ -43,6 +43,9 @@ return [
             ],
             'client_options' => [
                 // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
+                // A socket server that is down must not make requests wait: give up quickly (the failure is only logged).
+                'connect_timeout' => 1,
+                'timeout' => 3,
             ],
         ],
 

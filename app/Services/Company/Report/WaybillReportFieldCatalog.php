@@ -3,8 +3,10 @@
 namespace App\Services\Company\Report;
 
 use App\Enums\WaybillStatus;
+use App\Interfaces\ReportFieldRepositoryInterface;
 use App\Models\Company\Waybill;
 use App\Models\ReportField;
+use App\Support\JalaliDate;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
@@ -22,6 +24,10 @@ class WaybillReportFieldCatalog
     /** @var Collection<string, ReportField>|null */
     private ?Collection $fields = null;
 
+    public function __construct(protected ReportFieldRepositoryInterface $reportFieldRepository)
+    {
+    }
+
     /**
      * Forget the cached fields so the next read sees the admin's latest changes. Called at the start of every
      * request/job that reads the catalog (the instance is shared and may live across requests in a worker).
@@ -36,12 +42,7 @@ class WaybillReportFieldCatalog
     /** @return Collection<string, ReportField> active fields keyed by `key`, in the admin's order */
     public function all(): Collection
     {
-        return $this->fields ??= ReportField::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('id')
-            ->get()
-            ->keyBy('key');
+        return $this->fields ??= $this->reportFieldRepository->active()->keyBy('key');
     }
 
     public function has(string $key): bool
@@ -64,13 +65,19 @@ class WaybillReportFieldCatalog
 
     /**
      * @param list<string> $keys
-     * @return list<array{key: string, label: string}>
+     * @param array<string, array{align?: string, width?: int|null}> $options layout per key; `width` null = fit the content
+     * @return list<array{key: string, label: string, align: string, width: int|null}>
      */
-    public function columns(array $keys): array
+    public function columns(array $keys, array $options = []): array
     {
         return collect($keys)
             ->filter(fn(string $key): bool => $this->has($key))
-            ->map(fn(string $key): array => ['key' => $key, 'label' => $this->all()[$key]->label])
+            ->map(fn(string $key): array => [
+                'key' => $key,
+                'label' => $this->all()[$key]->label,
+                'align' => $options[$key]['align'] ?? 'right',
+                'width' => $options[$key]['width'] ?? null,
+            ])
             ->values()
             ->all();
     }
@@ -88,6 +95,35 @@ class WaybillReportFieldCatalog
             ->flatMap(fn(string $key): array => ReportFieldPath::relations($this->all()[$key]))
             ->unique()
             ->values()
+            ->all();
+    }
+
+    /**
+     * Keys of the given fields that hold numbers (the ones a report adds up).
+     *
+     * @param list<string> $keys
+     * @return list<string>
+     */
+    public function numericKeys(array $keys): array
+    {
+        return collect($keys)
+            ->filter(fn(string $key): bool => $this->has($key) && $this->all()[$key]->format === 'number')
+            ->values()
+            ->all();
+    }
+
+    /**
+     * What the waybill adds to the totals: field key => sum of its numbers (a has-many field adds all of its values).
+     *
+     * @param list<string> $numericKeys
+     * @return array<string, int|float>
+     */
+    public function numbers(Waybill $waybill, array $numericKeys): array
+    {
+        return collect($this->row($waybill, $numericKeys))
+            ->map(fn(mixed $value): int|float => collect(is_array($value) ? $value : [$value])
+                ->filter(fn(mixed $item): bool => is_int($item) || is_float($item))
+                ->sum())
             ->all();
     }
 
@@ -142,7 +178,8 @@ class WaybillReportFieldCatalog
 
         return match (true) {
             $value instanceof WaybillStatus => $display ? $value->label() : $value->value,
-            $value instanceof CarbonInterface => $value->format('Y-m-d H:i:s'),
+            // Printed files (Excel/PDF) show Shamsi dates; the on-screen load keeps the machine readable form.
+            $value instanceof CarbonInterface => $display ? JalaliDate::format($value) : $value->format('Y-m-d H:i:s'),
             $value instanceof \BackedEnum => $value->value,
             $format === 'bool' => $display ? ($value ? 'بله' : 'خیر') : (bool)$value,
             $format === 'number' => $this->number($value),
