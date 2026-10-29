@@ -323,44 +323,14 @@ php artisan schedule:work   # یا cron: * * * * * php artisan schedule:run
 
 ## عنوان و جمع کل فایل
 
-- بالای فایل (عنوان PDF و ردیف اول Excel، در یک نوار آبی تیره با نوشتهٔ سفید) به‌جای نام گزارش، **نام شرکت و کد سازمانی** آن نوشته می‌شود: `نام شرکت - کد سازمانی: 12345`.
+- بالای فایل (عنوان PDF و ردیف اول Excel، در یک نوار آبی خیلی کم‌رنگ با نوشتهٔ سرمه‌ای، تا در چاپ سیاه‌وسفید هم خوانا بماند) به‌جای نام گزارش، **نام شرکت و کد سازمانی** آن نوشته می‌شود: `نام شرکت - کد سازمانی: 12345`.
 - اگر گزارش فیلد عددی (فرمت `number`، مثل مبالغ، وزن و تعداد) داشته باشد، **آخرین رکورد جمع** این فیلدهاست؛ کلمهٔ «جمع» در
   اولین ستون غیرعددی نوشته می‌شود. جمع روی همهٔ بارنامه‌های فیلتر شده حساب می‌شود، نه فقط یک صفحه.
 
-## اجرا روی سرور (دپلوی خودکار)
+## اجرا روی سرور
 
-نیازی به استارت دستی نیست. workflow دپلوی (`.github/workflows/deploy-production.yml`) بعد از هر push روی `main`:
-
-1. دستور `queue:restart` و `reverb:restart` را می‌زند تا worker و Reverb با کد جدید برگردند.
-2. با `ops/server/install-cron.sh` دو cron در crontab کاربر دپلوی می‌گذارد (تکراری نمی‌شوند): `schedule:run` هر دقیقه، و
-   `ops/server/keep-services-alive.sh` هر دقیقه.
-3. `keep-services-alive.sh` را یک‌بار همان لحظه اجرا می‌کند.
-
-`keep-services-alive.sh` هر پروسه‌ای (worker صف و Reverb) که در حال اجرا نباشد را راه می‌اندازد و هر کدام که در حال اجراست
-را دست نمی‌زند؛ پس اگر پروسه‌ای crash کند یا بعد از دپلوی خارج شود، حداکثر تا یک دقیقه بعد دوباره بالا می‌آید.
-لاگ‌ها در `storage/logs/queue-worker.log` و `storage/logs/reverb.log` است.
-
-اگر روی سرور cron قابل استفاده نباشد (مثلاً cron نصب نیست و `/var/spool/cron` وجود ندارد)، دپلوی خودکار به‌جای آن
-`ops/server/service-loop.sh` را اجرا می‌کند: یک حلقهٔ پس‌زمینه که هر دقیقه همان دو کار را انجام می‌دهد (scheduler و
-نگهبان worker/Reverb). این حلقه بعد از ریبوت سرور خودش بالا نمی‌آید؛ دپلوی بعدی (یا اجرای دستی اسکریپت) دوباره آن را شروع می‌کند.
-لاگ حلقه: `storage/logs/service-loop.log`.
-
-### cron در DirectAdmin
-
-اگر cron را از پنل هاست (DirectAdmin ← Cron Jobs) می‌سازید، دو cron با زمان‌بندی «هر دقیقه» (`* * * * *`) بسازید:
-
-```
-cd /مسیر/پروژه && /مسیر/php artisan schedule:run >> /dev/null 2>&1
-bash /مسیر/پروژه/ops/server/keep-services-alive.sh /مسیر/پروژه /مسیر/php >> /dev/null 2>&1
-```
-
-سپس در GitHub (Settings ← Environments ← production ← Variables) متغیر `PANEL_CRON` را `true` بگذارید. در این حالت دپلوی
-فقط worker و Reverb را ری‌استارت می‌کند و خودش cron یا حلقهٔ پس‌زمینه نمی‌سازد (حلقهٔ قبلی را هم متوقف می‌کند).
-
-### لاگ cronها (قابل روشن/خاموش با GitHub)
-
-برای دیدن اینکه هر cron کی اجرا شد، چقدر طول کشید و آیا دوباره اجرا یا ری‌استارت شد، cronهای DirectAdmin را از طریق
-`ops/server/run-logged.sh` اجرا کنید (همه `* * * * *`):
+دپلوی (GitHub Actions) فقط کد را آپلود می‌کند و بعد از `migrate` دستورهای `queue:restart` و `reverb:restart` را می‌زند تا worker و Reverb
+در حال اجرا با کد جدید برگردند. **cronها را خودتان در پنل هاست (DirectAdmin ← Cron Jobs) می‌سازید**؛ هر سه `* * * * *`:
 
 ```
 cd domains/api.bijak724.ir/public_html && bash ops/server/run-logged.sh scheduler -- php artisan schedule:run >> /dev/null 2>&1
@@ -368,22 +338,23 @@ cd domains/api.bijak724.ir/public_html && bash ops/server/run-logged.sh --no-ove
 cd domains/api.bijak724.ir/public_html && SKIP_QUEUE_WORKER=1 bash ops/server/run-logged.sh reverb -- bash ops/server/keep-services-alive.sh . php >> /dev/null 2>&1
 ```
 
-- `--no-overlap`: اگر اجرای قبلیِ همان cron هنوز کار می‌کند، اجرای جدید رد می‌شود (`SKIPPED`) و روی هم انباشته نمی‌شوند.
-- لاگ‌ها فقط وقتی نوشته می‌شوند که در `.env` **سرور** خط `CRON_LOGS=true` باشد. با `CRON_LOGS=false` (یا نبودن خط) cronها
-  بی‌صدا اجرا می‌شوند و لاگی ثبت نمی‌شود. هر اجرا `.env` را دوباره می‌خواند، پس نه دپلوی لازم است نه ری‌استارت.
-- فایل‌ها: `storage/logs/cron/scheduler.log`، `queue.log`، `reverb.log` (هرکدام بالای ۱ مگابایت به ۲۰۰۰ خط آخر کوتاه می‌شود).
+- `schedule:run`: کارهای زمان‌بندی‌شده (`reports:prune` هر ۵ دقیقه).
+- `queue:work --stop-when-empty`: جاب‌های صف (ساخت Excel/PDF)؛ `--no-overlap` اجازه نمی‌دهد دو worker هم‌زمان باشند.
+- `keep-services-alive.sh`: Reverb را اگر اجرا نباشد راه می‌اندازد (و بعد از `reverb:restart` دوباره بالا می‌آورد).
 
-نمونهٔ لاگ:
+## لاگ cronها، دستورها و جاب‌ها (`CRON_LOGS`)
 
-```
-[2026-10-29 10:15:01] START queue
-   INFO  Processing jobs from the [reports,default] queues.
-  2026-10-29 10:15:02 App\Jobs\GenerateReportExport ... RUNNING
-  2026-10-29 10:15:05 App\Jobs\GenerateReportExport ... 3s DONE
-[2026-10-29 10:15:05] END queue exit=0 took=4s
-[2026-10-29 10:16:01] SKIPPED queue: the previous run is still running
-[2026-10-29 10:20:01] START reverb
-2026-10-29 10:20:01 reverb: not running any more (it exited or was restarted), starting it again
-2026-10-29 10:20:01 started reverb (pid 4821)
-[2026-10-29 10:20:01] END reverb exit=0 took=0s
-```
+با گذاشتن `CRON_LOGS=true` در `.env` **سرور** (و `php artisan optimize:clear` یا دپلوی بعدی تا کانفیگ کش‌شده عوض شود)، هر کدام فایل لاگ
+خودشان را دارند. با `false` یا نبودن خط، هیچ لاگی نوشته نمی‌شود.
+
+| پوشه | چه چیزی | نمونه فایل |
+|------|---------|-----------|
+| `storage/logs/cron/` | هر اجرای cron (شروع، پایان، مدت، `SKIPPED` اگر اجرای قبلی هنوز کار می‌کند) | `queue.log`، `scheduler.log`، `reverb.log` |
+| `storage/logs/commands/` | هر دستور artisan: شروع، پایان، exit code، مدت، و خطاهایی که حین اجرا گزارش شد | `reports-prune-2026-10-29.log` |
+| `storage/logs/jobs/` | هر جاب صف: شروع (شناسه، صف، تلاش)، پایان و مدت، و **متن و stack trace دقیق خطا** | `GenerateReportExport-2026-10-29.log` |
+
+- لاگ دستورها و جاب‌ها روزانه است و ۱۴ روز نگه داشته می‌شود (`config/cron_logs.php`)؛ دستورهایی که همیشه اجرا هستند یا هر دقیقه
+  (`schedule:run`، `queue:work`، `reverb:start`، ...) در لیست `ignored_commands` هستند و ثبت نمی‌شوند.
+- خطایی که برنامه با `report($exception)` گزارش می‌کند ولی جاب را خراب نمی‌کند (مثل خطای ساخت یک گزارش که کاربر «ناموفق» می‌بیند) هم
+  به فایل همان جاب/دستور اضافه می‌شود.
+- لاگ‌نویسی هیچ‌وقت اجرای دستور یا جاب را خراب نمی‌کند.

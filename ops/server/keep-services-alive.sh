@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Keeps the long-running processes of the app alive: the queue worker (report exports run on the `reports` queue)
-# and the Reverb websocket server. Cron runs it every minute (see install-cron.sh) and the deploy runs it once, so:
+# and the Reverb websocket server. A cron job of the host panel runs it every minute, so:
 #   - a process that is not running is started,
 #   - a process that exited (crash, or `queue:restart` / `reverb:restart` after a deploy) is started again with the new code,
 #   - a process that is running is left alone.

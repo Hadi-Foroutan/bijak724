@@ -79,12 +79,12 @@ class ColumnLayoutExcelDesign implements ExcelDesign
             $sheet->insertNewRowBefore(1);
             $sheet->setCellValueExplicit('A1', $this->title, DataType::TYPE_STRING);
             $sheet->mergeCells("A1:{$last}1");
-            // A dark blue banner with white text across the whole table width.
+            // A light banner with dark text across the whole table width (a dark fill prints as black on black-and-white printers).
             $sheet->getStyle("A1:{$last}1")->applyFromArray([
-                'font' => ['bold' => true, 'size' => 15, 'color' => ['rgb' => 'FFFFFF']],
-                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1F3864']],
+                'font' => ['bold' => true, 'size' => 15, 'color' => ['rgb' => '1F3864']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E4ECF7']],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
-                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '1F3864']]],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '8EA9DB']]],
             ]);
             $sheet->getRowDimension(1)->setRowHeight(34);
             $sheet->freezePane('A3');

@@ -85,7 +85,7 @@ class PdfReportWriter
         $mpdf->WriteHTML(
             'table{width:100%;border-collapse:collapse;margin-bottom:6px}'
             . 'th,td{border:0.2mm solid #888;padding:3px;text-align:right}th{background-color:#e8e8e8}'
-            . '.title{background-color:#1f3864;color:#ffffff;text-align:center;font-size:14pt;font-weight:bold;padding:8px;margin:0 0 8px}'
+            . '.title{background-color:#e4ecf7;color:#000;border:0.2mm solid #8ea9db;text-align:center;font-size:14pt;font-weight:bold;padding:8px;margin:0 0 8px}'
             . 'td.total{background-color:#ffe699;color:#5a3e00;font-weight:bold;border-top:0.6mm solid #bf8f00}',
             HTMLParserMode::HEADER_CSS,
         );

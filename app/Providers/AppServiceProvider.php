@@ -134,6 +134,9 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(CompanySettingService::class);
         // One shared instance so every part of a report load/export reads the same admin-managed fields.
         $this->app->singleton(WaybillReportFieldCatalog::class);
+        // One instance each: the subscriber remembers which command/job is running, the logger whether it is writing.
+        $this->app->singleton(\App\Support\Logging\RunLogger::class);
+        $this->app->singleton(\App\Listeners\RunLogSubscriber::class);
 
         // `php artisan reverb:start` prints who connects, subscribes and leaves (see LoggingPusherServer).
         $this->app->bind(\Laravel\Reverb\Protocols\Pusher\Server::class, \App\Support\Reverb\LoggingPusherServer::class);
@@ -145,6 +148,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Event::listen(CommandFinished::class, SyncPostmanOpenApi::class);
+
+        // CRON_LOGS=true: every command and queue job logs to its own file (storage/logs/commands, storage/logs/jobs).
+        if (config('cron_logs.enabled')) {
+            Event::subscribe(\App\Listeners\RunLogSubscriber::class);
+        }
 
         Company::observe(CompanyObserver::class);
         User::observe(UserObserver::class);

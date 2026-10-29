@@ -530,7 +530,7 @@ test('the file is headed by the company name and panel code and ends with the su
         ->and($rows[1][0])->toBe('شماره بیجک')
         ->and(count($rows))->toBe(2 + 2 + 1)
         ->and($rows[count($rows) - 1])->toBe(['جمع', '1,500', '7'])
-        ->and($sheet->getStyle('A1')->getFill()->getStartColor()->getRGB())->toBe('1F3864')
+        ->and($sheet->getStyle('A1')->getFill()->getStartColor()->getRGB())->toBe('E4ECF7')
         ->and($sheet->getStyle('A' . count($rows))->getFill()->getStartColor()->getRGB())->toBe('FFE699')
         ->and($sheet->getStyle('A3')->getFill()->getFillType())->toBe('none');
 

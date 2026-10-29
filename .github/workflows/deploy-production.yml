@@ -69,7 +69,6 @@ jobs:
       - name: Finalize Laravel deployment
         env:
           APP_URL: ${{ vars.APP_URL }}
-          PANEL_CRON: ${{ vars.PANEL_CRON }}
           SERVER_HOST: ${{ vars.SERVER_HOST }}
           SERVER_PORT: ${{ vars.SERVER_PORT }}
           SERVER_USER: ${{ vars.SERVER_USER }}
@@ -86,12 +85,11 @@ jobs:
             -p "${SERVER_PORT}" \
             -o IdentitiesOnly=yes \
             "${SERVER_USER}@${SERVER_HOST}" \
-            "bash -s -- '${SERVER_PATH}' '${DEPLOY_APP_URL}' '${PANEL_CRON}'" <<'REMOTE'
+            "bash -s -- '${SERVER_PATH}' '${DEPLOY_APP_URL}'" <<'REMOTE'
           set -e
 
           deployment_path="$1"
           deployment_app_url="$2"
-          panel_cron="$3"
           cd "${deployment_path}"
 
           test -f .env
@@ -128,28 +126,8 @@ jobs:
           php artisan up
           trap - EXIT
 
-          # Background processes (no manual start needed): cron runs the scheduler and a watchdog that keeps the queue
-          # worker and Reverb alive. The restart signals make running processes exit after their current job/connection;
-          # the watchdog then starts them again with the new code.
-          php_bin="$(command -v php)"
-
-          mkdir -p storage/run
+          # Running queue workers and Reverb exit after their current work and are started again (with the new code) by
+          # the server's cron jobs (see ops/server/keep-services-alive.sh).
           php artisan queue:restart
           php artisan reverb:restart || true
-          # Cron jobs: created in the host panel (DirectAdmin) -> set the repository variable PANEL_CRON=true and the deploy
-          # only restarts what is running. Otherwise the deploy installs cron itself, or, where cron is not usable, a
-          # small background loop that does the same (see ops/server/service-loop.sh).
-          if [ "${panel_cron}" = "true" ]; then
-            if [ -f storage/run/service-loop.pid ]; then
-              kill "$(cat storage/run/service-loop.pid)" 2>/dev/null || true
-              rm -f storage/run/service-loop.pid
-            fi
-            # The panel's cron jobs run the queue (`queue:work --stop-when-empty`), so no permanent worker is started here.
-            SKIP_QUEUE_WORKER=1 bash ops/server/keep-services-alive.sh "${deployment_path}" "${php_bin}"
-          elif bash ops/server/install-cron.sh "${deployment_path}" "${php_bin}"; then
-            bash ops/server/keep-services-alive.sh "${deployment_path}" "${php_bin}"
-          else
-            echo "cron is not usable on this server; using the background loop instead"
-            bash ops/server/service-loop.sh "${deployment_path}" "${php_bin}"
-          fi
           REMOTE
