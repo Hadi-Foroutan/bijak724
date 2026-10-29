@@ -12,7 +12,7 @@ use Throwable;
 /**
  * Persian (right-to-left) table PDF. mpdf shapes Arabic script and bundles a font that has the Persian glyphs.
  *
- * A different font can be dropped into the folder `waybill_report.pdf_font_directory` (a .ttf or .otf file): the PDF
+ * A different font can be dropped into a folder of `waybill_report.pdf_font_directories` (a .ttf or .otf file, see ReportFontResolver): the PDF
  * then uses it, and replacing or renaming the file changes the font with no code change. With no (or an unreadable)
  * font file there, the bundled font is used.
  */
@@ -22,13 +22,17 @@ class PdfReportWriter
 
     private const DEFAULT_FONT = 'dejavusans';
 
+    public function __construct(protected ReportFontResolver $fonts)
+    {
+    }
+
     /**
      * @param list<array{key: string, label: string, align?: string, width?: int|null}> $columns
      * @param iterable<array<string, mixed>> $rows
      */
     public function write(string $path, string $title, array $columns, iterable $rows): void
     {
-        $font = $this->customFont();
+        $font = $this->fonts->resolve();
 
         if ($font === null) {
             $this->render($path, $title, $columns, $rows, null);
@@ -49,7 +53,7 @@ class PdfReportWriter
     /**
      * @param list<array{key: string, label: string, align?: string, width?: int|null}> $columns
      * @param iterable<array<string, mixed>> $rows
-     * @param array{family: string, file: string, directory: string}|null $font
+     * @param array{family: string, file: string, directory: string, name: string}|null $font
      */
     private function render(string $path, string $title, array $columns, iterable $rows, ?array $font): void
     {
@@ -81,10 +85,11 @@ class PdfReportWriter
         $mpdf->WriteHTML(
             'table{width:100%;border-collapse:collapse;margin-bottom:6px}'
             . 'th,td{border:0.2mm solid #888;padding:3px;text-align:right}th{background-color:#e8e8e8}'
-            . 'h3{text-align:right;margin:0 0 6px}',
+            . '.title{background-color:#1f3864;color:#ffffff;text-align:center;font-size:14pt;font-weight:bold;padding:8px;margin:0 0 8px}'
+            . 'td.total{background-color:#ffe699;color:#5a3e00;font-weight:bold;border-top:0.6mm solid #bf8f00}',
             HTMLParserMode::HEADER_CSS,
         );
-        $mpdf->WriteHTML('<h3>' . e($title) . '</h3>', HTMLParserMode::HTML_BODY);
+        $mpdf->WriteHTML('<div class="title">' . e($title) . '</div>', HTMLParserMode::HTML_BODY);
 
         $header = '<tr>' . collect($columns)
                 ->map(fn(array $column): string => '<th' . $this->style($column) . '>' . e($column['label']) . '</th>')
@@ -100,7 +105,7 @@ class PdfReportWriter
                         // The totals record groups digits by three: 1,250,000
                         $text = e($bold && is_numeric($value) && !is_string($value) ? $this->grouped($value) : (string)$value);
 
-                        return '<td' . $this->style($column) . '>' . ($bold && $text !== '' ? "<b>{$text}</b>" : $text) . '</td>';
+                        return '<td' . ($bold ? ' class="total"' : '') . $this->style($column) . '>' . $text . '</td>';
                     })
                     ->implode('') . '</tr>';
 
@@ -132,38 +137,7 @@ class PdfReportWriter
     }
 
     /**
-     * The newest font file of the font folder. Its family name is built from the file name and the modification time,
-     * so a renamed or replaced file is always loaded fresh instead of from mpdf's font cache.
-     *
-     * @return array{family: string, file: string, directory: string}|null
-     */
-    private function customFont(): ?array
-    {
-        $directory = config('waybill_report.pdf_font_directory');
-
-        if (!is_string($directory) || !is_dir($directory)) {
-            return null;
-        }
-
-        $files = glob(rtrim($directory, '/\\') . '/*.{ttf,otf,TTF,OTF}', GLOB_BRACE) ?: [];
-
-        if ($files === []) {
-            return null;
-        }
-
-        usort($files, fn(string $a, string $b): int => filemtime($b) <=> filemtime($a));
-        $file = $files[0];
-        $name = strtolower(preg_replace('/[^A-Za-z0-9]/', '', pathinfo($file, PATHINFO_FILENAME)) ?? '');
-
-        return [
-            'family' => ($name === '' ? 'customfont' : $name) . filemtime($file),
-            'file' => basename($file),
-            'directory' => dirname($file),
-        ];
-    }
-
-    /**
-     * @param array{family: string, file: string, directory: string} $font
+     * @param array{family: string, file: string, directory: string, name: string} $font
      * @return array<string, mixed>
      */
     private function fontConfig(array $font): array

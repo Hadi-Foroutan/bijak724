@@ -168,12 +168,12 @@ class ReportExportGenerator
         return $row;
     }
 
-    /** The heading of the file: the company's name and its panel code (not the report's name). */
+    /** The heading of the file: the company's name and its organization code (not the report's name). */
     private function title(ReportExport $export): string
     {
         $company = $this->companyRepository->find($export->company_id);
 
-        return $company === null ? $export->name : "{$company->name} - کد پنل: {$company->panel_code}";
+        return $company === null ? $export->name : "{$company->name} - کد سازمانی: {$company->organization_code}";
     }
 
     /** @param array<string, mixed> $attributes */

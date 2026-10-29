@@ -474,7 +474,7 @@ test('a font file dropped in the font folder is used by the pdf and a missing on
     Event::fake([ReportExportStatusChanged::class]);
     $directory = storage_path('framework/testing/report-fonts-' . uniqid());
     mkdir($directory, 0775, true);
-    config(['waybill_report.pdf_font_directory' => $directory]);
+    config(['waybill_report.pdf_font_directories' => [$directory]]);
 
     $build = function () {
         $id = ($this->makeReport)()->json('data.id');
@@ -526,10 +526,13 @@ test('the file is headed by the company name and panel code and ends with the su
     $sheet = \PhpOffice\PhpSpreadsheet\IOFactory::load(Storage::disk('local')->path($export->file_path))->getActiveSheet();
     $rows = $sheet->toArray();
 
-    expect($rows[0][0])->toBe("{$this->company->name} - کد پنل: {$this->company->panel_code}")
+    expect($rows[0][0])->toBe("{$this->company->name} - کد سازمانی: {$this->company->organization_code}")
         ->and($rows[1][0])->toBe('شماره بیجک')
         ->and(count($rows))->toBe(2 + 2 + 1)
-        ->and($rows[count($rows) - 1])->toBe(['جمع', '1,500', '7']);
+        ->and($rows[count($rows) - 1])->toBe(['جمع', '1,500', '7'])
+        ->and($sheet->getStyle('A1')->getFill()->getStartColor()->getRGB())->toBe('1F3864')
+        ->and($sheet->getStyle('A' . count($rows))->getFill()->getStartColor()->getRGB())->toBe('FFE699')
+        ->and($sheet->getStyle('A3')->getFill()->getFillType())->toBe('none');
 
     $pdfId = ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'pdf'])->json('data.id');
     app(ReportExportGenerator::class)->generate(ReportExport::query()->findOrFail($pdfId));
@@ -548,4 +551,27 @@ test('the totals digits are grouped by three in both files', function () {
 
     expect($sheet->getCell("B{$last}")->getFormattedValue())->toBe('1,250,000')
         ->and($sheet->getCell("B{$last}")->getValue())->toEqual(1250000);
+});
+
+test('the excel file uses the font dropped in the font folder, named as written inside the font file', function () {
+    Event::fake([ReportExportStatusChanged::class]);
+    $directory = storage_path('framework/testing/report-fonts-' . uniqid());
+    mkdir($directory, 0775, true);
+    config(['waybill_report.pdf_font_directories' => [$directory]]);
+    $fontOf = function () {
+        $id = ($this->makeReport)()->json('data.id');
+        $exportId = ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'xlsx'])->json('data.id');
+        app(ReportExportGenerator::class)->generate(ReportExport::query()->findOrFail($exportId));
+        $path = Storage::disk('local')->path(ReportExport::query()->findOrFail($exportId)->file_path);
+
+        return \PhpOffice\PhpSpreadsheet\IOFactory::load($path)->getActiveSheet()->getStyle('A3')->getFont()->getName();
+    };
+
+    $default = $fontOf();
+    copy(base_path('vendor/mpdf/mpdf/ttfonts/DejaVuSerif.ttf'), $directory . '/anything-name.ttf');
+
+    expect($fontOf())->toBe('DejaVu Serif')->not->toBe($default);
+
+    array_map('unlink', glob($directory . '/*'));
+    rmdir($directory);
 });

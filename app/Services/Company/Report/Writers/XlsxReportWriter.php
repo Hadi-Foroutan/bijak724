@@ -13,7 +13,7 @@ use App\Support\Excel\ExcelExporter;
  */
 class XlsxReportWriter
 {
-    public function __construct(protected ExcelExporter $exporter)
+    public function __construct(protected ExcelExporter $exporter, protected ReportFontResolver $fonts)
     {
     }
 
@@ -23,6 +23,6 @@ class XlsxReportWriter
      */
     public function write(string $disk, string $relativePath, array $columns, iterable $rows, ?ExcelDesign $design = null, ?string $title = null, bool $totalsRow = false): void
     {
-        $this->exporter->store($rows, $relativePath, $disk, $columns, new ColumnLayoutExcelDesign($design ?? new DefaultExcelDesign, $columns, $title, $totalsRow));
+        $this->exporter->store($rows, $relativePath, $disk, $columns, new ColumnLayoutExcelDesign($design ?? new DefaultExcelDesign, $columns, $title, $totalsRow, config('waybill_report.excel_font_name') ?: ($this->fonts->resolve()['name'] ?? null)));
     }
 }

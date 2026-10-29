@@ -8,8 +8,17 @@ return [
     'disk' => env('REPORT_DISK', 'local'),
     'directory' => 'report-exports',
 
-    // Put a .ttf/.otf file here to change the font of the PDF files (the newest file wins; empty = the bundled font).
-    'pdf_font_directory' => env('REPORT_PDF_FONT_DIRECTORY', storage_path('app/report-fonts')),
+    // Put a .ttf/.otf file in one of these folders to change the font of the PDF and Excel files (the newest file wins;
+    // none = the bundled PDF font and Excel's default). The first one is the same as the `local` disk's `report-fonts`.
+    'pdf_font_directories' => array_filter([
+        env('REPORT_PDF_FONT_DIRECTORY'),
+        storage_path('app/private/report-fonts'),
+        storage_path('app/report-fonts'),
+    ]),
+
+    // The font NAME written in Excel files (Excel cannot embed fonts: it must be installed on the computer that opens the
+    // file). Empty = the family name read from the font file; set it when the installed font is listed under another name.
+    'excel_font_name' => env('REPORT_EXCEL_FONT_NAME'),
 
     // How many rows are loaded from the database at a time.
     'chunk_size' => 500,

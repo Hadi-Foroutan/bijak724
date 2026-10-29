@@ -6,11 +6,12 @@ use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 /**
  * Wraps another design and then applies each column's own `align` (right|left|center) and `width` (pixels; null keeps
- * the wrapped design's fit-to-content sizing). It can also put a title above the headings and bold the last row (totals).
+ * the wrapped design's fit-to-content sizing). It can also put a title above the headings, bold the last row (totals) and set the font.
  */
 class ColumnLayoutExcelDesign implements ExcelDesign
 {
@@ -23,6 +24,7 @@ class ColumnLayoutExcelDesign implements ExcelDesign
         private readonly array       $columns,
         private readonly ?string     $title = null,
         private readonly bool        $boldLastRow = false,
+        private readonly ?string     $fontName = null,
     )
     {
     }
@@ -49,8 +51,19 @@ class ColumnLayoutExcelDesign implements ExcelDesign
 
         $last = Coordinate::stringFromColumnIndex(max($columns, 1));
 
+        // The font of the whole sheet (it must be installed on the computer that opens the file; Excel cannot embed it).
+        if ($this->fontName !== null && $columns > 0) {
+            $sheet->getParent()?->getDefaultStyle()->getFont()->setName($this->fontName);
+            $sheet->getStyle("A1:{$last}{$rows}")->getFont()->setName($this->fontName);
+        }
+
         if ($this->boldLastRow && $rows > 1) {
-            $sheet->getStyle("A{$rows}:{$last}{$rows}")->getFont()->setBold(true);
+            // The totals row stands out: amber background, bold, a thick line above it.
+            $sheet->getStyle("A{$rows}:{$last}{$rows}")->applyFromArray([
+                'font' => ['bold' => true, 'color' => ['rgb' => '5A3E00']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFE699']],
+                'borders' => ['top' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => 'BF8F00']]],
+            ]);
             // Digits of the totals are grouped by three (1,250,000); the cells stay numbers.
             for ($index = 1; $index <= $columns; $index++) {
                 $cell = Coordinate::stringFromColumnIndex($index) . $rows;
@@ -66,11 +79,14 @@ class ColumnLayoutExcelDesign implements ExcelDesign
             $sheet->insertNewRowBefore(1);
             $sheet->setCellValueExplicit('A1', $this->title, DataType::TYPE_STRING);
             $sheet->mergeCells("A1:{$last}1");
-            $sheet->getStyle('A1')->applyFromArray([
-                'font' => ['bold' => true, 'size' => 13],
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_NONE]],
+            // A dark blue banner with white text across the whole table width.
+            $sheet->getStyle("A1:{$last}1")->applyFromArray([
+                'font' => ['bold' => true, 'size' => 15, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1F3864']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '1F3864']]],
             ]);
+            $sheet->getRowDimension(1)->setRowHeight(34);
             $sheet->freezePane('A3');
         }
     }
