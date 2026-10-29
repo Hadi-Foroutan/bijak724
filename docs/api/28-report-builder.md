@@ -282,7 +282,7 @@ POST /api/user/reports/3/exports
 
 ## ۸. نگهداری موقت فایل (تنظیم ادمین)
 
-فایل هر گزارش پس از «مدت نگهداری» از سرور پاک و وضعیت آن `expired` می‌شود (هر ۵ دقیقه بررسی می‌شود). پیش‌فرض ۸ ساعت است و ادمین
+هر گزارش پس از «مدت نگهداری» کاملاً حذف می‌شود: هم فایلش از سرور پاک می‌شود و هم رکوردش از لیست «گزارش‌های اخیر» (هر ۵ دقیقه بررسی می‌شود). قبل از حذف، یک رویداد سوکت با `status: expired` برای صاحبش فرستاده می‌شود تا صفحهٔ باز آن را از لیست بردارد؛ بعد از آن لینک دانلود و `GET /report-exports/{id}` پاسخ `404` می‌دهند. پیش‌فرض ۸ ساعت است و ادمین
 بدون تغییر کد عوض می‌کند:
 
 | متد | مسیر | مجوز |
@@ -338,3 +338,46 @@ php artisan schedule:work   # یا cron: * * * * * php artisan schedule:run
 `ops/server/service-loop.sh` را اجرا می‌کند: یک حلقهٔ پس‌زمینه که هر دقیقه همان دو کار را انجام می‌دهد (scheduler و
 نگهبان worker/Reverb). این حلقه بعد از ریبوت سرور خودش بالا نمی‌آید؛ دپلوی بعدی (یا اجرای دستی اسکریپت) دوباره آن را شروع می‌کند.
 لاگ حلقه: `storage/logs/service-loop.log`.
+
+### cron در DirectAdmin
+
+اگر cron را از پنل هاست (DirectAdmin ← Cron Jobs) می‌سازید، دو cron با زمان‌بندی «هر دقیقه» (`* * * * *`) بسازید:
+
+```
+cd /مسیر/پروژه && /مسیر/php artisan schedule:run >> /dev/null 2>&1
+bash /مسیر/پروژه/ops/server/keep-services-alive.sh /مسیر/پروژه /مسیر/php >> /dev/null 2>&1
+```
+
+سپس در GitHub (Settings ← Environments ← production ← Variables) متغیر `PANEL_CRON` را `true` بگذارید. در این حالت دپلوی
+فقط worker و Reverb را ری‌استارت می‌کند و خودش cron یا حلقهٔ پس‌زمینه نمی‌سازد (حلقهٔ قبلی را هم متوقف می‌کند).
+
+### لاگ cronها (قابل روشن/خاموش با GitHub)
+
+برای دیدن اینکه هر cron کی اجرا شد، چقدر طول کشید و آیا دوباره اجرا یا ری‌استارت شد، cronهای DirectAdmin را از طریق
+`ops/server/run-logged.sh` اجرا کنید (همه `* * * * *`):
+
+```
+cd domains/api.bijak724.ir/public_html && bash ops/server/run-logged.sh scheduler -- php artisan schedule:run >> /dev/null 2>&1
+cd domains/api.bijak724.ir/public_html && bash ops/server/run-logged.sh --no-overlap queue -- php artisan queue:work --queue=reports,default --stop-when-empty --tries=1 --timeout=1800 >> /dev/null 2>&1
+cd domains/api.bijak724.ir/public_html && SKIP_QUEUE_WORKER=1 bash ops/server/run-logged.sh reverb -- bash ops/server/keep-services-alive.sh . php >> /dev/null 2>&1
+```
+
+- `--no-overlap`: اگر اجرای قبلیِ همان cron هنوز کار می‌کند، اجرای جدید رد می‌شود (`SKIPPED`) و روی هم انباشته نمی‌شوند.
+- لاگ‌ها فقط وقتی نوشته می‌شوند که در `.env` **سرور** خط `CRON_LOGS=true` باشد. با `CRON_LOGS=false` (یا نبودن خط) cronها
+  بی‌صدا اجرا می‌شوند و لاگی ثبت نمی‌شود. هر اجرا `.env` را دوباره می‌خواند، پس نه دپلوی لازم است نه ری‌استارت.
+- فایل‌ها: `storage/logs/cron/scheduler.log`، `queue.log`، `reverb.log` (هرکدام بالای ۱ مگابایت به ۲۰۰۰ خط آخر کوتاه می‌شود).
+
+نمونهٔ لاگ:
+
+```
+[2026-10-29 10:15:01] START queue
+   INFO  Processing jobs from the [reports,default] queues.
+  2026-10-29 10:15:02 App\Jobs\GenerateReportExport ... RUNNING
+  2026-10-29 10:15:05 App\Jobs\GenerateReportExport ... 3s DONE
+[2026-10-29 10:15:05] END queue exit=0 took=4s
+[2026-10-29 10:16:01] SKIPPED queue: the previous run is still running
+[2026-10-29 10:20:01] START reverb
+2026-10-29 10:20:01 reverb: not running any more (it exited or was restarted), starting it again
+2026-10-29 10:20:01 started reverb (pid 4821)
+[2026-10-29 10:20:01] END reverb exit=0 took=0s
+```

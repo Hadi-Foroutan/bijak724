@@ -34,7 +34,15 @@ start() {
     name="$1"
     shift
 
-    is_running "storage/run/${name}.pid" && return 0
+    if is_running "storage/run/${name}.pid"; then
+        echo "$(date '+%F %T') ${name}: already running (pid $(cat "storage/run/${name}.pid")), left alone"
+
+        return 0
+    fi
+
+    if [ -f "storage/run/${name}.pid" ]; then
+        echo "$(date '+%F %T') ${name}: not running any more (it exited or was restarted), starting it again"
+    fi
 
     # `9>&-` closes the lock for the child, otherwise the daemon would hold it forever.
     nohup "$@" >> "storage/logs/${name}.log" 2>&1 9>&- &
@@ -42,7 +50,8 @@ start() {
     echo "$(date '+%F %T') started ${name} (pid $!)"
 }
 
-start queue-worker "${PHP_BIN}" artisan queue:work --queue=reports,default --sleep=3 --tries=1 --timeout=1800 --max-time=3600
+# SKIP_QUEUE_WORKER=1 when the queue is run by its own cron job (`queue:work --stop-when-empty`).
+[ "${SKIP_QUEUE_WORKER:-0}" = "1" ] || start queue-worker "${PHP_BIN}" artisan queue:work --queue=reports,default --sleep=3 --tries=1 --timeout=1800 --max-time=3600
 
 if "${PHP_BIN}" artisan list --raw 2>/dev/null | grep -q '^reverb:start'; then
     start reverb "${PHP_BIN}" artisan reverb:start

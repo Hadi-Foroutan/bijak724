@@ -9,11 +9,11 @@ class PruneReportExportsCommand extends Command
 {
     protected $signature = 'reports:prune';
 
-    protected $description = 'Delete the files of report exports whose retention time is over and mark them expired';
+    protected $description = 'Delete the report exports (file and record) whose retention time is over';
 
     public function handle(ReportExportService $reportExportService): int
     {
-        $this->info("Expired {$reportExportService->pruneExpired()} report export(s).");
+        $this->info("Deleted {$reportExportService->pruneExpired()} expired report export(s).");
 
         return self::SUCCESS;
     }

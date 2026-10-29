@@ -258,9 +258,10 @@ test('the admin changes the retention time without touching code, and the prune 
     $this->artisan('reports:prune')->assertSuccessful();
 
     Storage::disk('local')->assertMissing($path);
-    expect($export->refresh()->status)->toBe(ReportExportStatus::Expired);
-    ($this->as)($this->user)->getJson("/api/user/report-exports/{$exportId}")
-        ->assertJsonPath('data.status', 'expired')->assertJsonPath('data.download_url', null);
+    Event::assertDispatched(ReportExportStatusChanged::class, fn($event) => $event->export->id === $exportId && $event->export->status === ReportExportStatus::Expired);
+    expect(ReportExport::query()->find($exportId))->toBeNull();
+    ($this->as)($this->user)->getJson("/api/user/report-exports/{$exportId}")->assertNotFound();
+    ($this->as)($this->user)->getJson('/api/user/report-exports')->assertJsonCount(0, 'data');
     $this->app['auth']->forgetGuards();
     $this->get($url)->assertStatus(403); // امضای لینک هم منقضی شده است
 

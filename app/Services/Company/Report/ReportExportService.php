@@ -97,17 +97,24 @@ class ReportExportService
         return Storage::disk(config('waybill_report.disk'))->exists($export->file_path) ? $export : null;
     }
 
-    /** Removes the file of every export whose retention time is over and marks it expired. @return int how many */
+    /**
+     * Deletes every export whose retention time is over: its file and its record (so it leaves the recent list).
+     * The owner is told first with an `expired` status over the socket, so an open page can drop it at once.
+     *
+     * @return int how many
+     */
     public function pruneExpired(): int
     {
         $expired = $this->reportExportRepository->expiredCompleted();
 
         foreach ($expired as $export) {
             $this->deleteFile($export);
-            $this->reportExportRepository->update($export, [
+            $export = $this->reportExportRepository->update($export, [
                 'status' => ReportExportStatus::Expired,
                 'file_path' => null,
             ]);
+            $this->notifier->notify($export);
+            $this->reportExportRepository->delete($export);
         }
 
         return $expired->count();
