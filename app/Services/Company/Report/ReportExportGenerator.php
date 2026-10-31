@@ -9,6 +9,7 @@ use App\Interfaces\CompanyInterface;
 use App\Interfaces\Company\ReportExportRepositoryInterface;
 use App\Interfaces\Company\ReportWaybillRepositoryInterface;
 use App\Models\ReportExport;
+use App\Services\Company\Report\Templates\TemplateDocumentBuilder;
 use App\Services\Company\Report\Writers\PdfReportWriter;
 use App\Services\Company\Report\Writers\XlsxReportWriter;
 use App\Services\Setting\GlobalSettingService;
@@ -33,6 +34,7 @@ class ReportExportGenerator
         protected GlobalSettingService             $settings,
         protected ReportExportNotifier             $notifier,
         protected CompanyInterface                 $companyRepository,
+        protected TemplateDocumentBuilder          $templates,
     )
     {
     }
@@ -51,27 +53,29 @@ class ReportExportGenerator
         $relativePath = null;
 
         try {
-            $filters = $export->filters ?? [];
+            // A ready-made template or a user's own report: both end up as the same document for the writers.
+            $document = $export->template !== null
+                ? $this->templates->build($export)
+                : $this->definitionDocument($export);
 
             $limit = (int)config("waybill_report.max_rows.{$export->format->value}");
-            $total = $this->reportWaybillRepository->count($export->company_id, $export->visible_creator_ids, $filters);
 
-            if ($total > $limit) {
-                throw new RuntimeException("تعداد بارنامه‌ها ({$total}) بیشتر از سقف مجاز این خروجی ({$limit}) است؛ فیلتر را محدودتر کنید.");
+            if ($document->total > $limit) {
+                throw new RuntimeException("تعداد بارنامه‌ها ({$document->total}) بیشتر از سقف مجاز این خروجی ({$limit}) است؛ فیلتر را محدودتر کنید.");
             }
-
-            $columns = $this->catalog->columns($export->fields, $export->column_options ?? []);
-            $rows = $this->rows($export, $filters);
 
             $relativePath = config('waybill_report.directory') . "/{$export->company_id}/" . Str::uuid() . ".{$export->format->value}";
             $disk->makeDirectory(dirname($relativePath));
 
-            $title = $this->title($export);
-            $hasTotals = $this->catalog->numericKeys($export->fields) !== [];
-
             match ($export->format) {
-                ReportExportFormat::Xlsx => $this->xlsx->write($diskName, $relativePath, $columns, $rows, title: $title, totalsRow: $hasTotals),
-                ReportExportFormat::Pdf => $this->pdf->write($disk->path($relativePath), $title, $columns, $rows),
+                ReportExportFormat::Xlsx => $this->xlsx->write(
+                    $diskName, $relativePath, $document->columns, $document->rows,
+                    title: $document->title, subtitle: $document->subtitle, totalsRow: $document->hasTotals,
+                ),
+                ReportExportFormat::Pdf => $this->pdf->write(
+                    $disk->path($relativePath), $document->title, $document->columns, $document->rows,
+                    subtitle: $document->subtitle, landscape: $document->landscape,
+                ),
             };
 
             $retentionHours = (int)$this->settings->value(GlobalSettingKey::ReportRetentionHours);
@@ -80,7 +84,7 @@ class ReportExportGenerator
                 'status' => ReportExportStatus::Completed,
                 'file_path' => $relativePath,
                 'file_size' => $disk->size($relativePath),
-                'rows_count' => $total,
+                'rows_count' => $document->total,
                 'completed_at' => now(),
                 'expires_at' => now()->addHours(max($retentionHours, 1)),
                 'error' => null,
@@ -110,6 +114,26 @@ class ReportExportGenerator
             'error' => $message,
             'completed_at' => now(),
         ]);
+    }
+
+    /** The document of a report the user built from the field catalog. */
+    private function definitionDocument(ReportExport $export): ReportDocument
+    {
+        $filters = $export->filters ?? [];
+
+        return new ReportDocument(
+            title: $this->title($export),
+            subtitle: null,
+            // The columns of the on-screen load plus the plate mark, which the PDF draws as a plate.
+            columns: array_map(
+                fn(array $column): array => $column + ['format' => $this->catalog->isPlate($column['key']) ? 'plate' : 'text'],
+                $this->catalog->columns($export->fields, $export->column_options ?? []),
+            ),
+            rows: $this->rows($export, $filters),
+            total: $this->reportWaybillRepository->count($export->company_id, $export->visible_creator_ids, $filters),
+            hasTotals: $this->catalog->numericKeys($export->fields) !== [],
+            landscape: count($export->fields) > 6,
+        );
     }
 
     /**

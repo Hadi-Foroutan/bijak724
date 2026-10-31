@@ -34,3 +34,4 @@
 | ۲۷ |                              مدیران فنی | [27-technical-managers.md](27-technical-managers.md)           |
 | ۲۸ | گزارش‌ساز | [28-report-builder.md](28-report-builder.md) |
 | ۲۹ | وب‌سوکت (اتصال، کانال‌ها، رویدادها، React) | [29-socket.md](29-socket.md) |
+| ۳۰ | گزارش‌های پرکاربرد (قالب‌های آمادهٔ گزارش: بیمه و ...) | [30-frequent-reports.md](30-frequent-reports.md) |

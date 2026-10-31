@@ -43,6 +43,7 @@ arch('dynamic domain controllers do not query models directly')
 arch('report controllers do not query models directly')
     ->expect([
         'App\Http\Controllers\User\Report',
+        'App\Http\Controllers\User\FrequentReport',
         'App\Http\Controllers\Admin\Report',
     ])
     ->not->toUse('App\Models');

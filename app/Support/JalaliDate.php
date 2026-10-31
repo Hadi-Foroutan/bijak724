@@ -36,12 +36,23 @@ class JalaliDate
         return [$jalaliYear, 7 + intdiv($days - 186, 30), 1 + (($days - 186) % 30)];
     }
 
-    /** `1403/05/12`, followed by ` 14:30:00` unless the time is exactly midnight (a plain date). */
+    /** Left-to-right mark: keeps date and time in one left-to-right run, so the date stays before the time in right-to-left files. */
+    public const LRM = "\u{200E}";
+
+    /** `1403/05/12 14:30`: the date first, then the hour and minute (a plain date when the time is exactly midnight). */
     public static function format(CarbonInterface $date): string
     {
         [$year, $month, $day] = self::fromGregorian($date->year, $date->month, $date->day);
         $text = sprintf('%04d/%02d/%02d', $year, $month, $day);
 
-        return $date->format('H:i:s') === '00:00:00' ? $text : $text . ' ' . $date->format('H:i:s');
+        return $date->format('H:i') === '00:00' ? $text : self::LRM . $text . ' ' . $date->format('H:i');
+    }
+
+    /** Only the date, `1403/05/12`, whatever the time. */
+    public static function date(CarbonInterface $date): string
+    {
+        [$year, $month, $day] = self::fromGregorian($date->year, $date->month, $date->day);
+
+        return sprintf('%04d/%02d/%02d', $year, $month, $day);
     }
 }

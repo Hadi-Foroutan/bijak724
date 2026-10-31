@@ -34,7 +34,8 @@ class WaybillReportFilterApplier
         }
 
         isset($filters['issued_from']) && $query->where($column('issued_at'), '>=', $filters['issued_from']);
-        isset($filters['issued_to']) && $query->where($column('issued_at'), '<=', $filters['issued_to']);
+        // A plain date (`2026-10-28`) as the end of the range means the whole day, not midnight at its start.
+        isset($filters['issued_to']) && $query->where($column('issued_at'), '<=', $this->endOfDay((string)$filters['issued_to']));
 
         foreach ([
                      'branch_id' => 'owner_company_id', 'user_id' => 'created_by', 'status' => 'status',
@@ -43,6 +44,9 @@ class WaybillReportFilterApplier
                  ] as $key => $name) {
             isset($filters[$key]) && $query->where($column($name), $filters[$key]);
         }
+
+        isset($filters['has_insurance']) && filter_var($filters['has_insurance'], FILTER_VALIDATE_BOOL)
+            && $query->whereNotNull($column('liability_insurance'));
 
         isset($filters['freight_at_origin']) && $query->where($column('freight_at_origin'), filter_var($filters['freight_at_origin'], FILTER_VALIDATE_BOOL));
 
@@ -176,5 +180,10 @@ class WaybillReportFilterApplier
 
         $from !== null && $query->whereRaw("CAST({$wrapped} AS {$type}) >= ?", [(int)$from]);
         $to !== null && $query->whereRaw("CAST({$wrapped} AS {$type}) <= ?", [(int)$to]);
+    }
+
+    private function endOfDay(string $date): string
+    {
+        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) === 1 ? "{$date} 23:59:59" : $date;
     }
 }

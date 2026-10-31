@@ -31,6 +31,7 @@ return [
         'user.insurances.' => 'مدیریت بیمه‌ها و تعرفه‌ها',
         'user.technical-managers.' => 'مدیریت مدیران فنی',
         'user.reports.' => 'گزارش‌ساز',
+        'user.frequent-reports.' => 'گزارش‌های پرکاربرد',
         'user.report-exports.' => 'گزارش‌های اخیر و خروجی‌ها',
         'user.cargo-groups*' => 'مدیریت گروه‌بندی کالاها',
         'user.general.' => 'اطلاعات عمومی کاربران',

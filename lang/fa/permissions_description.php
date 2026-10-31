@@ -178,6 +178,8 @@ return [
     'user.reports.destroy' => 'حذف گزارش ذخیره‌شده',
     'user.reports.waybills' => 'مشاهده بارنامه‌ها با فیلدهای انتخابی گزارش',
     'user.reports.exports.store' => 'درخواست خروجی اکسل یا PDF گزارش',
+    'user.frequent-reports.index' => 'مشاهده انواع گزارش‌های پرکاربرد',
+    'user.frequent-reports.exports.store' => 'درخواست خروجی اکسل یا PDF گزارش پرکاربرد',
     'user.report-exports.index' => 'مشاهده لیست گزارش‌های اخیر',
     'user.report-exports.show' => 'مشاهده وضعیت و لینک دانلود گزارش',
     'user.report-exports.destroy' => 'حذف گزارش اخیر',

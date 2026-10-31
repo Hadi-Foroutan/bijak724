@@ -10,6 +10,7 @@ use App\Interfaces\Company\ReportRepositoryInterface;
 use App\Jobs\GenerateReportExport;
 use App\Models\ReportExport;
 use App\Models\User;
+use App\Services\Company\Report\Templates\ReportTemplateRegistry;
 use App\Services\Company\Waybill\WaybillVisibilityService;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
@@ -23,6 +24,7 @@ class ReportExportService
         protected ReportRepositoryInterface       $reportRepository,
         protected ReportExportNotifier            $notifier,
         protected WaybillVisibilityService        $visibility,
+        protected ReportTemplateRegistry          $templates,
     )
     {
     }
@@ -41,6 +43,35 @@ class ReportExportService
             ]);
         }
 
+        return $this->enqueue($companyId, $user, $format, [
+            'report_definition_id' => $report->getKey(),
+            'name' => $report->name,
+            'fields' => $fields,
+            'column_options' => $report->columnOptions(),
+            'filters' => Arr::except($filters, ['paginate', 'page', 'itemsPerPage']),
+        ]);
+    }
+
+    /**
+     * Queues the export of a ready-made report template (see config/report_templates.php).
+     *
+     * @param array<string, mixed> $filters waybill filters of the template's dialog (the date range is required by the request)
+     */
+    public function queueTemplate(int $companyId, User $user, string $templateKey, ReportExportFormat $format, array $filters): ServiceResult
+    {
+        $template = $this->templates->find($templateKey);
+
+        return $this->enqueue($companyId, $user, $format, [
+            'template' => $template->key(),
+            'name' => $template->title(),
+            'fields' => [],
+            'filters' => Arr::except($filters, ['paginate', 'page', 'itemsPerPage']),
+        ]);
+    }
+
+    /** @param array<string, mixed> $attributes what differs between a user's own report and a template */
+    private function enqueue(int $companyId, User $user, ReportExportFormat $format, array $attributes): ServiceResult
+    {
         $this->ensureBelowActiveLimit($companyId, $user->getKey());
 
         $export = $this->reportExportRepository->create([
@@ -48,11 +79,7 @@ class ReportExportService
             'user_id' => $user->getKey(),
             // Taken now: the queue worker has no access token, so it cannot tell what the user may see by itself.
             'visible_creator_ids' => $this->visibility->creatorIds($user),
-            'report_definition_id' => $report->getKey(),
-            'name' => $report->name,
-            'fields' => $fields,
-            'column_options' => $report->columnOptions(),
-            'filters' => Arr::except($filters, ['paginate', 'page', 'itemsPerPage']),
+            ...$attributes,
             'format' => $format,
             'status' => ReportExportStatus::Queued,
         ]);

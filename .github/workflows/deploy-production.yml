@@ -18,6 +18,7 @@ jobs:
     name: Build and deploy
     runs-on: ubuntu-latest
     environment: production
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -27,10 +28,24 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
+          extensions: curl, dom, fileinfo, gd, intl, mbstring, xml, zip
+          tools: composer:v2
           coverage: none
 
+      # Composer's download cache: only packages that changed in composer.lock are downloaded again.
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
       - name: Install PHP dependencies
-        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+        run: composer install --no-dev --no-interaction --no-progress --prefer-dist --optimize-autoloader
 
       - name: Configure deployment SSH key
         env:
@@ -50,7 +65,9 @@ jobs:
           SERVER_USER: ${{ vars.SERVER_USER }}
           SERVER_PATH: ${{ vars.SERVER_PATH }}
         run: |
-          rsync -az --delete \
+          # --checksum: the checkout gives every file a new modification time, so without it all of vendor/ would be
+          # uploaded on every deploy; with it only the files whose content really changed are sent.
+          rsync -az --checksum --delete \
             --exclude='.codex/' \
             --exclude='.env' \
             --exclude='.git/' \
@@ -58,6 +75,14 @@ jobs:
             --exclude='.idea/' \
             --exclude='.well-known/' \
             --exclude='AGENTS.md' \
+            --exclude='CLAUDE.md' \
+            --exclude='README.md' \
+            --exclude='api.json' \
+            --exclude='docs/' \
+            --exclude='package.json' \
+            --exclude='package-lock.json' \
+            --exclude='phpunit.xml' \
+            --exclude='vite.config.js' \
             --exclude='cgi-bin/' \
             --exclude='node_modules/' \
             --exclude='public/hot' \

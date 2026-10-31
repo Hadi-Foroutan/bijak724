@@ -508,7 +508,7 @@ test('dates are shamsi in the printed files and stay machine readable on screen'
     $waybill->forceFill(['issued_at' => '2026-10-28 14:30:05', 'created_at' => '2026-10-28 14:30:05', 'updated_at' => '2026-10-28 14:30:05', 'loading_started_at' => '2026-10-28 14:30:05', 'loading_ended_at' => '2026-10-28 14:30:05']);
     $catalog = app(App\Services\Company\Report\WaybillReportFieldCatalog::class)->refresh();
 
-    expect($catalog->row($waybill, [$key], display: true)[$key])->toBe('1405/08/06 14:30:05')
+    expect($catalog->row($waybill, [$key], display: true)[$key])->toBe(App\Support\JalaliDate::LRM . '1405/08/06 14:30')
         ->and($catalog->row($waybill, [$key])[$key])->toBe('2026-10-28 14:30:05');
 });
 

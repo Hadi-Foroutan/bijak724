@@ -18,11 +18,11 @@ class XlsxReportWriter
     }
 
     /**
-     * @param list<array{key: string, label: string, align?: string, width?: int|null}> $columns
+     * @param list<array{key: string, label: string, align?: string, width?: int|null, format?: string, multiline?: bool}> $columns
      * @param iterable<array<string, mixed>> $rows
      */
-    public function write(string $disk, string $relativePath, array $columns, iterable $rows, ?ExcelDesign $design = null, ?string $title = null, bool $totalsRow = false): void
+    public function write(string $disk, string $relativePath, array $columns, iterable $rows, ?ExcelDesign $design = null, ?string $title = null, bool $totalsRow = false, ?string $subtitle = null): void
     {
-        $this->exporter->store($rows, $relativePath, $disk, $columns, new ColumnLayoutExcelDesign($design ?? new DefaultExcelDesign, $columns, $title, $totalsRow, config('waybill_report.excel_font_name') ?: ($this->fonts->resolve()['name'] ?? null)));
+        $this->exporter->store($rows, $relativePath, $disk, $columns, new ColumnLayoutExcelDesign($design ?? new DefaultExcelDesign, $columns, $title, $totalsRow, config('waybill_report.excel_font_name') ?: ($this->fonts->resolve()['name'] ?? null), $subtitle));
     }
 }

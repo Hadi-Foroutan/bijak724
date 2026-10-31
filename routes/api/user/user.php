@@ -4,6 +4,7 @@ use App\Http\Controllers\User\BijakNumberController;
 use App\Http\Controllers\User\CanceledReferralController;
 use App\Http\Controllers\User\CargoGroupController;
 use App\Http\Controllers\User\CompanySettingController;
+use App\Http\Controllers\User\FrequentReport\FrequentReportController;
 use App\Http\Controllers\User\Report\ReportController;
 use App\Http\Controllers\User\Report\ReportExportController;
 use App\Http\Controllers\User\CompanyUserController;
@@ -152,7 +153,18 @@ Route::prefix('transport-contracts')->name('transport-contracts.')->group(functi
 Route::apiResource('transport-contracts', TransportContractController::class)
     ->parameters(['transport-contracts' => 'transportContract']);
 
-// Report builder
+// ─────────────────────────────────────────────────────────────
+// Frequent reports (گزارش‌های پرکاربرد): ready-made types with fixed columns; the client sends only the type, the format
+// and the period. Separate from the report builder below.
+// ─────────────────────────────────────────────────────────────
+Route::prefix('frequent-reports')->name('frequent-reports.')->controller(FrequentReportController::class)->group(function () {
+    Route::get('/', 'index')->name('index');
+    Route::post('{type}/exports', 'export')->name('exports.store');
+});
+
+// ─────────────────────────────────────────────────────────────
+// Report builder (گزارش‌ساز): the user's own reports
+// ─────────────────────────────────────────────────────────────
 Route::prefix('reports')->name('reports.')->group(function () {
     Route::get('/fields', [ReportController::class, 'fields'])->name('fields');
     Route::get('{report}/waybills', [ReportController::class, 'waybills'])->name('waybills');

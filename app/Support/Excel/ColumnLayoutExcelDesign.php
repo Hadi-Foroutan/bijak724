@@ -25,6 +25,7 @@ class ColumnLayoutExcelDesign implements ExcelDesign
         private readonly ?string     $title = null,
         private readonly bool        $boldLastRow = false,
         private readonly ?string     $fontName = null,
+        private readonly ?string     $subtitle = null,
     )
     {
     }
@@ -40,6 +41,16 @@ class ColumnLayoutExcelDesign implements ExcelDesign
                 $dimension = $sheet->getColumnDimension($letter);
                 $dimension->setAutoSize(false);
                 $dimension->setWidth($column['width'] / self::PIXELS_PER_UNIT);
+            }
+
+            // Number columns show digits grouped by three; multi-line cells (two lines in one cell) wrap.
+            if (($column['format'] ?? null) === 'number' && $rows > 1) {
+                $decimals = (int)($column['decimals'] ?? 0);
+                $sheet->getStyle("{$letter}2:{$letter}{$rows}")->getNumberFormat()->setFormatCode($decimals > 0 ? '#,##0.' . str_repeat('0', $decimals) : '#,##0');
+            }
+
+            if (($column['multiline'] ?? false) && $rows > 1) {
+                $sheet->getStyle("{$letter}2:{$letter}{$rows}")->getAlignment()->setWrapText(true)->setVertical(Alignment::VERTICAL_CENTER);
             }
 
             $sheet->getStyle("{$letter}1:{$letter}{$rows}")->getAlignment()->setHorizontal(match ($column['align'] ?? 'right') {
@@ -76,7 +87,8 @@ class ColumnLayoutExcelDesign implements ExcelDesign
         }
 
         if ($this->title !== null && $columns > 0) {
-            $sheet->insertNewRowBefore(1);
+            $headingRows = $this->subtitle === null ? 1 : 2;
+            $sheet->insertNewRowBefore(1, $headingRows);
             $sheet->setCellValueExplicit('A1', $this->title, DataType::TYPE_STRING);
             $sheet->mergeCells("A1:{$last}1");
             // A light banner with dark text across the whole table width (a dark fill prints as black on black-and-white printers).
@@ -87,7 +99,19 @@ class ColumnLayoutExcelDesign implements ExcelDesign
                 'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '8EA9DB']]],
             ]);
             $sheet->getRowDimension(1)->setRowHeight(34);
-            $sheet->freezePane('A3');
+
+            if ($this->subtitle !== null) {
+                $sheet->setCellValueExplicit('A2', $this->subtitle, DataType::TYPE_STRING);
+                $sheet->mergeCells("A2:{$last}2");
+                $sheet->getStyle("A2:{$last}2")->applyFromArray([
+                    'font' => ['bold' => true, 'size' => 11, 'color' => ['rgb' => '1F3864']],
+                    'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                    'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_NONE]],
+                ]);
+                $sheet->getRowDimension(2)->setRowHeight(22);
+            }
+
+            $sheet->freezePane('A' . ($headingRows + 2));
         }
     }
 }

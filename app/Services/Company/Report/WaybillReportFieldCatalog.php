@@ -7,6 +7,7 @@ use App\Interfaces\ReportFieldRepositoryInterface;
 use App\Models\Company\Waybill;
 use App\Models\ReportField;
 use App\Support\JalaliDate;
+use App\Support\PlateFormat;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
@@ -48,6 +49,11 @@ class WaybillReportFieldCatalog
     public function has(string $key): bool
     {
         return $this->all()->has($key);
+    }
+
+    public function isPlate(string $key): bool
+    {
+        return $this->has($key) && $this->all()[$key]->format === 'plate';
     }
 
     /** @return list<array{id: int, key: string, label: string, group: string, type: string, multiple: bool}> */
@@ -204,18 +210,6 @@ class WaybillReportFieldCatalog
 
     private function plate(Waybill $waybill): ?string
     {
-        $fleet = $waybill->fleet;
-
-        if ($fleet === null) {
-            return null;
-        }
-
-        return trim(sprintf(
-            '%s %s %s - %s',
-            $fleet->plate_first_number,
-            $fleet->plate_second_letter,
-            $fleet->plate_third_number,
-            $fleet->plate_fourth_number,
-        ));
+        return PlateFormat::text($waybill->fleet);
     }
 }
