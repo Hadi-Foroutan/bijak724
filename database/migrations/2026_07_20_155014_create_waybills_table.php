@@ -15,6 +15,7 @@ return new class extends Migration {
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->unsignedBigInteger('waybill_id');
             $table->timestamps();
+            $table->softDeletes()->index();
 
             $table->unique(['company_id', 'waybill_id']);
         });

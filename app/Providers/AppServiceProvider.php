@@ -137,6 +137,7 @@ class AppServiceProvider extends ServiceProvider
         // One instance each: the subscriber remembers which command/job is running, the logger whether it is writing.
         $this->app->singleton(\App\Support\Logging\RunLogger::class);
         $this->app->singleton(\App\Listeners\RunLogSubscriber::class);
+        $this->app->singleton(\App\Support\Logging\SocketLogger::class);
 
         // `php artisan reverb:start` prints who connects, subscribes and leaves (see LoggingPusherServer).
         $this->app->bind(\Laravel\Reverb\Protocols\Pusher\Server::class, \App\Support\Reverb\LoggingPusherServer::class);
@@ -154,6 +155,8 @@ class AppServiceProvider extends ServiceProvider
             Event::subscribe(\App\Listeners\RunLogSubscriber::class);
         }
 
+        $this->logSocketServer();
+
         Company::observe(CompanyObserver::class);
         User::observe(UserObserver::class);
 
@@ -163,5 +166,41 @@ class AppServiceProvider extends ServiceProvider
                     SecurityScheme::http('bearer')
                 );
             });
+    }
+
+    /**
+     * SOCKET_LOGS=true: what happens around `php artisan reverb:start` goes to storage/logs/socket_logs.log too: that the
+     * command starts and how it ends, and every error of the process (e.g. the port is taken, the database is down), which
+     * the server class cannot see because it is not running yet. Connections are logged by LoggingPusherServer.
+     */
+    private function logSocketServer(): void
+    {
+        $logger = $this->app->make(\App\Support\Logging\SocketLogger::class);
+
+        if (!$logger->enabled() || !in_array('reverb:start', $_SERVER['argv'] ?? [], true)) {
+            return;
+        }
+
+        $line = fn(string $text): string => '[' . now()->format('Y-m-d H:i:s') . '] ' . $text;
+
+        Event::listen(\Illuminate\Console\Events\CommandStarting::class, function ($event) use ($logger, $line): void {
+            if ($event->command === 'reverb:start') {
+                $logger->write($line(sprintf('reverb:start starting · pid %d · SOCKET_LOGS on', getmypid())));
+            }
+        });
+
+        Event::listen(CommandFinished::class, function (CommandFinished $event) use ($logger, $line): void {
+            if ($event->command === 'reverb:start') {
+                $logger->write($line("reverb:start stopped · exit code {$event->exitCode}"), $event->exitCode === 0 ? 'info' : 'error');
+            }
+        });
+
+        // Does not stop the normal reporting (the callback returns nothing).
+        $this->app->make(\Illuminate\Contracts\Debug\ExceptionHandler::class)->reportable(
+            fn(\Throwable $exception) => $logger->write(
+                $line(sprintf('error · %s: %s (%s:%d)', get_class($exception), $exception->getMessage(), $exception->getFile(), $exception->getLine())),
+                'error',
+            ),
+        );
     }
 }

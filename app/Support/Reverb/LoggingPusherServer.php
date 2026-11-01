@@ -3,14 +3,16 @@
 namespace App\Support\Reverb;
 
 use App\Models\User;
-use Illuminate\Support\Facades\Log;
+use App\Support\Logging\SocketLogger;
 use Laravel\Reverb\Contracts\Connection;
+use Laravel\Reverb\Protocols\Pusher\Contracts\ChannelManager;
+use Laravel\Reverb\Protocols\Pusher\EventHandler;
 use Laravel\Reverb\Protocols\Pusher\Server;
 use Throwable;
 
 /**
- * Reverb's own Pusher server that also prints who connects, to the terminal of `php artisan reverb:start` (and to the
- * Laravel log): the socket id when a client connects, the user when it subscribes to its private channel, and who
+ * Reverb's own Pusher server that also prints who connects, to the terminal of `php artisan reverb:start` (and, with
+ * SOCKET_LOGS=true, to storage/logs/socket_logs.log): the socket id when a client connects, the user when it subscribes to its private channel, and who
  * left when it disconnects. Reverb itself only prints this with `--debug`, and never names the user.
  */
 class LoggingPusherServer extends Server
@@ -22,6 +24,26 @@ class LoggingPusherServer extends Server
     private array $users = [];
 
     private int $connected = 0;
+
+    public function __construct(ChannelManager $channels, EventHandler $handler, protected SocketLogger $logger)
+    {
+        parent::__construct($channels, $handler);
+
+        $this->write('server started', null, sprintf(
+            'pid %d · %s:%s',
+            getmypid(),
+            config('reverb.servers.reverb.host'),
+            config('reverb.servers.reverb.port'),
+        ));
+    }
+
+    /** A connection failed (bad message, broken handshake, ...). */
+    public function error(Connection $connection, Throwable $exception): void
+    {
+        parent::error($connection, $exception);
+
+        $this->write('error', $connection, get_class($exception) . ': ' . $exception->getMessage(), 'error');
+    }
 
     public function open(Connection $connection): void
     {
@@ -45,7 +67,13 @@ class LoggingPusherServer extends Server
         $channel = is_array($data) ? (string)($data['channel'] ?? '') : '';
 
         // The subscription may have been refused (bad auth); only a channel the connection really joined is reported.
-        if ($channel === '' || !$this->channels->for($from->app())->find($channel)?->subscribed($from)) {
+        if ($channel === '') {
+            return;
+        }
+
+        if (!$this->channels->for($from->app())->find($channel)?->subscribed($from)) {
+            $this->write('subscription refused', $from, "channel: {$channel}", 'warning');
+
             return;
         }
 
@@ -84,11 +112,19 @@ class LoggingPusherServer extends Server
             : "user #{$user->id} ({$user->full_name}) company #{$user->company_id}";
     }
 
-    private function write(string $what, Connection $connection, string $details): void
+    /** One line to the terminal and, when SOCKET_LOGS is on, to the socket log. */
+    private function write(string $what, ?Connection $connection, string $details, string $level = 'info'): void
     {
-        $line = sprintf('[%s] %s · socket %s · %s · online: %d', now()->format('Y-m-d H:i:s'), $what, $connection->id(), $details, $this->connected);
+        $line = sprintf(
+            '[%s] %s%s · %s · online: %d',
+            now()->format('Y-m-d H:i:s'),
+            $what,
+            $connection === null ? '' : " · socket {$connection->id()}",
+            $details,
+            $this->connected,
+        );
 
         fwrite(STDOUT, $line . PHP_EOL);
-        Log::info("reverb: {$line}");
+        $this->logger->write($line, $level);
     }
 }

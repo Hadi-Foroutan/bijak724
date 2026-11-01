@@ -33,6 +33,9 @@ return new class extends Migration {
             $table->foreignId('report_definition_id')->constrained()->cascadeOnDelete();
             $table->foreignId('report_field_id')->constrained()->cascadeOnDelete();
             $table->unsignedInteger('sort_order')->default(0);
+            $table->string('align', 10)->default('right');
+            // Pixels; null = fit the content.
+            $table->unsignedSmallInteger('width')->nullable();
 
             // Explicit name: the default one is longer than MySQL's 64 character limit.
             $table->unique(['report_definition_id', 'report_field_id'], 'report_definition_fields_unique');
@@ -41,7 +44,6 @@ return new class extends Migration {
 
     public function down(): void
     {
-        Schema::table('report_definitions', fn(Blueprint $table) => $table->json('fields')->nullable());
         Schema::dropIfExists('report_definition_fields');
         Schema::dropIfExists('report_fields');
     }

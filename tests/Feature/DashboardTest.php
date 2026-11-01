@@ -313,3 +313,26 @@ function insertDashboardFleet(Company $company): void
         'updated_at' => '2026-09-23 12:00:00',
     ]);
 }
+
+test('with DASHBOARD_CACHE off the dashboard always reads fresh data, with it on the numbers are cached', function () {
+    $count = fn(): int => $this->getJson('/api/user/dashboard/waybills/daily')->assertSuccessful()->json('data.items.29.count');
+    $issue = fn() => insertDashboardWaybill($this->company, [
+        'status' => WaybillStatus::Completed->value,
+        'issued_at' => '2026-09-23 08:00:00',
+    ]);
+
+    $issue();
+    expect($count())->toBe(1);
+
+    $issue();
+    expect($count())->toBe(1); // still the cached number
+
+    config(['dashboard.cache_enabled' => false]);
+    expect($count())->toBe(2); // fresh, and the cache is not used
+
+    $issue();
+    expect($count())->toBe(3);
+
+    config(['dashboard.cache_enabled' => true]);
+    expect($count())->toBe(1); // the old cached number comes back
+});

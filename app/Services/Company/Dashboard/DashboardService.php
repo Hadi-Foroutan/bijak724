@@ -5,6 +5,7 @@ namespace App\Services\Company\Dashboard;
 use App\Helpers\ServiceResult;
 use App\Interfaces\Company\DashboardRepositoryInterface;
 use Carbon\CarbonImmutable;
+use Closure;
 use Illuminate\Support\Facades\Cache;
 
 class DashboardService
@@ -22,9 +23,8 @@ class DashboardService
         $today = CarbonImmutable::today();
 
         return ServiceResult::success(
-            Cache::remember(
+            $this->remember(
                 $this->cacheKey($companyId, 'summary', $today->toDateString()),
-                $this->cacheTtl(),
                 fn(): array => $this->dashboardRepository->summary($companyId, $today),
             ),
         );
@@ -36,9 +36,8 @@ class DashboardService
         $from = $to->startOfDay()->subDays(29);
 
         return ServiceResult::success(
-            Cache::remember(
+            $this->remember(
                 $this->cacheKey($companyId, 'daily-waybills', $to->toDateString()),
-                $this->cacheTtl(),
                 function () use ($companyId, $from, $to): array {
                     $counts = $this->dashboardRepository->issuedWaybillsByDay(
                         $companyId,
@@ -72,9 +71,8 @@ class DashboardService
         $from = $to->startOfMonth()->subMonths(5);
 
         return ServiceResult::success(
-            Cache::remember(
+            $this->remember(
                 $this->cacheKey($companyId, 'monthly-waybills', $to->format('Y-m')),
-                $this->cacheTtl(),
                 function () use ($companyId, $from, $to): array {
                     $counts = $this->dashboardRepository->issuedWaybillsByMonth(
                         $companyId,
@@ -106,9 +104,8 @@ class DashboardService
     public function topCargos(int $companyId): ServiceResult
     {
         return ServiceResult::success(
-            Cache::remember(
+            $this->remember(
                 $this->cacheKey($companyId, 'top-cargos'),
-                $this->cacheTtl(),
                 fn(): array => [
                     'items' => $this->dashboardRepository->topCargos($companyId),
                 ],
@@ -119,14 +116,23 @@ class DashboardService
     public function topDrivers(int $companyId): ServiceResult
     {
         return ServiceResult::success(
-            Cache::remember(
+            $this->remember(
                 $this->cacheKey($companyId, 'top-drivers'),
-                $this->cacheTtl(),
                 fn(): array => [
                     'items' => $this->dashboardRepository->topDrivers($companyId),
                 ],
             ),
         );
+    }
+
+    /** DASHBOARD_CACHE=false in the .env: every call reads the database (nothing is read from or written to the cache). */
+    private function remember(string $key, Closure $callback): array
+    {
+        if (!config('dashboard.cache_enabled', true)) {
+            return $callback();
+        }
+
+        return Cache::remember($key, $this->cacheTtl(), $callback);
     }
 
     private function cacheKey(int $companyId, string $metric, ?string $period = null): string

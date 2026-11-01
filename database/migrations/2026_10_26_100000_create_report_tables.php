@@ -12,7 +12,6 @@ return new class extends Migration {
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('name');
-            $table->json('fields');
             $table->timestamps();
 
             $table->index(['company_id', 'user_id']);
@@ -23,10 +22,16 @@ return new class extends Migration {
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('report_definition_id')->nullable()->constrained()->nullOnDelete();
+            // Set when the export is a ready-made frequent report (config/report_templates.php) instead of a user's report.
+            $table->string('template', 50)->nullable();
             // The report name and fields are copied so a later edit or delete does not change a queued export.
             $table->string('name');
             $table->json('fields');
+            // Align and width per field key, as they were when the export was requested.
+            $table->json('column_options')->nullable();
             $table->json('filters')->nullable();
+            // The creators whose waybills the user may see, captured at request time (the queue worker has no token).
+            $table->json('visible_creator_ids')->nullable();
             $table->string('format', 10);
             $table->string('status', 20)->default('queued')->index();
             $table->string('file_path')->nullable();

@@ -469,3 +469,20 @@ curl -X POST http://localhost:8000/api/user/reports/1/exports \
 
 شناسهٔ کاربر از کانال خصوصی او (`private-users.{id}.reports`) خوانده می‌شود، و فقط وقتی چاپ می‌شود که اشتراک واقعاً تأیید شده باشد.
 `online` تعداد اتصال‌های باز است. کلاس: `app/Support/Reverb/LoggingPusherServer.php`.
+
+## لاگ سوکت (`SOCKET_LOGS`)
+
+برای اینکه ببینید سرور سوکت روی سرور کار می‌کند، در `.env` سرور بگذارید `SOCKET_LOGS=true`؛ بعد `php artisan optimize:clear` و `php artisan reverb:restart`.
+همان خط‌هایی که `php artisan reverb:start` در ترمینال چاپ می‌کند در `storage/logs/socket_logs.log` هم نوشته می‌شود:
+
+```
+[2026-11-01 14:35:44] reverb:start starting · pid 12824 · SOCKET_LOGS on
+[2026-11-01 14:35:44] server started · pid 12824 · 0.0.0.0:8080 · online: 0
+[2026-11-01 14:36:02] connected · socket 123.456 · origin: https://app.example.com · online: 1
+[2026-11-01 14:36:02] user subscribed · socket 123.456 · user #5 (نام) company #3 · channel: private-users.5.reports · online: 1
+[2026-11-01 14:36:02] subscription refused · socket 123.456 · channel: private-users.9.reports · online: 1
+[2026-11-01 14:40:10] disconnected · socket 123.456 · user #5 (نام) company #3 · online: 0
+```
+
+خطاها هم ثبت می‌شوند: خطای اتصال (`error · socket ...`)، خطای راه‌اندازی (مثلاً پورت اشغال است: `error · ...`) و پایان پروسه (`reverb:start stopped · exit code N`).
+اگر بعد از deploy خط `server started` تازه‌ای نیست، سرور سوکت بالا نیامده است (کرون `keep-services-alive.sh` را بررسی کنید). فایل یک‌تکه است و بزرگ می‌شود؛ هر وقت خواستید خالی‌اش کنید.
