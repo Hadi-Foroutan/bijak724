@@ -135,7 +135,7 @@ jobs:
           update_env_value APP_DEBUG false
           update_env_value APP_URL "${deployment_app_url}"
           # The port Reverb listens on on the server (locally it stays on the default 8080 of config/reverb.php).
-          update_env_value REVERB_SERVER_PORT 9001
+          update_env_value REVERB_SERVER_PORT 6001
 
           mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
           chmod -R ug+rwX storage bootstrap/cache
