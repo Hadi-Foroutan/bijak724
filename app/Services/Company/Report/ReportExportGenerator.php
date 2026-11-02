@@ -19,24 +19,31 @@ use Illuminate\Support\Str;
 use RuntimeException;
 use Throwable;
 
-/** Runs on the queue: builds the file of one export and tells its owner about every step. */
+/** Runs on the queue (by GenerateReportExport): builds the file of one export; the status changes and socket messages go through the lifecycle. */
 class ReportExportGenerator
 {
     /** Key of the totals record, so the writers can tell it from a waybill. */
     public const TOTAL_MARKER = '__total';
 
     public function __construct(
-        protected ReportExportRepositoryInterface  $reportExportRepository,
+        protected ReportExportLifecycle            $lifecycle,
         protected ReportWaybillRepositoryInterface $reportWaybillRepository,
         protected WaybillReportFieldCatalog        $catalog,
         protected XlsxReportWriter                 $xlsx,
         protected PdfReportWriter                  $pdf,
         protected GlobalSettingService             $settings,
-        protected ReportExportNotifier             $notifier,
         protected CompanyInterface                 $companyRepository,
         protected TemplateDocumentBuilder          $templates,
     )
     {
+    }
+
+    /** How many waybills the export is about, to decide which queue it goes to (light or heavy). */
+    public function waybillCount(ReportExport $export): int
+    {
+        return $export->template !== null
+            ? $this->templates->waybillCount($export)
+            : $this->reportWaybillRepository->count($export->company_id, $export->visible_creator_ids, $export->filters ?? []);
     }
 
     public function generate(ReportExport $export): void
@@ -46,7 +53,7 @@ class ReportExportGenerator
         }
 
         $this->catalog->refresh();
-        $export = $this->changeStatus($export, ['status' => ReportExportStatus::Processing, 'started_at' => now()]);
+        $export = $this->lifecycle->processing($export);
 
         $diskName = config('waybill_report.disk');
         $disk = Storage::disk($diskName);
@@ -80,15 +87,7 @@ class ReportExportGenerator
 
             $retentionHours = (int)$this->settings->value(GlobalSettingKey::ReportRetentionHours);
 
-            $this->changeStatus($export, [
-                'status' => ReportExportStatus::Completed,
-                'file_path' => $relativePath,
-                'file_size' => $disk->size($relativePath),
-                'rows_count' => $document->total,
-                'completed_at' => now(),
-                'expires_at' => now()->addHours(max($retentionHours, 1)),
-                'error' => null,
-            ]);
+            $this->lifecycle->completed($export, $relativePath, $disk->size($relativePath), $document->total, $retentionHours);
         } catch (Throwable $exception) {
             report($exception);
 
@@ -96,24 +95,10 @@ class ReportExportGenerator
                 $disk->delete($relativePath);
             }
 
-            $this->fail($export, $exception instanceof RuntimeException
+            $this->lifecycle->failed($export, $exception instanceof RuntimeException
                 ? $exception->getMessage()
                 : 'ساخت گزارش با خطا مواجه شد.');
         }
-    }
-
-    /** Marks an export failed (also used when the worker died before it could record a result). */
-    public function fail(ReportExport $export, string $message = 'ساخت گزارش با خطا مواجه شد.'): ReportExport
-    {
-        if (in_array($export->status, [ReportExportStatus::Completed, ReportExportStatus::Failed], true)) {
-            return $export;
-        }
-
-        return $this->changeStatus($export, [
-            'status' => ReportExportStatus::Failed,
-            'error' => $message,
-            'completed_at' => now(),
-        ]);
     }
 
     /** The document of a report the user built from the field catalog. */
@@ -198,15 +183,5 @@ class ReportExportGenerator
         $company = $this->companyRepository->find($export->company_id);
 
         return $company === null ? $export->name : "{$company->name} - کد سازمانی: {$company->organization_code}";
-    }
-
-    /** @param array<string, mixed> $attributes */
-    private function changeStatus(ReportExport $export, array $attributes): ReportExport
-    {
-        $export = $this->reportExportRepository->update($export, $attributes);
-
-        $this->notifier->notify($export);
-
-        return $export;
     }
 }

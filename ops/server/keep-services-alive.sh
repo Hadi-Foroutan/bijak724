@@ -56,7 +56,7 @@ start() {
 }
 
 # SKIP_QUEUE_WORKER=1 when the queue is run by its own cron job (`queue:work --stop-when-empty`).
-[ "${SKIP_QUEUE_WORKER:-0}" = "1" ] || start queue-worker "${PHP_BIN}" artisan queue:work --queue=reports,default --sleep=3 --tries=1 --timeout=1800 --max-time=3600
+[ "${SKIP_QUEUE_WORKER:-0}" = "1" ] || start queue-worker "${PHP_BIN}" artisan queue:work --queue=reports-light,default --sleep=1 --tries=1 --timeout=300 --max-time=3600
 
 if "${PHP_BIN}" artisan list --raw 2>/dev/null | grep -q '^reverb:start'; then
     start reverb "${PHP_BIN}" artisan reverb:start

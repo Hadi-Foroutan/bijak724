@@ -204,6 +204,11 @@ POST /api/user/reports/3/exports
 
 `POST /api/user/reports/{report}/exports` — مجوز: `user.reports.exports.store` — پاسخ `202`
 
+> **دو صف: سبک و سنگین.** ساخت فایل همیشه فقط با جاب صف انجام می‌شود (هیچ‌وقت داخل درخواست). اگر تعداد بارنامه‌های گزارش حداکثر
+> `REPORT_LIGHT_MAX_ROWS` (پیش‌فرض `2000`، در `.env` سرور) باشد، جاب روی **صف سبک** می‌رود؛ workerِ آن همیشه روشن است و جاب را همان لحظه
+> برمی‌دارد. بیشتر از آن روی **صف سنگین** می‌رود که با کرون هر دقیقه اجرا می‌شود، پس گزارش‌های کوچک پشت گزارش‌های بزرگ منتظر نمی‌مانند.
+> برای فرانت فرقی ندارد: همیشه پاسخ `202` با `status: "queued"` می‌آید و بقیه از سوکت یا `GET /report-exports/{id}` دنبال می‌شود.
+
 | فیلد | توضیح |
 |------|-------|
 | `format`! | `xlsx` یا `pdf` |
@@ -297,7 +302,7 @@ POST /api/user/reports/3/exports
 صف گزارش‌ها جداست و باید یک worker برایش اجرا باشد (یکی، تا گزارش‌ها به‌نوبت ساخته شوند)، و scheduler برای پاک‌سازی:
 
 ```bash
-php artisan queue:work --queue=reports
+php artisan queue:work --queue=reports-light,reports-heavy,default
 php artisan schedule:work   # یا cron: * * * * * php artisan schedule:run
 ```
 
@@ -334,7 +339,7 @@ php artisan schedule:work   # یا cron: * * * * * php artisan schedule:run
 
 ```
 cd domains/api.bijak724.ir/public_html && bash ops/server/run-logged.sh scheduler -- php artisan schedule:run >> /dev/null 2>&1
-cd domains/api.bijak724.ir/public_html && bash ops/server/run-logged.sh --no-overlap queue -- php artisan queue:work --queue=reports,default --stop-when-empty --tries=1 --timeout=1800 >> /dev/null 2>&1
+cd domains/api.bijak724.ir/public_html && bash ops/server/run-logged.sh --no-overlap queue-heavy -- php artisan queue:work --queue=reports-heavy --stop-when-empty --tries=1 --timeout=1800 >> /dev/null 2>&1
 cd domains/api.bijak724.ir/public_html && SKIP_QUEUE_WORKER=1 bash ops/server/run-logged.sh reverb -- bash ops/server/keep-services-alive.sh . php >> /dev/null 2>&1
 ```
 

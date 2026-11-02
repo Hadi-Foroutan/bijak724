@@ -128,7 +128,7 @@ test('an export request is queued at once, announced on the users private channe
         ->assertJsonPath('data.status', 'queued')
         ->assertJsonPath('data.download_url', null);
 
-    Queue::assertPushedOn('reports', GenerateReportExport::class);
+    Queue::assertPushedOn('reports-light', GenerateReportExport::class);
     Event::assertDispatched(
         ReportExportStatusChanged::class,
         fn(ReportExportStatusChanged $event) => $event->broadcastAs() === 'report-export.queued'
@@ -574,4 +574,20 @@ test('the excel file uses the font dropped in the font folder, named as written 
 
     array_map('unlink', glob($directory . '/*'));
     rmdir($directory);
+});
+
+test('a small export goes to the light queue and a big one to the heavy queue', function () {
+    Queue::fake();
+    $id = ($this->makeReport)()->json('data.id');
+
+    // The user sees 2 waybills: at the limit (REPORT_LIGHT_MAX_ROWS) it is still light.
+    config(['waybill_report.light_max_rows' => 2]);
+    ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'xlsx'])->assertStatus(202);
+    Queue::assertPushedOn('reports-light', GenerateReportExport::class, fn(GenerateReportExport $job) => $job->timeout === 300);
+    Queue::assertNotPushed(GenerateReportExport::class, fn(GenerateReportExport $job) => $job->queue === 'reports-heavy');
+
+    // One waybill more than the limit: heavy, with the long time limit.
+    config(['waybill_report.light_max_rows' => 1]);
+    ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'xlsx'])->assertStatus(202);
+    Queue::assertPushedOn('reports-heavy', GenerateReportExport::class, fn(GenerateReportExport $job) => $job->timeout === 1800);
 });

@@ -38,6 +38,14 @@ class TemplateDocumentBuilder
     {
     }
 
+    /** How many waybills the export is about (the type's own conditions plus the frontend's filters). */
+    public function waybillCount(ReportExport $export): int
+    {
+        $filters = [...$this->registry->find((string)$export->template)->constraints(), ...($export->filters ?? [])];
+
+        return $this->reportWaybillRepository->count($export->company_id, $export->visible_creator_ids, $filters);
+    }
+
     public function build(ReportExport $export): ReportDocument
     {
         $template = $this->registry->find((string)$export->template);

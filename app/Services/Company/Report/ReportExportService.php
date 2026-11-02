@@ -16,15 +16,19 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
-/** Exports are never built inside the request: they are queued, and the user follows them by list and socket. */
+/**
+ * Takes the requests for an export and the reads on them. An export is never built here: the request only creates it
+ * (through the lifecycle, which also announces it) and puts a job on the light or the heavy queue by its size.
+ */
 class ReportExportService
 {
     public function __construct(
         protected ReportExportRepositoryInterface $reportExportRepository,
         protected ReportRepositoryInterface       $reportRepository,
-        protected ReportExportNotifier            $notifier,
+        protected ReportExportLifecycle           $lifecycle,
         protected WaybillVisibilityService        $visibility,
         protected ReportTemplateRegistry          $templates,
+        protected ReportExportGenerator           $generator,
     )
     {
     }
@@ -74,21 +78,25 @@ class ReportExportService
     {
         $this->ensureBelowActiveLimit($companyId, $user->getKey());
 
-        $export = $this->reportExportRepository->create([
+        // Announced as `queued` before the job exists: with the sync queue driver the job would otherwise finish first.
+        $export = $this->lifecycle->queued([
             'company_id' => $companyId,
             'user_id' => $user->getKey(),
             // Taken now: the queue worker has no access token, so it cannot tell what the user may see by itself.
             'visible_creator_ids' => $this->visibility->creatorIds($user),
             ...$attributes,
             'format' => $format,
-            'status' => ReportExportStatus::Queued,
         ]);
 
-        // Announce first: with the sync queue driver the job would otherwise finish before the "queued" message.
-        $this->notifier->notify($export);
-        GenerateReportExport::dispatch($export->getKey())->afterCommit();
+        GenerateReportExport::dispatch($export->getKey(), $this->isLight($export))->afterCommit();
 
         return ServiceResult::success($export);
+    }
+
+    /** Up to REPORT_LIGHT_MAX_ROWS waybills: the light queue, whose worker is always listening. */
+    private function isLight(ReportExport $export): bool
+    {
+        return $this->generator->waybillCount($export) <= (int)config('waybill_report.light_max_rows');
     }
 
     /** @param array<string, mixed> $filters */
@@ -136,12 +144,7 @@ class ReportExportService
 
         foreach ($expired as $export) {
             $this->deleteFile($export);
-            $export = $this->reportExportRepository->update($export, [
-                'status' => ReportExportStatus::Expired,
-                'file_path' => null,
-            ]);
-            $this->notifier->notify($export);
-            $this->reportExportRepository->delete($export);
+            $this->reportExportRepository->delete($this->lifecycle->expired($export));
         }
 
         return $expired->count();

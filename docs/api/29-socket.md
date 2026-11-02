@@ -408,7 +408,7 @@ await fetch(`${API_BASE}/user/reports/${reportId}/exports`, {
 ```bash
 php artisan serve                       # API روی 8000
 php artisan reverb:start --debug        # سوکت روی 8080
-php artisan queue:work --queue=reports,default   # ساخت گزارش‌ها
+php artisan queue:work --queue=reports-light,reports-heavy,default   # ساخت گزارش‌ها (محلی: هر دو صف)
 ```
 
 ### ۷.۳ فرستادن پیام آزمایشی
@@ -435,7 +435,7 @@ curl -X POST http://localhost:8000/api/user/reports/1/exports \
   -d '{"format":"xlsx"}'
 ```
 
-اگر `queued` آمد ولی `processing` نیامد، worker صف (`queue:work --queue=reports`) اجرا نیست.
+اگر `queued` آمد ولی `processing` نیامد، worker صف (`queue:work --queue=reports-light,default`) اجرا نیست.
 
 ### ۷.۴ عیب‌یابی
 
@@ -487,7 +487,7 @@ ProxyPassReverse "/apps" "http://127.0.0.1:9004/apps"
 - فرانت: `wsHost = api.example.com`، `wssPort = 443`، `forceTLS: true`، `enabledTransports: ["ws", "wss"]` (بخش ۴).
 - امنیت: `REVERB_APP_SECRET` را هرگز در فرانت نگذارید؛ مقدارهای `APP_ID/KEY/SECRET` را روی سرور تصادفی بگذارید (نه `local`)؛ کانال‌ها همه
   خصوصی هستند و با توکن Sanctum تأیید می‌شوند؛ `REVERB_ALLOWED_ORIGINS` مانع استفادهٔ سایت‌های دیگر از سوکت می‌شود.
-- Worker صف گزارش‌ها جداست (`queue:work --queue=reports`) و scheduler برای پاک‌سازی فایل‌ها لازم است ([28-report-builder.md](28-report-builder.md)).
+- Workerهای صف گزارش‌ها جدا هستند (صف سبک با Supervisor، صف سنگین با کرون؛ [server/supervisor.md](../server/supervisor.md)) و scheduler برای پاک‌سازی فایل‌ها لازم است ([28-report-builder.md](28-report-builder.md)).
 - اگر چند سرور Reverb دارید، `REVERB_SCALING_ENABLED=true` (به Redis نیاز دارد).
 
 ## لاگ اتصال‌ها در ترمینال سرور
