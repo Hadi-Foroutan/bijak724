@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\City\CityController;
 use App\Http\Controllers\Admin\Company\CompanyController;
 use App\Http\Controllers\Admin\Company\CompanySupportTokenController;
+use App\Http\Controllers\Admin\Dashboard\DashboardController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\Permission\PermissionController;
 use App\Http\Controllers\Admin\Report\ReportFieldController;
@@ -11,6 +12,12 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\User\UserController;
 use App\Http\Controllers\Admin\WaybillController;
 use Illuminate\Support\Facades\Route;
+
+// Dashboard
+Route::prefix('dashboard')->name('dashboard.')->controller(DashboardController::class)->group(function () {
+    Route::get('/', 'index')->name('index');
+    Route::get('companies/top', 'topCompanies')->name('companies.top');
+});
 
 Route::get('companies/aggregate-report', [CompanyController::class, 'aggregateReport'])
     ->name('companies.aggregate-report');

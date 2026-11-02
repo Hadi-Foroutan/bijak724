@@ -12,9 +12,9 @@
 |------|-----------|------------------------|
 | سرور API | `http://localhost:8000` | `https://api.example.com` |
 | پایهٔ API (`API_BASE`) | `http://localhost:8000/api` | `https://api.example.com/api` |
-| سرور وب‌سوکت (Reverb) | `ws://localhost:8080` | `ws://api.example.com:8080` (همان دامنه، پورت جدا) |
+| سرور وب‌سوکت (Reverb) | `ws://localhost:8080` | `wss://api.example.com` (پورت ۴۴۳، از طریق پروکسی Apache) |
 | احراز هویت کانال خصوصی | `POST http://localhost:8000/api/broadcasting/auth` | `POST https://api.example.com/api/broadcasting/auth` |
-| آدرس خام اتصال | `ws://localhost:8080/app/{APP_KEY}` | `ws://api.example.com:8080/app/{APP_KEY}` |
+| آدرس خام اتصال | `ws://localhost:8080/app/{APP_KEY}` | `wss://api.example.com/app/{APP_KEY}` |
 
 مقدارهای `REVERB_APP_KEY`، `REVERB_HOST`، `REVERB_PORT` و `REVERB_SCHEME` را بک‌اند می‌دهد (همان‌هایی که در `.env` سرور هست).
 `REVERB_APP_SECRET` **سری است و هرگز در فرانت قرار نمی‌گیرد**؛ فقط `APP_KEY` عمومی است.
@@ -447,13 +447,46 @@ curl -X POST http://localhost:8000/api/user/reports/1/exports \
 | روی HTTPS خطای mixed content | `forceTLS: true` و `wss://` را فعال کنید (`VITE_REVERB_SCHEME=https`) |
 | در پروداکشن بعد از چند ثانیه قطع می‌شود | پروکسی (Nginx) باید هدرهای `Upgrade`/`Connection` را عبور دهد |
 
-## ۸. نکتهٔ استقرار (برای DevOps)
+## ۸. نکتهٔ استقرار (برای DevOps): اتصال امن `wss` روی ۴۴۳
 
-- Reverb روی همان دامنهٔ برنامه و با یک پورت جدا اجرا می‌شود (بدون پروکسی و بدون ساب‌دامین): مثلاً `api.example.com:8080`.
-  در `.env` سرور: `REVERB_HOST=api.example.com`، `REVERB_PORT=8080`، `REVERB_SCHEME=http` (یا `https` اگر خود Reverb TLS دارد).
-- پروسه را با `php artisan reverb:start` (ترجیحاً با Supervisor) بالا نگه دارید و پورت انتخابی را در فایروال باز کنید.
-- فرانت با همان `host` و `port` وصل می‌شود: `ws://api.example.com:8080/app/{APP_KEY}`. اگر سایت روی `https` است مرورگر اتصال
-  `ws://` را به‌عنوان mixed content مسدود می‌کند؛ در آن حالت Reverb باید خودش TLS داشته باشد (`wss`) یا از پروکسی استفاده شود.
+مرورگر روی سایت `https` فقط اتصال `wss://` را قبول می‌کند. طرح امن: **TLS را وب‌سرور (Apache) با گواهی همان دامنه انجام می‌دهد و Reverb فقط روی
+پورت داخلی `127.0.0.1` گوش می‌دهد** (پورت داخلی در فایروال باز نمی‌شود).
+
+```
+مرورگر ──wss:443──► Apache (TLS) ──► ws://127.0.0.1:6001  (Reverb)
+```
+
+`.env` سرور:
+
+```env
+REVERB_APP_ID=<عدد/متن تصادفی>
+REVERB_APP_KEY=<تصادفی؛ مثلاً php -r 'echo bin2hex(random_bytes(16));'>
+REVERB_APP_SECRET=<تصادفی و سری>
+REVERB_HOST=api.example.com          # آدرس عمومی (همان دامنه)
+REVERB_PORT=443
+REVERB_SCHEME=https
+REVERB_SERVER_HOST=127.0.0.1         # خود Reverb فقط داخل سرور
+REVERB_SERVER_PORT=6001              # پورت داخلی آزاد (نه ۸۰۸۰ که Apache دارد)
+REVERB_ALLOWED_ORIGINS=panel.example.com   # فقط سایت‌های فرانت (فقط host، با کاما)
+```
+
+پروکسی Apache برای دامنه (ماژول‌های `proxy`، `proxy_http` و `proxy_wstunnel` فعال باشند؛ در DirectAdmin در «Custom HTTPD Configurations»):
+
+```apache
+ProxyPreserveHost On
+RequestHeader set X-Forwarded-Proto "https"
+ProxyPass        "/app"  "ws://127.0.0.1:6001/app"
+ProxyPassReverse "/app"  "ws://127.0.0.1:6001/app"
+ProxyPass        "/apps" "http://127.0.0.1:6001/apps"
+ProxyPassReverse "/apps" "http://127.0.0.1:6001/apps"
+```
+
+`/app` وب‌سوکت مرورگر است و `/apps` راهی که Laravel رویدادها را به Reverb می‌فرستد؛ هر دو لازم‌اند.
+
+- پروسه را با `php artisan reverb:start` (کرون `ops/server/keep-services-alive.sh` یا Supervisor) بالا نگه دارید.
+- فرانت: `wsHost = api.example.com`، `wssPort = 443`، `forceTLS: true`، `enabledTransports: ["ws", "wss"]` (بخش ۴).
+- امنیت: `REVERB_APP_SECRET` را هرگز در فرانت نگذارید؛ مقدارهای `APP_ID/KEY/SECRET` را روی سرور تصادفی بگذارید (نه `local`)؛ کانال‌ها همه
+  خصوصی هستند و با توکن Sanctum تأیید می‌شوند؛ `REVERB_ALLOWED_ORIGINS` مانع استفادهٔ سایت‌های دیگر از سوکت می‌شود.
 - Worker صف گزارش‌ها جداست (`queue:work --queue=reports`) و scheduler برای پاک‌سازی فایل‌ها لازم است ([28-report-builder.md](28-report-builder.md)).
 - اگر چند سرور Reverb دارید، `REVERB_SCALING_ENABLED=true` (به Redis نیاز دارد).
 

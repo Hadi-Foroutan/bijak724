@@ -2,6 +2,7 @@
 
 return [
     'groups' => [
+        'admin.dashboard.' => 'مشاهده داشبورد ادمین',
         'admin.companies.' => 'مدیریت شرکت‌های ادمین',
         'admin.cities.' => 'مدیریت شهرهای ادمین',
         'admin.notifications.' => 'مدیریت اعلان‌های ادمین',

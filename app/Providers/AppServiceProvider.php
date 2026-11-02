@@ -104,6 +104,7 @@ class AppServiceProvider extends ServiceProvider
         CompanySettingRepositoryInterface::class => CompanySettingRepository::class,
         SharedAdditionalFieldRepositoryInterface::class => SharedAdditionalFieldRepository::class,
         DashboardRepositoryInterface::class => DashboardRepository::class,
+        \App\Interfaces\AdminDashboardRepositoryInterface::class => \App\Repositories\AdminDashboardRepository::class,
         CargoGroupRepositoryInterface::class => CargoGroupRepository::class,
         InsuranceRepositoryInterface::class => InsuranceRepository::class,
         TechnicalManagerRepositoryInterface::class => TechnicalManagerRepository::class,
