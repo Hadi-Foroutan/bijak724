@@ -135,7 +135,9 @@ jobs:
           update_env_value APP_DEBUG false
           update_env_value APP_URL "${deployment_app_url}"
           # The port Reverb listens on on the server (locally it stays on the default 8080 of config/reverb.php).
-          update_env_value REVERB_SERVER_PORT 6001
+          update_env_value REVERB_SERVER_PORT 9004
+          # Laravel sends its events straight to the local Reverb, on the same port (REVERB_PUBLISH_* in the server .env).
+          update_env_value REVERB_PUBLISH_PORT 9004
 
           mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
           chmod -R ug+rwX storage bootstrap/cache
@@ -158,9 +160,4 @@ jobs:
           php artisan queue:restart
           php artisan reverb:restart || true
 
-          # Make sure Reverb is running afterwards: the old one needs a few seconds to see the restart signal and exit, then
-          # this starts it again with the new config. It never starts a second copy (a running one is left alone), and a
-          # cron job can run the same script every minute to bring it back if it ever dies.
-          sleep 10
-          SKIP_QUEUE_WORKER=1 bash ops/server/keep-services-alive.sh "${deployment_path}" php || true
           REMOTE

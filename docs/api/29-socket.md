@@ -453,7 +453,7 @@ curl -X POST http://localhost:8000/api/user/reports/1/exports \
 پورت داخلی `127.0.0.1` گوش می‌دهد** (پورت داخلی در فایروال باز نمی‌شود).
 
 ```
-مرورگر ──wss:443──► Apache (TLS) ──► ws://127.0.0.1:6001  (Reverb)
+مرورگر ──wss:443──► Apache (TLS) ──► ws://127.0.0.1:9004  (Reverb)
 ```
 
 `.env` سرور:
@@ -466,7 +466,7 @@ REVERB_HOST=api.example.com          # آدرس عمومی (همان دامنه)
 REVERB_PORT=443
 REVERB_SCHEME=https
 REVERB_SERVER_HOST=127.0.0.1         # خود Reverb فقط داخل سرور
-REVERB_SERVER_PORT=6001              # پورت داخلی آزاد (نه ۸۰۸۰ که Apache دارد)
+REVERB_SERVER_PORT=9004              # پورت داخلی آزاد (نه ۸۰۸۰ که Apache دارد)
 REVERB_ALLOWED_ORIGINS=panel.example.com   # فقط سایت‌های فرانت (فقط host، با کاما)
 ```
 
@@ -475,10 +475,10 @@ REVERB_ALLOWED_ORIGINS=panel.example.com   # فقط سایت‌های فرانت
 ```apache
 ProxyPreserveHost On
 RequestHeader set X-Forwarded-Proto "https"
-ProxyPass        "/app"  "ws://127.0.0.1:6001/app"
-ProxyPassReverse "/app"  "ws://127.0.0.1:6001/app"
-ProxyPass        "/apps" "http://127.0.0.1:6001/apps"
-ProxyPassReverse "/apps" "http://127.0.0.1:6001/apps"
+ProxyPass        "/app"  "ws://127.0.0.1:9004/app"
+ProxyPassReverse "/app"  "ws://127.0.0.1:9004/app"
+ProxyPass        "/apps" "http://127.0.0.1:9004/apps"
+ProxyPassReverse "/apps" "http://127.0.0.1:9004/apps"
 ```
 
 `/app` وب‌سوکت مرورگر است و `/apps` راهی که Laravel رویدادها را به Reverb می‌فرستد؛ هر دو لازم‌اند.
