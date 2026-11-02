@@ -157,4 +157,10 @@ jobs:
           # the server's cron jobs (see ops/server/keep-services-alive.sh).
           php artisan queue:restart
           php artisan reverb:restart || true
+
+          # Make sure Reverb is running afterwards: the old one needs a few seconds to see the restart signal and exit, then
+          # this starts it again with the new config. It never starts a second copy (a running one is left alone), and a
+          # cron job can run the same script every minute to bring it back if it ever dies.
+          sleep 10
+          SKIP_QUEUE_WORKER=1 bash ops/server/keep-services-alive.sh "${deployment_path}" php || true
           REMOTE

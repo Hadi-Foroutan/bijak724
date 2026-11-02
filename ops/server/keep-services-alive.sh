@@ -45,7 +45,12 @@ start() {
     fi
 
     # `9>&-` closes the lock for the child, otherwise the daemon would hold it forever.
-    nohup "$@" >> "storage/logs/${name}.log" 2>&1 9>&- &
+    # `< /dev/null`: the child must not keep the caller's stdin (e.g. the ssh session of a deploy) open; `setsid` detaches it from that session.
+    if command -v setsid >/dev/null 2>&1; then
+        setsid nohup "$@" >> "storage/logs/${name}.log" 2>&1 9>&- < /dev/null &
+    else
+        nohup "$@" >> "storage/logs/${name}.log" 2>&1 9>&- < /dev/null &
+    fi
     echo $! > "storage/run/${name}.pid"
     echo "$(date '+%F %T') started ${name} (pid $!)"
 }
