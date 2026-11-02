@@ -164,8 +164,8 @@ jobs:
           php artisan up
           trap - EXIT
 
-          # The queue workers (cron jobs, see ops/server/keep-services-alive.sh) are only told to stop: each exits after its current
-          # work and the cron job starts it again with the new code.
+          # The queue workers are only told to stop: each exits after its current job and is started again with the new code and .env,
+          # by Supervisor (light queue, program `bijak-queue-light`) or by the cron job (heavy queue). See docs/server/supervisor.md.
           php artisan queue:restart
 
           # Reverb runs under Supervisor (program `bijak-reverb`): restarting it makes it read the new .env (port, logs, ...).

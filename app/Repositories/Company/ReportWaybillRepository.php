@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Company;
 
+use App\Enums\WaybillStatus;
 use App\Interfaces\Company\ReportWaybillRepositoryInterface;
 use App\Models\Company\Waybill;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -25,12 +26,23 @@ class ReportWaybillRepository implements ReportWaybillRepositoryInterface
 
     public function count(int $companyId, ?array $creatorIds, array $filters): int
     {
-        return $this->query($companyId, $creatorIds, [], $filters)->reorder()->count();
+        return $this->completed($this->query($companyId, $creatorIds, [], $filters))->reorder()->count();
     }
 
     public function lazy(int $companyId, ?array $creatorIds, array $relations, array $filters, int $chunkSize): LazyCollection
     {
-        return $this->query($companyId, $creatorIds, $relations, $filters)->lazy($chunkSize);
+        return $this->completed($this->query($companyId, $creatorIds, $relations, $filters))->lazy($chunkSize);
+    }
+
+    /**
+     * Exports (and the count that picks their queue) only contain completed waybills.
+     *
+     * @param Builder<Waybill> $query
+     * @return Builder<Waybill>
+     */
+    private function completed(Builder $query): Builder
+    {
+        return $query->where('status', WaybillStatus::Completed)->orWhere('status',WaybillStatus::Referral);
     }
 
     /**

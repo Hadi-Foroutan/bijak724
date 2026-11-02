@@ -24,13 +24,15 @@ interface ReportWaybillRepositoryInterface
     public function search(int $companyId, ?array $creatorIds, array $relations, array $filters): Collection|LengthAwarePaginator;
 
     /**
+     * Counts the completed waybills only: it is the size of an export, which never contains the others.
+     *
      * @param list<int>|null $creatorIds
      * @param array<string, mixed> $filters
      */
     public function count(int $companyId, ?array $creatorIds, array $filters): int;
 
     /**
-     * Every matching waybill, read in chunks so an export never holds them all in memory.
+     * Every matching completed waybill, read in chunks so an export never holds them all in memory.
      *
      * @param list<int>|null $creatorIds
      * @param list<string> $relations
