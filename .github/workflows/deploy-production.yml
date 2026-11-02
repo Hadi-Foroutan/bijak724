@@ -98,6 +98,9 @@ jobs:
           SERVER_PORT: ${{ vars.SERVER_PORT }}
           SERVER_USER: ${{ vars.SERVER_USER }}
           SERVER_PATH: ${{ vars.SERVER_PATH }}
+          # Secrets of the `production` environment (never written in this file): the Supervisor login that restarts Reverb.
+          SUPERVISOR_USER: ${{ secrets.SUPERVISOR_USER }}
+          SUPERVISOR_PASSWORD: ${{ secrets.SUPERVISOR_PASSWORD }}
         run: |
           DEPLOY_APP_URL="${APP_URL}"
 
@@ -106,15 +109,21 @@ jobs:
           fi
 
           test -n "${DEPLOY_APP_URL}"
+
+          # The arguments of the remote script, shell-quoted (a password may contain any character).
+          remote_args="$(printf '%q ' "${SERVER_PATH}" "${DEPLOY_APP_URL}" "${SUPERVISOR_USER}" "${SUPERVISOR_PASSWORD}")"
+
           ssh -i ~/.ssh/deploy_key \
             -p "${SERVER_PORT}" \
             -o IdentitiesOnly=yes \
             "${SERVER_USER}@${SERVER_HOST}" \
-            "bash -s -- '${SERVER_PATH}' '${DEPLOY_APP_URL}'" <<'REMOTE'
+            "bash -s -- ${remote_args}" <<'REMOTE'
           set -e
 
           deployment_path="$1"
           deployment_app_url="$2"
+          supervisor_user="$3"
+          supervisor_password="$4"
           cd "${deployment_path}"
 
           test -f .env
@@ -155,19 +164,18 @@ jobs:
           php artisan up
           trap - EXIT
 
-          # Running queue workers and Reverb exit after their current work and are started again (with the new code) by
-          # the server's cron jobs (see ops/server/keep-services-alive.sh).
+          # The queue workers (cron jobs, see ops/server/keep-services-alive.sh) are only told to stop: each exits after its current
+          # work and the cron job starts it again with the new code.
           php artisan queue:restart
-          php artisan reverb:restart || true
 
-          # The restart signal only works through the cache and only while Reverb is polling it. Stop the process the keep-alive
-          # script started as well, so the new port/config is certain to be used when the cron job starts it again.
-          if [ -f storage/run/reverb.pid ]; then
-            reverb_pid="$(cat storage/run/reverb.pid)"
-            # Only if that pid is still the Reverb process (pids are reused).
-            if grep -aq 'reverb:start' "/proc/${reverb_pid}/cmdline" 2>/dev/null; then
-              kill "${reverb_pid}" || true
-            fi
+          # Reverb runs under Supervisor (program `bijak-reverb`): restarting it makes it read the new .env (port, logs, ...).
+          # Without the Supervisor secrets, or if Supervisor fails, it is only sent the restart signal (Supervisor's autorestart
+          # then starts it again).
+          if [ -n "${supervisor_user}" ] && supervisorctl -u "${supervisor_user}" -p "${supervisor_password}" restart bijak-reverb; then
+            echo "Reverb restarted by Supervisor"
+          else
+            echo "::warning::Reverb was not restarted through Supervisor; sending the restart signal instead"
+            php artisan reverb:restart || true
           fi
 
           REMOTE
