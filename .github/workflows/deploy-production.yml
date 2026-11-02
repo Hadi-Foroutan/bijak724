@@ -160,4 +160,14 @@ jobs:
           php artisan queue:restart
           php artisan reverb:restart || true
 
+          # The restart signal only works through the cache and only while Reverb is polling it. Stop the process the keep-alive
+          # script started as well, so the new port/config is certain to be used when the cron job starts it again.
+          if [ -f storage/run/reverb.pid ]; then
+            reverb_pid="$(cat storage/run/reverb.pid)"
+            # Only if that pid is still the Reverb process (pids are reused).
+            if grep -aq 'reverb:start' "/proc/${reverb_pid}/cmdline" 2>/dev/null; then
+              kill "${reverb_pid}" || true
+            fi
+          fi
+
           REMOTE
