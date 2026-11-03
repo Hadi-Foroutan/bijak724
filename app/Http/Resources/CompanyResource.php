@@ -2,8 +2,10 @@
 
 namespace App\Http\Resources;
 
+use App\Services\Uploads\CompanyImageUploader;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use InvalidArgumentException;
 
 class CompanyResource extends JsonResource
 {
@@ -34,7 +36,10 @@ class CompanyResource extends JsonResource
             'postal_code' => $this->postal_code,
             'fax' => $this->fax,
             'email' => $this->email,
+            'website' => $this->website,
             'logo' => $this->logo,
+            'logo_url' => $this->imageUrl($this->logo),
+            'signature_url' => $this->imageUrl($this->signature),
             'brand' => $this->brand,
             'description' => $this->description,
             'status' => $this->status,
@@ -42,5 +47,15 @@ class CompanyResource extends JsonResource
             'updated_at' => $this->updated_at,
             'account' => UserResource::make($this->whenLoaded('account')),
         ];
+    }
+
+    /** The public address of an uploaded image; a value that is not one of the uploader's files has none. */
+    private function imageUrl(?string $path): ?string
+    {
+        try {
+            return app(CompanyImageUploader::class)->url($path);
+        } catch (InvalidArgumentException) {
+            return null;
+        }
     }
 }

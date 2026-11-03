@@ -25,6 +25,12 @@ class DashboardController extends Controller
         return ResponseHandler::success($this->dashboardService->topCompanies()->data);
     }
 
+    /** ۷ شرکت برتر از نظر تعداد بارنامه‌های صادرشده (در هر زمانی) */
+    public function topSevenCompanies(): JsonResponse
+    {
+        return ResponseHandler::success($this->dashboardService->topSevenCompanies()->data);
+    }
+
     /** تعداد بارنامه‌های صادرشدهٔ هر یک از ۱۲ ماه اخیر */
     public function monthlyWaybills(): JsonResponse
     {

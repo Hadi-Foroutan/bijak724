@@ -3,6 +3,7 @@
 use App\Http\Controllers\User\BijakNumberController;
 use App\Http\Controllers\User\CanceledReferralController;
 use App\Http\Controllers\User\CargoGroupController;
+use App\Http\Controllers\User\CompanyProfileController;
 use App\Http\Controllers\User\CompanySettingController;
 use App\Http\Controllers\User\FrequentReport\FrequentReportController;
 use App\Http\Controllers\User\Report\ReportController;
@@ -37,6 +38,12 @@ Route::prefix('dashboard')->name('dashboard.')->controller(DashboardController::
 // Notifications
 Route::apiResource('notifications', NotificationController::class)
     ->only(['index', 'show']);
+
+// The company's own information (multipart to upload the logo and the signature, so it is POST like the other upload forms)
+Route::prefix('company')->name('company.')->controller(CompanyProfileController::class)->group(function () {
+    Route::get('/', 'show')->name('show');
+    Route::match(['post', 'put', 'patch'], '/', 'update')->name('update');
+});
 
 // Company Settings
 Route::prefix('settings')->name('settings.')->group(function () {

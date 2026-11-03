@@ -43,8 +43,10 @@ return new class extends Migration {
             $table->string('postal_code')->nullable();
             $table->string('fax')->nullable();
             $table->string('email')->nullable();
+            $table->string('website')->nullable();
 
             $table->string('logo')->nullable();
+            $table->string('signature')->nullable();
             $table->string('brand')->nullable();
             $table->text('description')->nullable();
             $table->enum('status', StatusEnum::values())->default(StatusEnum::ACTIVE->value);

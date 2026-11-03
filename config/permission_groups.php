@@ -14,6 +14,7 @@ return [
         'admin.roles.' => 'مدیریت نقش‌های ادمین',
         'user.dashboard.' => 'مدیریت داشبورد کاربر',
         'user.notifications.' => 'مشاهده اعلان‌های کاربر',
+        'user.company.' => 'مدیریت اطلاعات شرکت',
         'user.settings.' => 'مدیریت تنظیمات شرکت',
         'user.shared-additional-fields.' => 'مدیریت فیلدهای اضافی مشترک',
         'user.users.' => 'مدیریت کاربران شرکت',
@@ -67,6 +68,7 @@ return [
     'role_exclusions' => [
         'demo' => [
             'profile.update',
+            'user.company.update',
             'user.settings.update',
             'user.users.store',
             'user.users.update',
@@ -83,6 +85,8 @@ return [
     'non_default_permissions' => [
         'user.users.*',
         'user.technical-managers.*',
+        // ویرایش اطلاعات شرکت فقط با تیک دستی مدیر؛ مشاهده‌اش برای همه است.
+        'user.company.update',
         // مدیریت دسترسی‌ها فقط با تیک دستی مدیر داده می‌شود، نه به هر کاربر ساده.
         'user.permissions.*',
         // فقط با تیک دستی مدیر داده می‌شوند؛ کاربر ساده به‌صورت پیش‌فرض آن‌ها را ندارد.

@@ -40,8 +40,10 @@ class Company extends Model
         'postal_code',
         'fax',
         'email',
+        'website',
 
         'logo',
+        'signature',
         'brand',
         'description',
         'status',

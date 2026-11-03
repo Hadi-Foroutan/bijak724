@@ -83,8 +83,11 @@ class AdminDashboardRepository implements AdminDashboardRepositoryInterface
             ->all();
     }
 
-    public function topCompaniesByMonth(CarbonInterface $from, CarbonInterface $to, int $limit = 7): array
-    {
+    public function topCompaniesByMonth(
+        CarbonInterface $from,
+        CarbonInterface $to,
+        ?int $limit = null
+    ): array {
         $counts = $this->issuedWaybillCounts($from, $to);
 
         if ($counts === null) {
@@ -100,12 +103,12 @@ class AdminDashboardRepository implements AdminDashboardRepositoryInterface
             ->groupBy('month')
             ->map(fn(Collection $rows): array => $rows
                 ->sortBy([['waybills_count', 'desc'], ['company_id', 'asc']])
-                ->take($limit)
+                ->when($limit !== null, fn(Collection $rows) => $rows->take($limit))
                 ->map(fn(object $row): array => [
-                    'company_id' => (int)$row->company_id,
-                    'name' => (string)$row->name,
+                    'company_id' => (int) $row->company_id,
+                    'name' => (string) $row->name,
                     'organization_code' => $row->organization_code,
-                    'count' => (int)$row->waybills_count,
+                    'count' => (int) $row->waybills_count,
                 ])
                 ->values()
                 ->all())

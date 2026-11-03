@@ -23,7 +23,7 @@ interface AdminDashboardRepositoryInterface
      *
      * @return list<array{company_id: int, name: string, organization_code: string|null, count: int}>
      */
-    public function topCompanies(int $limit = 7): array;
+    public function topCompanies(int $limit): array;
 
     /**
      * Issued (completed) waybills of every month from the first month to the last one, by issue date.

@@ -137,6 +137,8 @@ return [
     'user.waybills.view-peer-users' => 'مشاهده بارنامه هم‌رده کاربران',
     'user.waybills.view-parent-user' => 'مشاهده بارنامه والد کاربر',
 
+    'user.company.show' => 'مشاهده اطلاعات شرکت',
+    'user.company.update' => 'ویرایش اطلاعات شرکت',
     'user.settings.show' => 'مشاهده تنظیمات شرکت',
     'user.settings.update' => 'ویرایش تنظیمات شرکت',
     'user.shared-additional-fields.index' => 'مشاهده لیست فیلدهای اضافی مشترک',

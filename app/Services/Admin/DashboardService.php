@@ -31,12 +31,23 @@ class DashboardService
     }
 
     /** The 7 companies that issued the most waybills, whenever they were issued. */
+    public function topSevenCompanies(): ServiceResult
+    {
+        return ServiceResult::success(
+            $this->cache->remember(
+                ['admin', 'top-seven-companies'],
+                fn(): array => ['items' => $this->dashboardRepository->topCompanies(7)],
+            ),
+        );
+    }
+
+    /** The 7 companies that issued the most waybills, whenever they were issued. */
     public function topCompanies(): ServiceResult
     {
         return ServiceResult::success(
             $this->cache->remember(
                 ['admin', 'top-companies'],
-                fn(): array => ['items' => $this->dashboardRepository->topCompanies(7)],
+                fn(): array => ['items' => $this->dashboardRepository->topCompanies()],
             ),
         );
     }

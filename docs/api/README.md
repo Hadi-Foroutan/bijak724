@@ -37,3 +37,4 @@
 | ۳۰ | گزارش‌های پرکاربرد (قالب‌های آمادهٔ گزارش: بیمه و ...) | [30-frequent-reports.md](30-frequent-reports.md) |
 | ۳۱ | داشبورد ادمین | [31-admin-dashboard.md](31-admin-dashboard.md) |
 | ۳۲ | فیلدهای اضافی | [32-additional-fields.md](32-additional-fields.md) |
+| ۳۳ | اطلاعات شرکت (پنل شرکت) | [33-company-profile.md](33-company-profile.md) |
