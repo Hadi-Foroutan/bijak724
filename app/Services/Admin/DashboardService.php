@@ -5,6 +5,7 @@ namespace App\Services\Admin;
 use App\Helpers\ServiceResult;
 use App\Interfaces\AdminDashboardRepositoryInterface;
 use App\Support\DashboardCache;
+use App\Support\JalaliDate;
 use Carbon\CarbonImmutable;
 
 /** The admin dashboard: each part has its own method and its own cache entry (DASHBOARD_CACHE switches the cache). */
@@ -30,15 +31,14 @@ class DashboardService
         );
     }
 
-    /** The 7 companies that issued the most waybills this month. */
+    /** The 7 companies that issued the most waybills this (Jalali) month. */
     public function topCompanies(): ServiceResult
     {
-        $from = CarbonImmutable::today()->startOfMonth();
-        $to = CarbonImmutable::today()->endOfMonth();
+        [$from, $to] = JalaliDate::monthRange(CarbonImmutable::today());
 
         return ServiceResult::success(
             $this->cache->remember(
-                ['admin', 'top-companies', $to->format('Y-m')],
+                ['admin', 'top-companies', $from->toDateString()],
                 fn(): array => [
                     'from' => $from->toDateString(),
                     'to' => $to->toDateString(),

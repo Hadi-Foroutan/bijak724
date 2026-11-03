@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 
 /** Gregorian to Jalali (Shamsi) conversion for the dates printed in Excel/PDF reports. */
@@ -54,5 +55,32 @@ class JalaliDate
         [$year, $month, $day] = self::fromGregorian($date->year, $date->month, $date->day);
 
         return sprintf('%04d/%02d/%02d', $year, $month, $day);
+    }
+
+    /**
+     * The Jalali month the date is in, as Gregorian days: its first day at 00:00 and its last day at 23:59:59.
+     *
+     * @return array{0: CarbonImmutable, 1: CarbonImmutable}
+     */
+    public static function monthRange(CarbonInterface $date): array
+    {
+        $day = CarbonImmutable::instance($date)->startOfDay();
+        [, $month, $dayOfMonth] = self::fromGregorian($day->year, $day->month, $day->day);
+
+        $first = $day->subDays($dayOfMonth - 1);
+        $last = $first;
+
+        // A Jalali month has 29 to 31 days: walk forward until the next one begins.
+        while (self::fromGregorian(...self::parts($last->addDay()))[1] === $month) {
+            $last = $last->addDay();
+        }
+
+        return [$first, $last->endOfDay()];
+    }
+
+    /** @return array{0: int, 1: int, 2: int} */
+    private static function parts(CarbonInterface $date): array
+    {
+        return [$date->year, $date->month, $date->day];
     }
 }
