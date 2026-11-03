@@ -19,9 +19,9 @@ interface AdminDashboardRepositoryInterface
     public function summary(CarbonInterface $today): array;
 
     /**
-     * The companies that issued the most waybills (completed, by issue date) in a period.
+     * The companies that issued the most waybills (completed ones), whenever they were issued.
      *
      * @return list<array{company_id: int, name: string, organization_code: string|null, count: int}>
      */
-    public function topCompanies(CarbonInterface $from, CarbonInterface $to, int $limit = 7): array;
+    public function topCompanies(int $limit = 7): array;
 }

@@ -39,9 +39,9 @@ class AdminDashboardRepository implements AdminDashboardRepositoryInterface
         ];
     }
 
-    public function topCompanies(CarbonInterface $from, CarbonInterface $to, int $limit = 7): array
+    public function topCompanies(int $limit = 7): array
     {
-        $counts = $this->issuedWaybillCounts($from, $to);
+        $counts = $this->issuedWaybillCounts();
 
         if ($counts === null) {
             return [];
@@ -66,15 +66,15 @@ class AdminDashboardRepository implements AdminDashboardRepositoryInterface
     }
 
     /**
-     * Issued (completed) waybills per company in the period. Every company that owns its data has its own waybills table
+     * Issued (completed) waybills per company. Every company that owns its data has its own waybills table
      * (its branches write into it, told apart by `owner_company_id`), so the counts are read from each table and put together.
      */
-    private function issuedWaybillCounts(CarbonInterface $from, CarbonInterface $to): ?QueryBuilder
+    private function issuedWaybillCounts(): ?QueryBuilder
     {
         $counts = Company::query()
             ->whereNull('parent_id')
             ->pluck('id')
-            ->map(function (int $companyId) use ($from, $to): ?QueryBuilder {
+            ->map(function (int $companyId): ?QueryBuilder {
                 $table = $this->companyTableRegistry->tableName($companyId, 'waybills');
 
                 if (!Schema::hasTable($table)) {
@@ -84,7 +84,6 @@ class AdminDashboardRepository implements AdminDashboardRepositoryInterface
                 return DB::table($table)
                     ->when(Schema::hasColumn($table, 'deleted_at'), fn(QueryBuilder $query) => $query->whereNull('deleted_at'))
                     ->where('status', WaybillStatus::Completed->value)
-                    ->whereBetween('issued_at', [$from, $to])
                     ->selectRaw('owner_company_id as company_id, COUNT(*) as waybills_count')
                     ->groupBy('owner_company_id');
             })

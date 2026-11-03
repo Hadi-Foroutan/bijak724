@@ -36,6 +36,7 @@ class AdminWaybillResource extends JsonResource
             'deleted_at' => $this->deleted_at,
             'created_at' => $companyWaybill?->created_at ?? $this->created_at,
             'updated_at' => $companyWaybill?->updated_at ?? $this->updated_at,
+            'issued_at' => $companyWaybill?->issued_at ?? $this->issued_at,
         ];
     }
 }
