@@ -210,7 +210,8 @@ test('what the requester may see is decided when the export is asked for, not by
 
     app(ReportExportGenerator::class)->generate(ReportExport::query()->findOrFail($exportId));
 
-    expect(ReportExport::query()->findOrFail($exportId)->rows_count)->toBe(3);
+    // Everyone's completed waybills: 555 and 999 (the incomplete 556 is never exported).
+    expect(ReportExport::query()->findOrFail($exportId)->rows_count)->toBe(2);
 
     $own = ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'xlsx'])->json('data.id');
     expect(ReportExport::query()->findOrFail($own)->visible_creator_ids)->toBe([$this->user->id]);
@@ -218,7 +219,7 @@ test('what the requester may see is decided when the export is asked for, not by
 
 test('an export over the row limit fails with a message instead of exhausting the worker', function () {
     Event::fake([ReportExportStatusChanged::class]);
-    config(['waybill_report.max_rows.xlsx' => 1]);
+    config(['waybill_report.max_rows.xlsx' => 0]);
     $id = ($this->makeReport)()->json('data.id');
     $exportId = ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'xlsx'])->json('data.id');
 
@@ -396,10 +397,17 @@ test('the filter dialog keys narrow the loaded report and the export the same wa
 
     // همین فیلترها در خروجی ذخیره و به کار می‌روند.
     $exportId = ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", [
-        'format' => 'xlsx', 'filters' => ['bijak_number_from' => 1500, 'status' => 'incomplete'],
+        'format' => 'xlsx', 'filters' => ['bijak_number_from' => 900, 'status' => 'completed'],
     ])->assertStatus(202)->json('data.id');
     app(ReportExportGenerator::class)->generate(ReportExport::query()->findOrFail($exportId));
     expect(ReportExport::query()->findOrFail($exportId)->rows_count)->toBe(1);
+
+    // An export only holds completed waybills, so asking it for another status gives nothing.
+    $incompleteId = ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", [
+        'format' => 'xlsx', 'filters' => ['status' => 'incomplete'],
+    ])->assertStatus(202)->json('data.id');
+    app(ReportExportGenerator::class)->generate(ReportExport::query()->findOrFail($incompleteId));
+    expect(ReportExport::query()->findOrFail($incompleteId)->rows_count)->toBe(0);
 
     ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'xlsx', 'filters' => ['status' => 'bogus']])
         ->assertUnprocessable();
@@ -430,7 +438,8 @@ test('blank filters sent by the filter dialog are ignored by the list and the ex
     $exportId = ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'xlsx', 'filters' => $blank])->json('data.id');
     app(ReportExportGenerator::class)->generate(ReportExport::query()->findOrFail($exportId));
 
-    expect(ReportExport::query()->findOrFail($exportId)->rows_count)->toBe(2);
+    // The list shows both of the user's waybills; the export only the completed one.
+    expect(ReportExport::query()->findOrFail($exportId)->rows_count)->toBe(1);
 });
 
 test('each field of a report keeps its alignment and width, which the load and the export use', function () {
@@ -528,8 +537,8 @@ test('the file is headed by the company name and panel code and ends with the su
 
     expect($rows[0][0])->toBe("{$this->company->name} - کد سازمانی: {$this->company->organization_code}")
         ->and($rows[1][0])->toBe('شماره بیجک')
-        ->and(count($rows))->toBe(2 + 2 + 1)
-        ->and($rows[count($rows) - 1])->toBe(['جمع', '1,500', '7'])
+        ->and(count($rows))->toBe(2 + 1 + 1)
+        ->and($rows[count($rows) - 1])->toBe(['جمع', '1,000', '3'])
         ->and($sheet->getStyle('A1')->getFill()->getStartColor()->getRGB())->toBe('E4ECF7')
         ->and($sheet->getStyle('A' . count($rows))->getFill()->getStartColor()->getRGB())->toBe('FFE699')
         ->and($sheet->getStyle('A3')->getFill()->getFillType())->toBe('none');
@@ -580,14 +589,14 @@ test('a small export goes to the light queue and a big one to the heavy queue', 
     Queue::fake();
     $id = ($this->makeReport)()->json('data.id');
 
-    // The user sees 2 waybills: at the limit (REPORT_LIGHT_MAX_ROWS) it is still light.
-    config(['waybill_report.light_max_rows' => 2]);
+    // The user's export holds 1 waybill (the completed one): at the limit (REPORT_LIGHT_MAX_ROWS) it is still light.
+    config(['waybill_report.light_max_rows' => 1]);
     ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'xlsx'])->assertStatus(202);
     Queue::assertPushedOn('reports-light', GenerateReportExport::class, fn(GenerateReportExport $job) => $job->timeout === 300);
     Queue::assertNotPushed(GenerateReportExport::class, fn(GenerateReportExport $job) => $job->queue === 'reports-heavy');
 
     // One waybill more than the limit: heavy, with the long time limit.
-    config(['waybill_report.light_max_rows' => 1]);
+    config(['waybill_report.light_max_rows' => 0]);
     ($this->as)($this->user)->postJson("/api/user/reports/{$id}/exports", ['format' => 'xlsx'])->assertStatus(202);
     Queue::assertPushedOn('reports-heavy', GenerateReportExport::class, fn(GenerateReportExport $job) => $job->timeout === 1800);
 });
