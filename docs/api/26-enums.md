@@ -17,6 +17,8 @@
 | `TransportContractItemType`                  | `owned` (ملکی)، `rental` (استیجاری)، `free` (آزاد)، `unknown` (نامشخص) — فیلدهای `is_<value>` و `default_<value>` | آیتم‌های قرارداد و پرچم‌های پیش‌فرض                                           |
 | `NotificationType`                           | `success` (موفقیت‌آمیز)، `error` (خطا)، `warning` (هشدار)، `info` (اطلاعات) — از API                               | اعلان‌ها                                                                    |
 | `SettingValueType`                           | `boolean`، `integer`، `decimal`، `string`                                                                         | تنظیمات                                                                    |
+| `AdditionalFieldType`                        | `text`، `number`، `date_time`، `date`، `time`، `long_text`، `checkbox`، `email`، `url` | نوع فیلدهای اضافی ([بخش ۳۲](32-additional-fields.md))                       |
+| `AdditionalFieldLayout`                      | `rtl`، `ltr`                                                                                                      | جهت فیلدهای اضافی                                                          |
 
 به این ناهمخوانی توجه کنید: ناوگان از `leased` استفاده می‌کند، در حالی که آیتم‌های قرارداد و پرچم‌های پیش‌فرض از
 `rental`. آن‌ها را صریحاً نگاشت کنید و از یک ثابت برای هر دو استفاده نکنید.

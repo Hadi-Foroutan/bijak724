@@ -11,14 +11,10 @@ enum AdditionalFieldType: string
     case Text = 'text';
     case Number = 'number';
     case DateTime = 'date_time';
-    case Selection = 'selection';
     case Date = 'date';
     case Time = 'time';
     case LongText = 'long_text';
     case Checkbox = 'checkbox';
-    case Radio = 'radio';
-    case File = 'file';
-    case Image = 'image';
     case Email = 'email';
     case Url = 'url';
 

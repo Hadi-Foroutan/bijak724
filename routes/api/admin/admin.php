@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('dashboard')->name('dashboard.')->controller(DashboardController::class)->group(function () {
     Route::get('/', 'index')->name('index');
     Route::get('companies/top', 'topCompanies')->name('companies-top');
+    Route::get('companies/top/monthly', 'monthlyTopCompanies')->name('companies-top-monthly');
+    Route::get('waybills/monthly', 'monthlyWaybills')->name('waybills-monthly');
 });
 
 Route::get('companies/aggregate-report', [CompanyController::class, 'aggregateReport'])

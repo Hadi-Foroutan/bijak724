@@ -81,7 +81,7 @@ stateDiagram-v2
 - در همهٔ وضعیت‌ها اختیاری: `driver2_id` (باید با `driver1_id` متفاوت باشد)، `referral_weight`، `quantity`،
   `description`، `advance_freight_amount`، `weighbridge_amount`، `loading_amount`، `warehousing_amount`،
   `unloading_amount`، `excess_tonnage_amount`، `commission_amount`، `detention_amount`، `driver_receivable_amount`،
-  `freight_at_origin`، `is_fixed`.
+  `freight_at_origin`، `is_fixed`، `additional_fields` (فیلدهای اضافی؛ توضیح کامل در [فیلدهای اضافی](#فیلدهای-اضافی-در-بارنامه)).
 - ردیف‌های کالا همچنین `product_owner_id`، `title`، `description` و `is_traffic` می‌گیرند.
 - همهٔ مبالغ اعداد صحیح نامنفی‌اند؛ API واحد پول را مشخص نمی‌کند.
 - شناسه‌ها باید متعلق به همان شرکت باشند:
@@ -92,6 +92,62 @@ stateDiagram-v2
 
 مشکل شناخته‌شده: `base_freight_amount` قاعدهٔ `nullable` ندارد، بنابراین ارسال `null` در بارنامهٔ ناتمام خطای اعتبارسنجی
 می‌دهد. به‌جای آن کلید را ارسال نکنید.
+
+#### فیلدهای اضافی در بارنامه
+
+هر شرکت شش فیلد اضافی دارد (تنظیمات و نوعشان: [بخش ۳۲](32-additional-fields.md)). مقدار آن‌ها روی خود بارنامه ذخیره می‌شود.
+
+**ارسال (ایجاد `POST` و ویرایش `PUT|PATCH`):** کلید `additional_fields` یک شیء است که **کلیدش شمارهٔ فیلد** (`1` تا `6`، همان
+`number` در `GET /user/shared-additional-fields`) و مقدارش مقدار فیلد است:
+
+```json
+{
+  "status": "incomplete",
+  "additional_fields": {
+    "1": "P-20481",
+    "3": "2026-11-03",
+    "5": null
+  }
+}
+```
+
+قواعد:
+
+- `additional_fields` کاملاً اختیاری است و در **هر وضعیتی** (`incomplete`، `referral`، `completed`) پذیرفته می‌شود.
+- فقط کلیدهای `1` تا `6` مجازند؛ هر کلید دیگر (مثلاً `7` یا `title`) خطای `422` روی `additional_fields` می‌دهد.
+- هر مقدار اختیاری است و با `null` می‌شود آن را خالی کرد. مقدار باید با `field_type` همان فیلد جور باشد
+  (عدد برای `number`، تاریخ برای `date` و `date_time`، `HH:mm` برای `time`، بولی برای `checkbox`، ایمیل، URL، و در بقیه رشته). در غیر این صورت
+  `422` با خطای `additional_fields.<number>` برمی‌گردد.
+- **در ویرایش، فقط شماره‌هایی که بفرستید عوض می‌شوند.** شماره‌ای که نفرستید مقدار قبلی‌اش را نگه می‌دارد؛ برای پاک کردن آن `null` بفرستید.
+  بارنامهٔ `completed` یا `canceled` مثل بقیهٔ فیلدها قابل ویرایش نیست.
+- سرور `is_visible`، `length` و `default_value` فیلد را اعمال نمی‌کند: فرم باید فیلدهای مخفی را نفرستد و مقدار پیش‌فرض را خودش پر کند.
+
+**دریافت (خروجی بارنامه):** مقدارها به‌صورت ستون‌های جدا در خود بارنامه می‌آیند، نه داخل `additional_fields`:
+
+```json
+{
+  "id": 41,
+  "status": "incomplete",
+  "additional_field_1": "P-20481",
+  "additional_field_2": null,
+  "additional_field_3": "2026-11-03",
+  "additional_field_4": null,
+  "additional_field_5": null,
+  "additional_field_6": null
+}
+```
+
+| ارسال (کلید در `additional_fields`) | دریافت (ستون در بارنامه) |
+|--------------------------------------|---------------------------|
+| `1`                                  | `additional_field_1`      |
+| `2`                                  | `additional_field_2`      |
+| `3`                                  | `additional_field_3`      |
+| `4`                                  | `additional_field_4`      |
+| `5`                                  | `additional_field_5`      |
+| `6`                                  | `additional_field_6`      |
+
+نام ستون هر فیلد در پاسخ تنظیمات هم به‌صورت `waybill_column` آمده است. مقدارها به‌صورت متن ذخیره و برگردانده می‌شوند (همیشه رشته یا `null`).
+همین ستون‌ها در گزارش‌ساز قابل انتخاب‌اند ([بخش ۲۸](28-report-builder.md)). فیلتر لیست بارنامه‌ها (`GET /user/waybills`) روی آن‌ها کار نمی‌کند.
 
 #### تصویرهای ثابت (Snapshots)
 

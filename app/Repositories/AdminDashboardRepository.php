@@ -10,6 +10,7 @@ use App\Models\Waybill;
 use App\Services\Company\CompanyTableRegistry;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -65,16 +66,65 @@ class AdminDashboardRepository implements AdminDashboardRepositoryInterface
         ])->all();
     }
 
+    public function waybillsByMonth(CarbonInterface $from, CarbonInterface $to): array
+    {
+        $counts = $this->issuedWaybillCounts($from, $to);
+
+        if ($counts === null) {
+            return [];
+        }
+
+        return DB::query()
+            ->fromSub($counts, 'issued')
+            ->selectRaw('issued.month, SUM(issued.waybills_count) as waybills_count')
+            ->groupBy('issued.month')
+            ->pluck('waybills_count', 'month')
+            ->map(fn(mixed $count): int => (int)$count)
+            ->all();
+    }
+
+    public function topCompaniesByMonth(CarbonInterface $from, CarbonInterface $to, int $limit = 7): array
+    {
+        $counts = $this->issuedWaybillCounts($from, $to);
+
+        if ($counts === null) {
+            return [];
+        }
+
+        return DB::query()
+            ->fromSub($counts, 'issued')
+            ->join('companies', 'companies.id', '=', 'issued.company_id')
+            ->selectRaw('issued.month, companies.id as company_id, companies.name, companies.organization_code, SUM(issued.waybills_count) as waybills_count')
+            ->groupBy('issued.month', 'companies.id', 'companies.name', 'companies.organization_code')
+            ->get()
+            ->groupBy('month')
+            ->map(fn(Collection $rows): array => $rows
+                ->sortBy([['waybills_count', 'desc'], ['company_id', 'asc']])
+                ->take($limit)
+                ->map(fn(object $row): array => [
+                    'company_id' => (int)$row->company_id,
+                    'name' => (string)$row->name,
+                    'organization_code' => $row->organization_code,
+                    'count' => (int)$row->waybills_count,
+                ])
+                ->values()
+                ->all())
+            ->all();
+    }
+
     /**
      * Issued (completed) waybills per company. Every company that owns its data has its own waybills table
      * (its branches write into it, told apart by `owner_company_id`), so the counts are read from each table and put together.
+     * With a period the counts are also split by month (`month` = `Y-m` of the issue date) and only that period is read.
      */
-    private function issuedWaybillCounts(): ?QueryBuilder
+    private function issuedWaybillCounts(?CarbonInterface $from = null, ?CarbonInterface $to = null): ?QueryBuilder
     {
+        $perMonth = $from !== null && $to !== null;
+
         $counts = Company::query()
             ->whereNull('parent_id')
             ->pluck('id')
-            ->map(function (int $companyId): ?QueryBuilder {
+            ->map(function (int $companyId) use ($perMonth, $from, $to): ?QueryBuilder {
                 $table = $this->companyTableRegistry->tableName($companyId, 'waybills');
 
                 if (!Schema::hasTable($table)) {
@@ -84,6 +134,10 @@ class AdminDashboardRepository implements AdminDashboardRepositoryInterface
                 return DB::table($table)
                     ->when(Schema::hasColumn($table, 'deleted_at'), fn(QueryBuilder $query) => $query->whereNull('deleted_at'))
                     ->where('status', WaybillStatus::Completed->value)
+                    ->when($perMonth, fn(QueryBuilder $query) => $query
+                        ->whereBetween('issued_at', [$from, $to])
+                        ->selectRaw('SUBSTR(issued_at, 1, 7) as month')
+                        ->groupBy('month'))
                     ->selectRaw('owner_company_id as company_id, COUNT(*) as waybills_count')
                     ->groupBy('owner_company_id');
             })

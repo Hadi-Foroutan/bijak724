@@ -40,7 +40,9 @@ return [
     'admin.roles.destroy' => 'حذف نقش از سیستم ادمین',
 
     'admin.dashboard.index' => 'مشاهده خلاصه داشبورد ادمین',
-    'admin.dashboard.companies.top' => 'مشاهده شرکت‌های برتر در داشبورد ادمین',
+    'admin.dashboard.companies-top' => 'مشاهده شرکت‌های برتر در داشبورد ادمین',
+    'admin.dashboard.companies-top-monthly' => 'مشاهده شرکت‌های برتر هر ماه در داشبورد ادمین',
+    'admin.dashboard.waybills-monthly' => 'مشاهده تعداد بارنامه‌های هر ماه در داشبورد ادمین',
     'admin.report-fields.index' => 'مشاهده فیلدهای گزارش‌ساز ادمین',
     'admin.report-fields.store' => 'ایجاد فیلد گزارش‌ساز ادمین',
     'admin.report-fields.show' => 'مشاهده فیلد گزارش‌ساز ادمین',

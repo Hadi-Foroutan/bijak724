@@ -36,3 +36,4 @@
 | ۲۹ | وب‌سوکت (اتصال، کانال‌ها، رویدادها، React) | [29-socket.md](29-socket.md) |
 | ۳۰ | گزارش‌های پرکاربرد (قالب‌های آمادهٔ گزارش: بیمه و ...) | [30-frequent-reports.md](30-frequent-reports.md) |
 | ۳۱ | داشبورد ادمین | [31-admin-dashboard.md](31-admin-dashboard.md) |
+| ۳۲ | فیلدهای اضافی | [32-additional-fields.md](32-additional-fields.md) |

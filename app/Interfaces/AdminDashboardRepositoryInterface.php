@@ -24,4 +24,18 @@ interface AdminDashboardRepositoryInterface
      * @return list<array{company_id: int, name: string, organization_code: string|null, count: int}>
      */
     public function topCompanies(int $limit = 7): array;
+
+    /**
+     * Issued (completed) waybills of every month from the first month to the last one, by issue date.
+     *
+     * @return array<string, int> `Y-m` => count (months without waybills are missing)
+     */
+    public function waybillsByMonth(CarbonInterface $from, CarbonInterface $to): array;
+
+    /**
+     * For every month, the companies that issued the most waybills in it.
+     *
+     * @return array<string, list<array{company_id: int, name: string, organization_code: string|null, count: int}>> `Y-m` => companies
+     */
+    public function topCompaniesByMonth(CarbonInterface $from, CarbonInterface $to, int $limit = 7): array;
 }
