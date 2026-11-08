@@ -35,7 +35,7 @@
 بارگذاری، `UserResource` مدیر شرکت). ایجاد شرکت به‌طور خودکار قرارداد حمل پیش‌فرض، بازه‌های پیش‌فرض بیجک و حواله، بیمهٔ
 پیش‌فرض و تنظیمات پیش‌فرض را هم می‌سازد. شعبه‌ها از جداول شرکت مادر استفاده می‌کنند.
 
-`GET /admin/companies/aggregate-report` دستور لیست را به‌علاوهٔ `min-/max-/eq-waybills_count`، `last_waybill_from` و
+`GET /admin/companies/aggregate-report` خروجی `{active_companies_count, total_waybills_count, companies}` می‌دهد و بدون `order_field` شرکت‌ها را **بر اساس تعداد بارنامه (نزولی)** مرتب می‌کند. دستور لیست را به‌علاوهٔ `min-/max-/eq-waybills_count`، `last_waybill_from` و
 `last_waybill_to` می‌پذیرد. مرتب‌سازی بر اساس
 `id, name, organization_code, panel_code, national_code, status, created_at, waybills_count, last_waybill_at` ممکن است و
 خروجی شامل

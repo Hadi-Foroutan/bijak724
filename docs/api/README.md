@@ -38,3 +38,7 @@
 | ۳۱ | داشبورد ادمین | [31-admin-dashboard.md](31-admin-dashboard.md) |
 | ۳۲ | فیلدهای اضافی | [32-additional-fields.md](32-additional-fields.md) |
 | ۳۳ | اطلاعات شرکت (پنل شرکت) | [33-company-profile.md](33-company-profile.md) |
+| ۳۴ | نمایندگی‌های بیمه (ادمین؛ شامل ورود به پنل نمایندگی) | [34-insurance-agencies.md](34-insurance-agencies.md) |
+| ۳۵ | پنل بیمه | [35-insurance-panel.md](35-insurance-panel.md) |
+| ۳۶ | **راهنمای تغییرات نمایندگی بیمه برای فرانت (از اینجا شروع کنید)** | [36-insurance-frontend-handoff.md](36-insurance-frontend-handoff.md) |
+| ۳۷ | اتصال نمایندهٔ بیمه به قرارداد بیمهٔ شرکت (تغییرات برای فرانت) | [37-insurance-agency-contract-connection.md](37-insurance-agency-contract-connection.md) |

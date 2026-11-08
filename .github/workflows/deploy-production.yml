@@ -158,6 +158,8 @@ jobs:
           php artisan company-tables:sync --no-interaction
           # Adds the report-builder fields that are missing; fields an admin edited or turned off are left alone.
           php artisan db:seed --class=ReportFieldSeeder --force --no-interaction
+          # The insurance panel's role must exist before its permissions are generated; an existing role is left as it is.
+          php artisan db:seed --class=InsuranceRoleSeeder --force --no-interaction
           php artisan generate-permissions --no-interaction
           php artisan storage:link || true
           php artisan optimize

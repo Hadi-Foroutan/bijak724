@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Interfaces\AdminDashboardRepositoryInterface;
 use App\Interfaces\CityRepositoryInterface;
 use App\Interfaces\Company\BijakNumberRepositoryInterface;
 use App\Interfaces\Company\CanceledReferralRepositoryInterface;
@@ -18,12 +19,18 @@ use App\Interfaces\Company\ReportExportRepositoryInterface;
 use App\Interfaces\Company\ReportRepositoryInterface;
 use App\Interfaces\Company\ReportWaybillRepositoryInterface;
 use App\Interfaces\GlobalSettingRepositoryInterface;
+use App\Interfaces\InsuranceAgencyRepositoryInterface;
+use App\Interfaces\InsurancePanelRepositoryInterface;
 use App\Interfaces\ReportFieldRepositoryInterface;
 use App\Interfaces\Company\TechnicalManagerRepositoryInterface;
+use App\Listeners\RunLogSubscriber;
+use App\Repositories\AdminDashboardRepository;
 use App\Repositories\Company\ReportExportRepository;
 use App\Repositories\Company\ReportRepository;
 use App\Repositories\Company\ReportWaybillRepository;
 use App\Repositories\GlobalSettingRepository;
+use App\Repositories\InsuranceAgencyRepository;
+use App\Repositories\InsurancePanelRepository;
 use App\Repositories\ReportFieldRepository;
 use App\Repositories\Company\TechnicalManagerRepository;
 use App\Interfaces\Company\InsuranceTariffRepositoryInterface;
@@ -78,12 +85,18 @@ use App\Repositories\WaybillRepository as SharedWaybillRepository;
 use App\Services\Company\CompanyDataOwnerResolver;
 use App\Services\Company\Report\WaybillReportFieldCatalog;
 use App\Services\Company\Settings\CompanySettingService;
+use App\Support\Logging\RunLogger;
+use App\Support\Logging\SocketLogger;
+use App\Support\Reverb\LoggingPusherServer;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
 use Dedoc\Scramble\Support\Generator\SecurityScheme;
 use Illuminate\Console\Events\CommandFinished;
+use Illuminate\Console\Events\CommandStarting;
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Reverb\Protocols\Pusher\Server;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -104,7 +117,7 @@ class AppServiceProvider extends ServiceProvider
         CompanySettingRepositoryInterface::class => CompanySettingRepository::class,
         SharedAdditionalFieldRepositoryInterface::class => SharedAdditionalFieldRepository::class,
         DashboardRepositoryInterface::class => DashboardRepository::class,
-        \App\Interfaces\AdminDashboardRepositoryInterface::class => \App\Repositories\AdminDashboardRepository::class,
+        AdminDashboardRepositoryInterface::class => AdminDashboardRepository::class,
         CargoGroupRepositoryInterface::class => CargoGroupRepository::class,
         InsuranceRepositoryInterface::class => InsuranceRepository::class,
         TechnicalManagerRepositoryInterface::class => TechnicalManagerRepository::class,
@@ -115,6 +128,8 @@ class AppServiceProvider extends ServiceProvider
         CityRepositoryInterface::class => CityRepository::class,
         GeneralOptionRepositoryInterface::class => GeneralOptionRepository::class,
         InsuranceCompanyRepositoryInterface::class => InsuranceCompanyRepository::class,
+        InsuranceAgencyRepositoryInterface::class => InsuranceAgencyRepository::class,
+        InsurancePanelRepositoryInterface::class => InsurancePanelRepository::class,
         NotificationRepositoryInterface::class => NotificationRepository::class,
         PermissionInterface::class => PermissionRepository::class,
         RoleInterface::class => RoleRepository::class,
@@ -136,12 +151,12 @@ class AppServiceProvider extends ServiceProvider
         // One shared instance so every part of a report load/export reads the same admin-managed fields.
         $this->app->singleton(WaybillReportFieldCatalog::class);
         // One instance each: the subscriber remembers which command/job is running, the logger whether it is writing.
-        $this->app->singleton(\App\Support\Logging\RunLogger::class);
-        $this->app->singleton(\App\Listeners\RunLogSubscriber::class);
-        $this->app->singleton(\App\Support\Logging\SocketLogger::class);
+        $this->app->singleton(RunLogger::class);
+        $this->app->singleton(RunLogSubscriber::class);
+        $this->app->singleton(SocketLogger::class);
 
         // `php artisan reverb:start` prints who connects, subscribes and leaves (see LoggingPusherServer).
-        $this->app->bind(\Laravel\Reverb\Protocols\Pusher\Server::class, \App\Support\Reverb\LoggingPusherServer::class);
+        $this->app->bind(Server::class, LoggingPusherServer::class);
     }
 
     /**
@@ -153,7 +168,7 @@ class AppServiceProvider extends ServiceProvider
 
         // CRON_LOGS=true: every command and queue job logs to its own file (storage/logs/commands, storage/logs/jobs).
         if (config('cron_logs.enabled')) {
-            Event::subscribe(\App\Listeners\RunLogSubscriber::class);
+            Event::subscribe(RunLogSubscriber::class);
         }
 
         $this->logSocketServer();
@@ -176,7 +191,7 @@ class AppServiceProvider extends ServiceProvider
      */
     private function logSocketServer(): void
     {
-        $logger = $this->app->make(\App\Support\Logging\SocketLogger::class);
+        $logger = $this->app->make(SocketLogger::class);
 
         if (!$logger->enabled() || !in_array('reverb:start', $_SERVER['argv'] ?? [], true)) {
             return;
@@ -184,7 +199,7 @@ class AppServiceProvider extends ServiceProvider
 
         $line = fn(string $text): string => '[' . now()->format('Y-m-d H:i:s') . '] ' . $text;
 
-        Event::listen(\Illuminate\Console\Events\CommandStarting::class, function ($event) use ($logger, $line): void {
+        Event::listen(CommandStarting::class, function ($event) use ($logger, $line): void {
             if ($event->command === 'reverb:start') {
                 $logger->write($line(sprintf('reverb:start starting · pid %d · SOCKET_LOGS on', getmypid())));
             }
@@ -197,7 +212,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         // Does not stop the normal reporting (the callback returns nothing).
-        $this->app->make(\Illuminate\Contracts\Debug\ExceptionHandler::class)->reportable(
+        $this->app->make(ExceptionHandler::class)->reportable(
             fn(\Throwable $exception) => $logger->write(
                 $line(sprintf('error · %s: %s (%s:%d)', get_class($exception), $exception->getMessage(), $exception->getFile(), $exception->getLine())),
                 'error',

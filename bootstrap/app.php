@@ -81,6 +81,15 @@ return Application::configure(basePath: dirname(__DIR__))
                 ->group(function () {
                     loadRoutesFromFolder(base_path('routes/api/admin'));
                 });
+
+            // 🛡 INSURANCE (auto load): the panel of the insurers' agents
+            Route::prefix('api/insurance')
+                ->middleware(['api', 'auth:sanctum', 'company.support.scope', 'check.permissions'])
+                ->as('insurance.')
+                ->where(['company' => '[0-9]+', 'waybill' => '[0-9]+'])
+                ->group(function () {
+                    loadRoutesFromFolder(base_path('routes/api/insurance'));
+                });
         }
     )
     ->withBroadcasting(

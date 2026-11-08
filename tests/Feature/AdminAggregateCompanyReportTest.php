@@ -94,3 +94,9 @@ function aggregateReportWaybill(Company $company, int $waybillId, string $create
         'updated_at' => $createdAt,
     ]);
 }
+
+test('aggregate report orders the companies by waybill count when no order is given', function () {
+    $counts = $this->getJson('/api/admin/companies/aggregate-report')->assertSuccessful()->json('data.companies.*.waybills_count');
+
+    expect($counts)->toBe(collect($counts)->sortDesc()->values()->all());
+});

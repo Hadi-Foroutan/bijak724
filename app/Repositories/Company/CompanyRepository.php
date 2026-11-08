@@ -49,8 +49,14 @@ class CompanyRepository implements CompanyInterface
             ->fromSub(clone $waybillStatistics, 'waybill_totals')
             ->sum('waybills_count');
         $companyFilters = $this->prepareAggregateReportFilters($params);
+        // The companies come ordered by their number of waybills unless another order is asked for.
+        if (blank($params['order_field'] ?? null)) {
+            $params['order_field'] = 'waybills_count';
+            $params['order_type'] ??= 'desc';
+        }
+
         $aggregateOrderField = in_array(
-            $params['order_field'] ?? null,
+            $params['order_field'],
             ['waybills_count', 'last_waybill_at'],
             true,
         ) ? $params['order_field'] : null;

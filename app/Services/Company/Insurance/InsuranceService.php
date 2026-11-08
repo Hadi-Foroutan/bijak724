@@ -3,9 +3,12 @@
 namespace App\Services\Company\Insurance;
 
 use App\Helpers\ServiceResult;
+use App\Enums\StatusEnum;
 use App\Interfaces\Company\CargoGroupRepositoryInterface;
 use App\Interfaces\Company\InsuranceRepositoryInterface;
 use App\Interfaces\Company\InsuranceTariffRepositoryInterface;
+use App\Interfaces\InsuranceAgencyRepositoryInterface;
+use App\Models\Insurance;
 use App\Models\InsuranceTariff;
 use App\Services\Company\Waybill\IssuedWaybillDeletionGuard;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +21,7 @@ class InsuranceService
         protected InsuranceTariffRepositoryInterface $insuranceTariffRepository,
         protected CargoGroupRepositoryInterface      $cargoGroupRepository,
         protected IssuedWaybillDeletionGuard         $issuedWaybillDeletionGuard,
+        protected InsuranceAgencyRepositoryInterface $insuranceAgencyRepository,
     )
     {
     }
@@ -30,6 +34,8 @@ class InsuranceService
     public function store(int $companyId, array $data): ServiceResult
     {
         return DB::transaction(function () use ($companyId, $data): ServiceResult {
+            $data = $this->withAgency($data);
+
             if ($data['is_default'] ?? false) {
                 $this->insuranceRepository->lockCompanyForUpdate($companyId);
                 $this->insuranceRepository->clearDefault($companyId);
@@ -39,6 +45,51 @@ class InsuranceService
 
             return ServiceResult::success($this->insuranceRepository->findOrFail($companyId, $insurance->id));
         });
+    }
+
+    /** The agency of the insurer (its `org_code`) with this code: its information, or an error when there is no active one. */
+    public function agencyInquiry(int $insuranceCompanyOrgCode, string $code): ServiceResult
+    {
+        $agency = $this->insuranceAgencyRepository->findActiveByCode($insuranceCompanyOrgCode, $code);
+
+        if ($agency === null) {
+            return ServiceResult::error(__('public.insurance_agency_not_found'), Response::HTTP_NOT_FOUND);
+        }
+
+        return ServiceResult::success($agency);
+    }
+
+    /**
+     * The contract is recorded with the agency found by the insurer's `insurance_company_org_code` and the
+     * `insurance_agency_code`: it takes the agency (and so its insurer) and is connected to it.
+     * A contract the admin cut off from its agency cannot change the agency (only the admin turns it on again). Without
+     * them (an edit that keeps the agency) the data is returned as it is.
+     *
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    private function withAgency(array $data, ?Insurance $insurance = null): array
+    {
+        $orgCode = $data['insurance_company_org_code'] ?? null;
+        $code = $data['insurance_agency_code'] ?? null;
+        unset($data['insurance_company_org_code'], $data['insurance_agency_code']);
+
+        if ($code === null || $orgCode === null) {
+            return $data;
+        }
+
+        $agency = $this->agencyInquiry((int)$orgCode, (string)$code)->data;
+
+        if ($insurance?->insurance_agency_status === StatusEnum::INACTIVE) {
+            ServiceResult::error(__('public.insurance_agency_disconnected'), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        return [
+            ...$data,
+            'insurance_agency_id' => $agency->getKey(),
+            'insurance_agency_status' => StatusEnum::ACTIVE->value,
+            'insurance_company_id' => $agency->insurance_company_id,
+        ];
     }
 
     /**
@@ -102,6 +153,7 @@ class InsuranceService
     {
         return DB::transaction(function () use ($companyId, $id, $data): ServiceResult {
             $insurance = $this->insuranceRepository->findOrFail($companyId, $id);
+            $data = $this->withAgency($data, $insurance);
 
             if ($data['is_default'] ?? false) {
                 $this->insuranceRepository->lockCompanyForUpdate($companyId);

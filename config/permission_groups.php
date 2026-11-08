@@ -3,6 +3,9 @@
 return [
     'groups' => [
         'admin.dashboard.' => 'مشاهده داشبورد ادمین',
+        'admin.insurance-agencies.' => 'مدیریت نمایندگی‌های بیمه',
+        'admin.insurance-companies.' => 'مشاهده شرکت‌های بیمه (ادمین)',
+        'insurance.' => 'پنل بیمه: شرکت‌ها و بارنامه‌ها',
         'admin.companies.' => 'مدیریت شرکت‌های ادمین',
         'admin.cities.' => 'مدیریت شهرهای ادمین',
         'admin.notifications.' => 'مدیریت اعلان‌های ادمین',
@@ -54,6 +57,7 @@ return [
     'roles' => [
         'superAdmin' => ['*'],
         'admin' => ['admin.*', 'profile.*'],
+        'insurance' => ['insurance.*', 'profile.*'],
         'companyManager' => ['user.*', 'profile.*'],
         'user' => ['user.*', 'profile.*'],
         // دمو: همهٔ دسترسی‌های پنل شرکت، به‌جز موارد `role_exclusions` پایین.

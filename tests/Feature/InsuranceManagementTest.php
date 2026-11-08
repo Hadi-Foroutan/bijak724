@@ -6,6 +6,7 @@ use App\Models\CargoGroup;
 use App\Models\CargoGroupCargo;
 use App\Models\Company;
 use App\Models\Insurance;
+use App\Models\InsuranceAgency;
 use App\Models\InsuranceCompany;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -328,8 +329,18 @@ test('insurance validation rejects invalid dates and duplicate company contract 
 /** @return array<string, mixed> */
 function insurancePayload(int $insuranceCompanyId, string $contractNumber, bool $isDefault = false): array
 {
+    // The contract is recorded with an agency of the insurer, found by the insurer's org_code and the agency code.
+    $agency = InsuranceAgency::query()->firstOrCreate(
+        ['code' => "AGENCY-{$insuranceCompanyId}"],
+        [
+            'insurance_company_id' => $insuranceCompanyId, 'first_name' => 'علی', 'last_name' => 'احمدی',
+            'mobile' => '09121234567', 'phone' => '02112345678', 'fax' => '02112345679', 'email' => 'agent@example.com', 'address' => 'تهران',
+        ],
+    );
+
     return [
-        'insurance_company_id' => $insuranceCompanyId,
+        'insurance_company_org_code' => $agency->insuranceCompany->org_code,
+        'insurance_agency_code' => $agency->code,
         'title' => "قرارداد {$contractNumber}",
         'contract_number' => $contractNumber,
         'is_default' => $isDefault,
@@ -337,13 +348,6 @@ function insurancePayload(int $insuranceCompanyId, string $contractNumber, bool 
         'start_date' => '2026-01-01',
         'end_date' => '2026-12-31',
         'description' => 'توضیحات بیمه',
-        'representative_first_name' => 'علی',
-        'representative_last_name' => 'احمدی',
-        'representative_mobile' => '09121234567',
-        'representative_phone' => '02112345678',
-        'representative_fax' => '02112345679',
-        'representative_email' => 'agent@example.com',
-        'representative_address' => 'تهران',
     ];
 }
 

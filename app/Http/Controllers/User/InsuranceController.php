@@ -4,13 +4,16 @@ namespace App\Http\Controllers\User;
 
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Insurance\InquiryInsuranceAgencyRequest;
 use App\Http\Requests\Insurance\InquiryInsuranceRequest;
 use App\Http\Requests\Insurance\StoreInsuranceRequest;
 use App\Http\Requests\Insurance\UpdateInsuranceRequest;
+use App\Http\Resources\InsuranceAgencyResource;
 use App\Http\Resources\InsuranceResource;
 use App\Services\Company\Insurance\InsuranceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Symfony\Component\HttpFoundation\Response;
 
 class InsuranceController extends Controller
@@ -24,6 +27,15 @@ class InsuranceController extends Controller
         $result = $this->insuranceService->index($this->companyId($request), $request->all());
 
         return ResponseHandler::success($this->resourceCollection($result->data, InsuranceResource::class, $request));
+    }
+
+    /** The insurance agency with the given code (its information, or 404 «نمایندگی بیمه یافت نشد») */
+    public function agencyInquiry(InquiryInsuranceAgencyRequest $request): JsonResponse
+    {
+        $result = $this->insuranceService->agencyInquiry((int)$request->validated('insurance_company_org_code'), $request->validated('code'));
+
+        // The agent's national code is the admin's information, not the company's.
+        return ResponseHandler::success(Arr::except(InsuranceAgencyResource::make($result->data)->resolve($request), ['national_code']));
     }
 
     public function inquiry(InquiryInsuranceRequest $request): JsonResponse

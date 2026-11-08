@@ -30,14 +30,7 @@ class CompanyRequiredForRole implements ValidationRule
             return;
         }
 
-        $isAdmin = in_array(
-            $role->name,
-            [
-                RoleEnum::ADMIN->value,
-                RoleEnum::SUPERADMIN->value,
-            ],
-            true
-        );
+        $isAdmin = in_array($role->name, RoleEnum::withoutCompany(), true);
 
         if ($isAdmin) {
             $fail(__('public.admin_company_forbidden'));

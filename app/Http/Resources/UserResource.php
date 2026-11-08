@@ -16,6 +16,7 @@ class UserResource extends JsonResource
         return [
             'id' => $this->id,
             'company_id' => $this->company_id,
+            'insurance_agency_id' => $this->insurance_agency_id,
             'parent_id' => $this->parent_id,
             'parent' => $this->whenLoaded('parent', fn(): ?array => $this->parent === null ? null : [
                 'id' => $this->parent->id,

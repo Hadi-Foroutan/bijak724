@@ -6,6 +6,8 @@ use App\Models\InsuranceCompany;
 
 interface InsuranceCompanyRepositoryInterface
 {
+    public function findByOrganizationCode(int $organizationCode): ?InsuranceCompany;
+
     /** @param array<string, mixed> $data */
     public function findOrCreateByOrganizationCode(int $organizationCode, array $data): InsuranceCompany;
 }

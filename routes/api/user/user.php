@@ -189,6 +189,7 @@ Route::apiResource('technical-managers', TechnicalManagerController::class)
 // Insurances
 Route::prefix('insurances')->name('insurances.')->group(function () {
     Route::match(['get', 'post'], '/inquiry', [InsuranceController::class, 'inquiry'])->name('inquiry');
+    Route::match(['get', 'post'], '/agency-inquiry', [InsuranceController::class, 'agencyInquiry'])->name('agency-inquiry');
 });
 Route::apiResource('insurances', InsuranceController::class);
 Route::apiResource('insurances.tariffs', InsuranceTariffController::class)

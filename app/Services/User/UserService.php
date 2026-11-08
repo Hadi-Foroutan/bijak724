@@ -59,12 +59,9 @@ class UserService
             );
         }
 
-        $isAdmin = in_array($role->name, [
-            RoleEnum::ADMIN->value,
-            RoleEnum::SUPERADMIN->value,
-        ], true);
+        $withoutCompany = in_array($role->name, RoleEnum::withoutCompany(), true);
 
-        if (!$isAdmin && empty($data['company_id'])) {
+        if (!$withoutCompany && empty($data['company_id'])) {
             return ServiceResult::error(
                 __('validation.required', [
                     'attribute' => 'شرکت',
@@ -73,6 +70,7 @@ class UserService
             );
         }
 
+        $data = $this->withInsuranceFields($data, $role->name);
         $this->validateParent($data);
 
         unset(
@@ -128,23 +126,16 @@ class UserService
             );
         }
 
-        $isAdmin = in_array(
-            $role->name,
-            [
-                RoleEnum::ADMIN->value,
-                RoleEnum::SUPERADMIN->value,
-            ],
-            true
-        );
+        $withoutCompany = in_array($role->name, RoleEnum::withoutCompany(), true);
 
-        if (!$isAdmin && empty($data['company_id'] ?? $user->company_id)) {
+        if (!$withoutCompany && empty($data['company_id'] ?? $user->company_id)) {
             return ServiceResult::error(
                 __('validation.required', ['attribute' => 'شرکت']),
                 Response::HTTP_UNPROCESSABLE_ENTITY
             );
         }
 
-        if ($isAdmin) {
+        if ($withoutCompany) {
             $data['company_id'] = $data['company_id'] ?? null;
         }
 
@@ -154,6 +145,7 @@ class UserService
             $data['parent_id'] = null;
         }
 
+        $data = $this->withInsuranceFields($data, $role->name);
         $this->validateParent($data, $user);
 
         $currentPaths = collect(array_keys(self::IMAGE_FIELDS))
@@ -318,5 +310,15 @@ class UserService
         }
 
         return false;
+    }
+
+    /** The insurance agency belongs to the insurance role only: any other role has it emptied. */
+    private function withInsuranceFields(array $data, string $roleName): array
+    {
+        if ($roleName === RoleEnum::INSURANCE->value) {
+            return $data;
+        }
+
+        return [...$data, 'insurance_agency_id' => null];
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Enums\StatusEnum;
 use App\Models\User;
 use App\Services\Company\CompanySupportTokenService;
+use App\Services\InsurancePanel\InsuranceAccessService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +23,7 @@ class CheckPermission
 
     public function __construct(
         protected CompanySupportTokenService $supportTokenService,
+        protected InsuranceAccessService     $insuranceAccessService,
     )
     {
     }
@@ -49,6 +51,16 @@ class CheckPermission
 
             return $token instanceof PersonalAccessToken
             && $this->supportTokenService->canAccessSupportPermission($token, $routeName)
+                ? $next($request)
+                : response()->json([
+                    'message' => __('public.access_denied', ['attribute' => 'صفحه']),
+                ], Response::HTTP_FORBIDDEN);
+        }
+
+        // توکن موقت ادمین برای پنل یک نمایندگی بیمه فقط به مسیرهای پنل بیمه دسترسی دارد
+        if ($currentUser instanceof User
+            && $this->insuranceAccessService->isSupportToken($this->insuranceAccessService->currentToken($currentUser))) {
+            return $this->insuranceAccessService->allowsRoute($routeName)
                 ? $next($request)
                 : response()->json([
                     'message' => __('public.access_denied', ['attribute' => 'صفحه']),

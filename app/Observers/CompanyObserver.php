@@ -37,8 +37,8 @@ class CompanyObserver
             $this->companyTableService->sync($company->id);
         }
 
-//        $this->bijakNumberService->ensureDefaultForCompany($company->id);
-//        $this->referralNumberService->ensureDefaultForCompany($company->id);
+        $this->bijakNumberService->ensureDefaultForCompany($company->id);
+        $this->referralNumberService->ensureDefaultForCompany($company->id);
 //        $this->defaultInsuranceService->createForCompany($company);
         $this->companySettingService->ensureDefaultsForCompany($company->id);
         $this->sharedAdditionalFieldService->ensureDefaultsForCompany($company->id);

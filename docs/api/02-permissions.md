@@ -22,7 +22,19 @@
 | `superAdmin`     | همه (`*`)                                  | ادمین |
 | `admin`          | `admin.*`                                  | ادمین |
 | `companyManager` | `user.*`، `profile.*`                      | شرکت  |
+| `insurance`      | `insurance.*` (و `profile.*` که برای او کار نمی‌کند، [بخش ۳۵](35-insurance-panel.md)) | بیمه  |
 | `user`           | `user.*`، `profile.*` به‌جز موارد غیرپیش‌فرض | شرکت  |
+
+### مجوزهای جدید پنل بیمه
+
+| گروه (پیشوند)                  | عنوان گروه                         | مجوزها                                                                                                                                                                                                 | چه کسی می‌گیرد                  |
+|--------------------------------|------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------|
+| `admin.insurance-agencies.`    | مدیریت نمایندگی‌های بیمه            | `index`، `store`، `show`، `update`، `destroy`، `companies.index`، `companies.unconnected`، `insurances.index`، `insurances.store`، `insurances.destroy`، `companies.insurances.index`، `loginAs` (ورود به پنل نمایندگی)                                                              | `admin`، `superAdmin`           |
+| `admin.insurance-companies.`   | مشاهده شرکت‌های بیمه (ادمین)       | `index`                                                                                                                                                                                                | `admin`، `superAdmin`           |
+| `insurance.`                   | پنل بیمه: شرکت‌ها و بارنامه‌ها      | `companies.index`، `companies.waybills.index`، `companies.waybills.show`                                                                                                                                 | نقش `insurance`                 |
+| `user.insurances.` (مجوز تازه) | مدیریت بیمه‌ها و تعرفه‌ها          | `agency-inquiry` (استعلام نمایندگی با `org_code` شرکت بیمه + کد)                                                                                                                                                               | `companyManager`، `user`        |
+
+در UI مدیریت مجوزها این گروه‌ها خودکار از `GET /api/admin/permissions` و `GET /api/admin/users/{user}/permissions` می‌آیند؛ کد خاصی لازم نیست.
 
 ### قواعد فرانت‌اند
 

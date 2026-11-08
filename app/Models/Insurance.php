@@ -30,7 +30,7 @@ class Insurance extends Model
     ];
 
     protected $fillable = [
-        'company_id', 'insurance_company_id', 'title', 'contract_number', 'is_default',
+        'company_id', 'insurance_company_id', 'insurance_agency_id', 'insurance_agency_status', 'title', 'contract_number', 'is_default',
         'status', 'start_date', 'end_date', 'description', 'representative_first_name',
         'representative_last_name', 'representative_mobile', 'representative_phone',
         'representative_fax', 'representative_email', 'representative_address',
@@ -41,6 +41,7 @@ class Insurance extends Model
         return [
             'is_default' => 'boolean',
             'status' => StatusEnum::class,
+            'insurance_agency_status' => StatusEnum::class,
             'start_date' => 'date',
             'end_date' => 'date',
         ];
@@ -54,6 +55,18 @@ class Insurance extends Model
     public function insuranceCompany(): BelongsTo
     {
         return $this->belongsTo(InsuranceCompany::class);
+    }
+
+    /** The agency of the insurer this contract was recorded with (soft-deleted agencies still show here). */
+    public function agency(): BelongsTo
+    {
+        return $this->belongsTo(InsuranceAgency::class, 'insurance_agency_id')->withTrashed();
+    }
+
+    /** Whether the contract is connected to its agency: it has one and the admin has not cut it off. */
+    public function isConnectedToAgency(): bool
+    {
+        return $this->insurance_agency_id !== null && $this->insurance_agency_status === StatusEnum::ACTIVE;
     }
 
     public function tariffs(): HasMany

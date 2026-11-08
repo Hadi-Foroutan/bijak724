@@ -4,6 +4,7 @@ namespace App\Http\Requests\Insurance;
 
 use App\Enums\StatusEnum;
 use App\Http\Requests\BaseRequest;
+use App\Rules\ActiveInsuranceAgencyCode;
 use Illuminate\Validation\Rule;
 
 class StoreInsuranceRequest extends BaseRequest
@@ -11,7 +12,9 @@ class StoreInsuranceRequest extends BaseRequest
     public function rules(): array
     {
         return [
-            'insurance_company_id' => ['required', 'integer', Rule::exists('insurance_companies', 'id')],
+            // The insurer and the agent's information come from the agency found by the insurer's org_code and the agency code.
+            'insurance_company_org_code' => ['required', 'integer'],
+            'insurance_agency_code' => ['required', 'string', 'max:255', new ActiveInsuranceAgencyCode($this->input('insurance_company_org_code'))],
             'title' => ['required', 'string', 'max:255'],
             'contract_number' => ['required', 'string', 'max:255', Rule::unique('insurances')->where('company_id', $this->companyId())],
             'is_default' => ['required', 'boolean'],
@@ -19,13 +22,6 @@ class StoreInsuranceRequest extends BaseRequest
             'start_date' => ['required', 'date_format:Y-m-d'],
             'end_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:start_date'],
             'description' => ['nullable', 'string'],
-            'representative_first_name' => ['nullable', 'string', 'max:255'],
-            'representative_last_name' => ['nullable', 'string', 'max:255'],
-            'representative_mobile' => ['nullable', 'string', 'max:30'],
-            'representative_phone' => ['nullable', 'string', 'max:30'],
-            'representative_fax' => ['nullable', 'string', 'max:30'],
-            'representative_email' => ['nullable', 'email', 'max:255'],
-            'representative_address' => ['nullable', 'string'],
         ];
     }
 }

@@ -12,7 +12,7 @@
 | #    | متد | مسیر                              | نوع ورودی | مجوز لازم                      | کاربرد                        |
 |------|-----|-----------------------------------|-----------|--------------------------------|-------------------------------|
 | ۳۱.۱ | GET | `/api/admin/dashboard`            | ندارد     | `admin.dashboard.index`        | شمارنده‌های خلاصهٔ سیستم       |
-| ۳۱.۲ | GET | `/api/admin/dashboard/companies/top` | ندارد  | `admin.dashboard.companies-top` | ۷ شرکت برتر (بیشترین بارنامه) |
+| ۳۱.۲ | GET | `/api/admin/dashboard/companies/top/seven` | ندارد  | `admin.dashboard.companies-top-seven` | ۷ شرکت برتر (بیشترین بارنامه) |
 | ۳۱.۳ | GET | `/api/admin/dashboard/waybills/monthly` | ندارد | `admin.dashboard.waybills-monthly` | بارنامه‌های صادرشدهٔ ۱۲ ماه اخیر |
 | ۳۱.۴ | GET | `/api/admin/dashboard/companies/top/monthly` | ندارد | `admin.dashboard.companies-top-monthly` | ۷ شرکت برتر هر یک از ۱۲ ماه اخیر |
 
@@ -45,7 +45,7 @@
 | `total_companies`        | int | تعداد شرکت‌ها                                                                          |
 | `total_users`            | int | تعداد کاربران شرکت‌ها؛ کاربران پنل ادمین (بدون شرکت) شمرده نمی‌شوند                       |
 
-### ۳۱.۳ ۷ شرکت برتر — `GET /api/admin/dashboard/companies/top`
+### ۳۱.۳ ۷ شرکت برتر — `GET /api/admin/dashboard/companies/top/seven`
 
 **ورودی:** ندارد. شرکت‌ها از نظر تعداد کل بارنامه‌های صادرشده مرتب می‌شوند، بدون توجه به زمان صدور.
 

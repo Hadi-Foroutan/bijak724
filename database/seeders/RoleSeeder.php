@@ -37,6 +37,11 @@ class RoleSeeder extends Seeder
                 'description' => 'کاربر عادی شرکت',
             ],
             [
+                'name' => 'insurance',
+                'display_name' => 'نمایندگی بیمه',
+                'description' => 'کاربر پنل بیمه: نمایندگی یا مدیر شرکت بیمه که بارنامه‌های بیمه‌شدهٔ خود را می‌بیند',
+            ],
+            [
                 'name' => 'demo',
                 'display_name' => 'دمو',
                 'description' => 'نقش دمو برای کاربرانی که قصد تست کردن سایت رو دارن',
@@ -67,6 +72,20 @@ class RoleSeeder extends Seeder
             ->all();
 
         $companyManagerRole->permissions()->sync($companyPermissionIds);
+
+        // The insurance panel's own permissions (`insurance.*`) and the profile ones.
+        Role::query()
+            ->where('name', RoleEnum::INSURANCE->value)
+            ->firstOrFail()
+            ->permissions()
+            ->sync(Permission::query()
+                ->where('status', StatusEnum::ACTIVE->value)
+                ->where(function ($query): void {
+                    $query->where('name', 'like', 'insurance.%')
+                        ->orWhere('name', 'like', 'profile.%');
+                })
+                ->pluck('id')
+                ->all());
 
         $demoRole = Role::query()
             ->where('name', RoleEnum::DEMO->value)

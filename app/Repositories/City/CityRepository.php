@@ -17,6 +17,11 @@ class CityRepository implements CityRepositoryInterface
         );
     }
 
+    public function findByCode(int $code): ?City
+    {
+        return City::query()->where('code', $code)->first();
+    }
+
     public function create(array $data): City
     {
         return City::query()->create($data);

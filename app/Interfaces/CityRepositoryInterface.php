@@ -10,6 +10,9 @@ interface CityRepositoryInterface
 {
     public function all(array $params): Collection|LengthAwarePaginator;
 
+    /** The city with this code, or null. */
+    public function findByCode(int $code): ?City;
+
     /**
      * @param array<string, mixed> $data
      */

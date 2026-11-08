@@ -21,6 +21,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'company_id',
+        'insurance_agency_id',
         'parent_id',
         'national_code',
         'full_name',
@@ -93,6 +94,12 @@ class User extends Authenticatable
     public function company(): BelongsTo
     {
         return $this->belongsTo(Company::class);
+    }
+
+    /** The agency of an insurance panel user (empty for the other roles); it carries the insurer, the city and the level. */
+    public function insuranceAgency(): BelongsTo
+    {
+        return $this->belongsTo(InsuranceAgency::class);
     }
 
     public function parent(): BelongsTo

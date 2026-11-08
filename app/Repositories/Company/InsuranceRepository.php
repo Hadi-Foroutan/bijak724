@@ -20,7 +20,7 @@ class InsuranceRepository implements InsuranceRepositoryInterface
         return Insurance::searchRecords(
             $filters,
             fn($query) => $query->where('company_id', $companyId)
-                ->with(['insuranceCompany', 'tariffs.cargoGroup']),
+                ->with(['insuranceCompany', 'agency.city', 'tariffs.cargoGroup']),
         );
     }
 
@@ -28,7 +28,7 @@ class InsuranceRepository implements InsuranceRepositoryInterface
     {
         return Insurance::query()
             ->where('company_id', $companyId)
-            ->with(['insuranceCompany', 'tariffs.cargoGroup'])
+            ->with(['insuranceCompany', 'agency.city', 'tariffs.cargoGroup'])
             ->findOrFail($id);
     }
 
