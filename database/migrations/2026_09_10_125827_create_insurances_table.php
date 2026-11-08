@@ -15,6 +15,9 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('company_id')->constrained()->cascadeOnDelete();
             $table->foreignId('insurance_company_id')->constrained()->restrictOnDelete();
+            // The agency of the company's agent, and the state of that connection (`inactive` = cut off by the admin).
+            $table->foreignId('insurance_agency_id')->nullable()->constrained('insurance_agencies')->restrictOnDelete();
+            $table->enum('insurance_agency_status', StatusEnum::values())->default(StatusEnum::ACTIVE->value);
             $table->string('title');
             $table->string('contract_number');
             $table->boolean('is_default')->default(false);

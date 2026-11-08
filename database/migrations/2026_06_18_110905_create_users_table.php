@@ -17,6 +17,8 @@ return new class extends Migration {
                 ->nullable()
                 ->constrained('companies')
                 ->cascadeOnDelete();
+            // The insurance panel user's agency; its foreign key is added in the insurance_agencies migration.
+            $table->unsignedBigInteger('insurance_agency_id')->nullable();
             $table->foreignId('parent_id')
                 ->nullable()
                 ->constrained('users')
