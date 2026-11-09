@@ -20,6 +20,7 @@ class InsuranceAgencyResource extends JsonResource
                 'id' => $this->insuranceCompany->id,
                 'org_code' => $this->insuranceCompany->org_code,
                 'name' => $this->insuranceCompany->name,
+                'logo' => $this->insuranceCompany->logo_url,
             ]),
             'state_code' => $this->state_code,
             'state' => $this->whenLoaded('state', fn(): ?array => $this->state === null ? null : [

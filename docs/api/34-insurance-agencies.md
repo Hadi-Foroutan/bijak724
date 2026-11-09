@@ -70,7 +70,7 @@ php artisan generate-insurance-agencies
 
 برای فیلتر شهر بر اساس استانِ نماینده استانی، `state.id` همان گره/ردیف را در `GET /api/admin/cities?eq-state_id=<state.id>` بگذارید.
 
-خروجی `GET /api/admin/insurance-companies`: آرایه (یا paginator با `paginate=1`) از شرکت‌های بیمهٔ **فعال**؛ هر ردیف دست‌کم `id`، `org_code` و `name` دارد. جست‌وجو با `search` یا `name=`.
+خروجی `GET /api/admin/insurance-companies`: آرایه (یا paginator با `paginate=1`) از شرکت‌های بیمهٔ **فعال**؛ هر ردیف دست‌کم `id`، `org_code`، `name` و `logo_url` (نشانی لوگو یا `null`) دارد. جست‌وجو با `search` یا `name=`.
 
 ### ۳۴.۴ ورودی
 

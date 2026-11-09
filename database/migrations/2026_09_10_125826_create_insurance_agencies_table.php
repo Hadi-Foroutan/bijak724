@@ -48,18 +48,10 @@ return new class extends Migration {
                 $table->unique(['insurance_company_id', 'code']);
             });
         }
-
-        Schema::table('users', function (Blueprint $table) {
-            $table->foreign('insurance_agency_id')->references('id')->on('insurance_agencies')->restrictOnDelete();
-        });
     }
 
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['insurance_agency_id']);
-        });
-
         Schema::dropIfExists('insurance_agencies');
     }
 };

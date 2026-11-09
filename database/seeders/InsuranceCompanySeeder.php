@@ -28,6 +28,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10103858742',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Iran.webp',
             ],
             [
                 'id' => 2,
@@ -42,6 +43,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10100314757',
                 'phone' => '021 - 88800950 - 60',
                 'website' => null,
+                'logo' => 'images/insurance/logo/Asia.webp',
             ],
             [
                 'id' => 3,
@@ -56,6 +58,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10100641966',
                 'phone' => '88770971-80',
                 'website' => null,
+                'logo' => 'images/insurance/logo/Dana.webp',
             ],
             [
                 'id' => 4,
@@ -70,6 +73,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10101541927',
                 'phone' => null,
                 'website' => 'https://mic.co.ir',
+                'logo' => 'images/insurance/logo/Moallem.webp',
             ],
             [
                 'id' => 5,
@@ -84,6 +88,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10100314776',
                 'phone' => null,
                 'website' => 'https://www.ealborzins.ir',
+                'logo' => 'images/insurance/logo/Alborz.svg',
             ],
             [
                 'id' => 6,
@@ -98,6 +103,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10102425969',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Karafarin.webp',
             ],
             [
                 'id' => 7,
@@ -112,6 +118,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10102424818',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Parsian.webp',
             ],
             [
                 'id' => 8,
@@ -126,6 +133,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10102425044',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Tosee.webp',
             ],
             [
                 'id' => 9,
@@ -140,6 +148,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10102529006',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Sina.webp',
             ],
             [
                 'id' => 10,
@@ -154,6 +163,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10102818130',
                 'phone' => '3253',
                 'website' => 'https://www.si24.ir',
+                'logo' => 'images/insurance/logo/Saman.webp',
             ],
             [
                 'id' => 11,
@@ -168,6 +178,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10102425103',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Razi.webp',
             ],
             [
                 'id' => 12,
@@ -182,6 +193,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10103808680',
                 'phone' => '2123047',
                 'website' => 'https://novininsurance.com',
+                'logo' => 'images/insurance/logo/Novin.webp',
             ],
             [
                 'id' => 13,
@@ -196,6 +208,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10102822596',
                 'phone' => '021-36242816',
                 'website' => null,
+                'logo' => 'images/insurance/logo/Day.webp',
             ],
             [
                 'id' => 14,
@@ -210,6 +223,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10103698106',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Mihan.webp',
             ],
             [
                 'id' => 15,
@@ -224,6 +238,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10102526951',
                 'phone' => null,
                 'website' => 'melat.ir',
+                'logo' => 'images/insurance/logo/Mellat.webp',
             ],
             [
                 'id' => 16,
@@ -238,6 +253,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10861529526',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Hafez.webp',
             ],
             [
                 'id' => 17,
@@ -252,6 +268,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10101605874',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Amin.png',
             ],
             [
                 'id' => 18,
@@ -266,6 +283,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '14011514175',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/IranMoein.png',
             ],
             [
                 'id' => 19,
@@ -280,6 +298,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10861532066',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Omid.png',
             ],
             [
                 'id' => 20,
@@ -294,6 +313,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10103270201',
                 'phone' => '021-82486',
                 'website' => null,
+                'logo' => 'images/insurance/logo/Pasargad.webp',
             ],
             [
                 'id' => 21,
@@ -308,6 +328,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '14009269642',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Iranian.webp',
             ],
             [
                 'id' => 22,
@@ -322,6 +343,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10320357598',
                 'phone' => '89382',
                 'website' => 'kins.ir',
+                'logo' => 'images/insurance/logo/Kosar.svg',
             ],
             [
                 'id' => 23,
@@ -336,6 +358,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10320839651',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Taavon.webp',
             ],
             [
                 'id' => 24,
@@ -350,6 +373,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10320591652',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Ma.webp',
             ],
             [
                 'id' => 25,
@@ -364,6 +388,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '14000218561',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Asmari.webp',
             ],
             [
                 'id' => 26,
@@ -378,6 +403,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10320903570',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Sarmad.svg',
             ],
             [
                 'id' => 27,
@@ -392,6 +418,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10320718237',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Arman.webp',
             ],
             [
                 'id' => 28,
@@ -406,6 +433,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => null,
                 'phone' => null,
                 'website' => null,
+                'logo' => null,
             ],
             [
                 'id' => 29,
@@ -420,6 +448,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '14005725237',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/TejaratNo.svg',
             ],
             [
                 'id' => 30,
@@ -434,6 +463,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => null,
                 'phone' => null,
                 'website' => null,
+                'logo' => null,
             ],
             [
                 'id' => 31,
@@ -448,10 +478,11 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => null,
                 'phone' => null,
                 'website' => null,
+                'logo' => null,
             ],
             [
                 'id' => 32,
-                'name' => 'دانا) شرکت های ادغامی(',
+                'name' => 'شرکت های ادغامی (دانا)',
                 'en_name' => 'Sherkathaye_Edghami_Dana',
                 'org_code' => 42,
                 'economy_code' => null,
@@ -462,6 +493,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '14010230653',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Dana.webp',
             ],
             [
                 'id' => 33,
@@ -476,6 +508,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '10103858742 ',
                 'phone' => null,
                 'website' => 'www.centinsur.ir',
+                'logo' => 'images/insurance/logo/Central.webp',
             ],
             [
                 'id' => 34,
@@ -490,6 +523,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => null,
                 'phone' => null,
                 'website' => null,
+                'logo' => null,
             ],
             [
                 'id' => 35,
@@ -504,6 +538,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => '14006513174',
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Hekmat.svg',
             ],
             [
                 'id' => 36,
@@ -518,6 +553,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => null,
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Khavarmiyaneh.svg',
             ],
             [
                 'id' => 37,
@@ -532,6 +568,7 @@ class InsuranceCompanySeeder extends Seeder
                 'national_code' => null,
                 'phone' => null,
                 'website' => null,
+                'logo' => 'images/insurance/logo/Baran.png',
             ]
         ];
 

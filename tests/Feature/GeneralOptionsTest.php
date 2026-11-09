@@ -101,3 +101,19 @@ test('it filters cities by state and only returns active insurance companies', f
         ->assertJsonPath('data.total', 1)
         ->assertJsonPath('data.data.0.id', $activeInsuranceCompany->id);
 });
+
+test('insurance companies are listed with the address of their logo', function () {
+    InsuranceCompany::query()->forceCreate(['name' => 'بیمه بدون لوگو', 'org_code' => 6003]);
+    InsuranceCompany::query()->forceCreate([
+        'name' => 'بیمه با لوگو',
+        'org_code' => 6004,
+        'logo' => 'images/insurance/logo/Iran.webp',
+    ]);
+
+    $this->getJson('/api/user/general/insurance-companies')
+        ->assertSuccessful()
+        ->assertJsonPath('data.0.org_code', 6004)
+        ->assertJsonPath('data.0.logo_url', asset('images/insurance/logo/Iran.webp'))
+        ->assertJsonPath('data.1.org_code', 6003)
+        ->assertJsonPath('data.1.logo_url', null);
+});

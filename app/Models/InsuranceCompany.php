@@ -17,4 +17,12 @@ class InsuranceCompany extends Model
     protected array $globalSearchFields = [
         'name', 'en_name', 'org_code', 'economy_code', 'national_code', 'phone',
     ];
+
+    protected $appends = ['logo_url'];
+
+    /** The public address of the insurer's logo; an insurer without a logo has none. */
+    public function getLogoUrlAttribute(): ?string
+    {
+        return $this->logo ? asset($this->logo) : null;
+    }
 }
