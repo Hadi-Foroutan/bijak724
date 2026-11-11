@@ -208,9 +208,12 @@ class WaybillService
         }
     }
 
-    public function cancel(int $companyId, int $id): ServiceResult
+    /**
+     * Void a completed waybill and record who voided it, when and why.
+     */
+    public function cancel(int $companyId, int $id, User $user, ?string $reason = null): ServiceResult
     {
-        return DB::transaction(function () use ($companyId, $id): ServiceResult {
+        return DB::transaction(function () use ($companyId, $id, $user, $reason): ServiceResult {
             /** @var Waybill $waybill */
             $waybill = $this->waybillRepository->findOrFailForUpdate($companyId, $id);
 
@@ -223,6 +226,10 @@ class WaybillService
 
             $this->waybillRepository->update($companyId, $id, [
                 'status' => WaybillStatus::Canceled->value,
+                'canceled_by' => $user->getKey(),
+                'canceled_by_print_name' => $user->printNameOrFullName(),
+                'canceled_at' => now(),
+                'cancel_reason' => $reason,
             ]);
 
             return ServiceResult::success($this->waybillRepository->findOrFail($companyId, $id));

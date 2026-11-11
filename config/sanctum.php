@@ -22,7 +22,7 @@ return [
         '%s%s',
         'localhost,localhost:3000,127.0.0.1,127.0.0.1:8000,::1',
         Sanctum::currentApplicationUrlWithPort(),
-    // Sanctum::currentRequestHost(),
+        // Sanctum::currentRequestHost(),
     ))),
 
     /*
@@ -51,6 +51,19 @@ return [
     */
 
     'expiration' => null,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Login Token Expiration Minutes
+    |--------------------------------------------------------------------------
+    |
+    | The number of minutes a token issued by a username/password login
+    | stays valid (stored in the token's "expires_at"). The admin's
+    | login-as support tokens use their own duration instead.
+    |
+    */
+
+    'login_token_expiration' => (int) env('SANCTUM_LOGIN_TOKEN_EXPIRATION', 60 * 24),
 
     /*
     |--------------------------------------------------------------------------

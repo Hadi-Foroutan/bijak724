@@ -22,22 +22,23 @@ class InsuranceAccessService
 {
     public const DEFAULT_DURATION = 1;
 
+    /** The name prefix of an insurance user's own login tokens (`insurance-user:{userId}:{uuid}`). */
+    public const USER_TOKEN_PREFIX = 'insurance-user:';
+
     private const USER_ABILITY = 'insurance-user';
 
     private const SUPPORT_ABILITY = 'insurance-support';
 
-    public function __construct(protected AccessTokenService $accessTokenService)
-    {
-    }
+    public function __construct(protected AccessTokenService $accessTokenService) {}
 
     public function userTokenName(User $user): string
     {
-        return "insurance-user:{$user->getKey()}:" . Str::uuid();
+        return self::USER_TOKEN_PREFIX."{$user->getKey()}:".Str::uuid();
     }
 
     public function supportTokenName(InsuranceAgency $agency): string
     {
-        return "insurance-support:{$agency->getKey()}:" . Str::uuid();
+        return "insurance-support:{$agency->getKey()}:".Str::uuid();
     }
 
     /** @return array<int, string> */
@@ -119,7 +120,7 @@ class InsuranceAccessService
     {
         $isSupport = $this->isSupportToken($token);
 
-        if (!$isSupport && !$this->isInsuranceUser($user)) {
+        if (! $isSupport && ! $this->isInsuranceUser($user)) {
             return null;
         }
 
@@ -146,7 +147,7 @@ class InsuranceAccessService
     {
         foreach ($this->accessTokenService->abilities($token) as $ability) {
             if (preg_match('/^insurance-agency:(\d+)$/', $ability, $matches) === 1) {
-                return InsuranceAgency::query()->with('insuranceCompany')->find((int)$matches[1]);
+                return InsuranceAgency::query()->with('insuranceCompany')->find((int) $matches[1]);
             }
         }
 

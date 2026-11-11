@@ -71,6 +71,10 @@ class Waybill extends DynamicModel
         'bijak_tracking_code',
         'description',
         'status',
+        'canceled_by',
+        'canceled_by_print_name',
+        'canceled_at',
+        'cancel_reason',
         'transport_contract_id',
         'base_freight_amount',
         'advance_freight_amount',
@@ -165,6 +169,9 @@ class Waybill extends DynamicModel
         'bijak_tracking_code',
         'description',
         'status',
+        'canceled_by',
+        'canceled_by_print_name',
+        'canceled_at',
         'transport_contract_id',
         'base_freight_amount',
         'advance_freight_amount',
@@ -197,6 +204,12 @@ class Waybill extends DynamicModel
         return $this->belongsTo(User::class, 'created_by')->withTrashed();
     }
 
+    /** The user who voided the waybill (an admin when it was voided through a support token). */
+    public function canceler(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'canceled_by')->withTrashed();
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {
@@ -205,6 +218,7 @@ class Waybill extends DynamicModel
             'loading_started_at' => 'datetime',
             'loading_ended_at' => 'datetime',
             'issued_at' => 'datetime',
+            'canceled_at' => 'datetime',
             'status' => WaybillStatus::class,
             'freight_at_origin' => 'boolean',
             'is_fixed' => 'boolean',

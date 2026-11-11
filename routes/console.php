@@ -13,3 +13,5 @@ Schedule::command('db:backup')
     ->withoutOverlapping();
 
 Schedule::command('reports:prune')->everyFiveMinutes()->withoutOverlapping();
+
+Schedule::command('sanctum:prune-expired --hours=24')->daily()->withoutOverlapping();

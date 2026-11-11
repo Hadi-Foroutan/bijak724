@@ -20,24 +20,22 @@ use Symfony\Component\HttpFoundation\Response;
 class AuthService
 {
     public function __construct(
-        protected UserInterface              $authRepository,
-        protected PermissionInterface        $permissionRepository,
+        protected UserInterface $authRepository,
+        protected PermissionInterface $permissionRepository,
         protected CompanySupportTokenService $supportTokenService,
-        protected AccessTokenService         $accessTokenService,
-        protected InsuranceAccessService     $insuranceAccessService,
-    )
-    {
-    }
+        protected AccessTokenService $accessTokenService,
+        protected InsuranceAccessService $insuranceAccessService,
+    ) {}
 
     public function login(string $username, string $password): ServiceResult
     {
         $user = $this->authRepository->findByUsername($username);
-        if (!$user) {
+        if (! $user) {
             return ServiceResult::error(__('public.not_found', ['attribute' => 'کاربر']));
         }
 
         $verify = Hash::check($password, $user->password);
-        if (!$verify) {
+        if (! $verify) {
             return ServiceResult::error(__('public.invalid_credentials'));
         }
 
@@ -45,6 +43,9 @@ class AuthService
             ? $this->companyForUser($user)
             : null;
         $isInsuranceUser = $company === null && $this->insuranceAccessService->isInsuranceUser($user);
+
+        $this->revokePreviousLoginTokens($user, $company, $isInsuranceUser);
+
         $newToken = $this->accessTokenService->create(
             $user,
             match (true) {
@@ -57,6 +58,7 @@ class AuthService
                 $isInsuranceUser => $this->insuranceAccessService->userAbilities(),
                 default => ['*'],
             },
+            $this->accessTokenService->loginExpiresAt(),
         );
 
         return ServiceResult::success([
@@ -67,13 +69,13 @@ class AuthService
 
     public function loginAsCompany(User $admin, Company $company, int $durationDays): ServiceResult
     {
-        if (!$admin->isSuperAdmin() && !$admin->hasRole(RoleEnum::ADMIN->value)) {
+        if (! $admin->isSuperAdmin() && ! $admin->hasRole(RoleEnum::ADMIN->value)) {
             return ServiceResult::error(__('public.access_denied', ['attribute' => 'شرکت']), Response::HTTP_FORBIDDEN);
         }
 
         $supportRole = $this->supportTokenService->supportRole();
 
-        if (!$supportRole) {
+        if (! $supportRole) {
             return ServiceResult::error(
                 __('public.not_found', ['attribute' => 'نقش مدیر شرکت']),
                 Response::HTTP_UNPROCESSABLE_ENTITY,
@@ -96,11 +98,11 @@ class AuthService
     /** An admin's temporary token for the panel of one insurance agency (the agency level of that agency). */
     public function loginAsInsuranceAgency(User $admin, InsuranceAgency $agency, int $durationDays): ServiceResult
     {
-        if (!$admin->isSuperAdmin() && !$admin->hasRole(RoleEnum::ADMIN->value)) {
+        if (! $admin->isSuperAdmin() && ! $admin->hasRole(RoleEnum::ADMIN->value)) {
             return ServiceResult::error(__('public.access_denied', ['attribute' => 'پنل بیمه']), Response::HTTP_FORBIDDEN);
         }
 
-        if (!$this->insuranceAccessService->supportRole()) {
+        if (! $this->insuranceAccessService->supportRole()) {
             return ServiceResult::error(
                 __('public.not_found', ['attribute' => 'نقش نمایندگی بیمه']),
                 Response::HTTP_UNPROCESSABLE_ENTITY,
@@ -144,13 +146,13 @@ class AuthService
      */
     private function authenticatedUserData(User $user): array
     {
-        if (!$user->isActive()) {
+        if (! $user->isActive()) {
             ServiceResult::error(__('auth.user_inactive'), Response::HTTP_FORBIDDEN);
         }
 
         $role = $this->permissionRepository->findRole($user);
 
-        if (!$role) {
+        if (! $role) {
             ServiceResult::error(__('public.not_found', ['attribute' => 'نقش']), Response::HTTP_FORBIDDEN);
         }
 
@@ -174,7 +176,7 @@ class AuthService
     {
         $data = $this->authenticatedUserData($user);
 
-        if (!$token) {
+        if (! $token) {
             return [
                 ...$data,
                 'auth_mode' => 'system',
@@ -183,7 +185,7 @@ class AuthService
 
         $companyContext = $this->supportTokenService->context($user, $token);
 
-        if (!$companyContext) {
+        if (! $companyContext) {
             return $this->insuranceContext($user, $token, $data);
         }
 
@@ -206,7 +208,7 @@ class AuthService
      * The context of a session without a company: the insurance panel's (`insurance` for a user of the insurance role,
      * `insurance_support` for an admin inside an agency's panel) or, for everyone else, the system one.
      *
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      * @return array<string, mixed>
      */
     private function insuranceContext(User $user, PersonalAccessToken $token, array $data): array
@@ -230,11 +232,29 @@ class AuthService
         return $data;
     }
 
+    /**
+     * Keep a single session for company and insurance users: a new login revokes the user's earlier login tokens of
+     * the same kind. A system (admin) login revokes nothing, so the admin's other sessions and the support tokens
+     * issued from them stay valid until they expire.
+     */
+    private function revokePreviousLoginTokens(User $user, ?Company $company, bool $isInsuranceUser): void
+    {
+        $namePrefix = match (true) {
+            $company !== null => CompanySupportTokenService::COMPANY_USER_TOKEN_PREFIX,
+            $isInsuranceUser => InsuranceAccessService::USER_TOKEN_PREFIX,
+            default => null,
+        };
+
+        if ($namePrefix !== null) {
+            $this->accessTokenService->revokeByNamePrefix($user, $namePrefix);
+        }
+    }
+
     private function companyForUser(User $user): Company
     {
         $company = $user->company;
 
-        if (!$company || $company->status !== StatusEnum::ACTIVE->value) {
+        if (! $company || $company->status !== StatusEnum::ACTIVE->value) {
             ServiceResult::error(__('public.access_denied', ['attribute' => 'شرکت']), Response::HTTP_FORBIDDEN);
         }
 

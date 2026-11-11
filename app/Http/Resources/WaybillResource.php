@@ -12,6 +12,7 @@ class WaybillResource extends CompanyDynamicResource
     {
         return [
             'issued_at' => $this->issued_at?->format('Y-m-d H:i:s'),
+            'canceled_at' => $this->canceled_at?->format('Y-m-d H:i:s'),
             'sender' => ShipmentPartyResource::make($this->whenLoaded('sender')),
             'sender_address' => ShipmentPartyAddressResource::make($this->whenLoaded('senderAddress')),
             //            'origin' => ShipmentPartyAddressResource::make($this->whenLoaded('origin')),

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\User\Waybill;
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Waybill\CancelWaybillReferralRequest;
+use App\Http\Requests\Waybill\CancelWaybillRequest;
 use App\Http\Requests\Waybill\StoreWaybillRequest;
 use App\Http\Requests\Waybill\UpdateWaybillRequest;
 use App\Http\Resources\WaybillResource;
@@ -20,16 +21,14 @@ use Symfony\Component\HttpFoundation\Response;
 class WaybillController extends Controller
 {
     public function __construct(
-        protected WaybillService           $waybillService,
+        protected WaybillService $waybillService,
         protected WaybillVisibilityService $waybillVisibility,
-    )
-    {
-    }
+    ) {}
 
     /** کاربر نباید بارنامه‌ای را که اجازهٔ دیدنش را ندارد ویرایش، ابطال یا حذف کند. */
     private function ensureVisible(Request $request, Waybill $waybill): void
     {
-        if (!$this->waybillVisibility->canView($waybill, $request->user())) {
+        if (! $this->waybillVisibility->canView($waybill, $request->user())) {
             throw (new ModelNotFoundException)->setModel(Waybill::class, [$waybill->getKey()]);
         }
     }
@@ -58,7 +57,7 @@ class WaybillController extends Controller
             $this->companyId($request),
             [
                 ...$request->validated(),
-                'created_by' => (int)$request->user()->getKey(),
+                'created_by' => (int) $request->user()->getKey(),
                 'issued_by_print_name' => $request->user()->printNameOrFullName(),
             ],
             $request->user(),
@@ -98,11 +97,16 @@ class WaybillController extends Controller
         );
     }
 
-    public function cancel(Request $request, Waybill $waybill): JsonResponse
+    public function cancel(CancelWaybillRequest $request, Waybill $waybill): JsonResponse
     {
         $this->ensureVisible($request, $waybill);
 
-        $result = $this->waybillService->cancel($this->companyId($request), $waybill->getKey());
+        $result = $this->waybillService->cancel(
+            $this->companyId($request),
+            $waybill->getKey(),
+            $request->user(),
+            $request->validated('reason'),
+        );
 
         return ResponseHandler::success(
             WaybillResource::make($result->data)->resolve($request),

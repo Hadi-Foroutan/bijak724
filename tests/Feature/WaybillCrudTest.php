@@ -447,6 +447,61 @@ test('completed and canceled waybills prevent deleting their references', functi
     }
 });
 
+test('canceling a waybill records who canceled it, when and why', function () {
+    CarbonImmutable::setTestNow('2026-11-11 10:30:00');
+
+    $waybillId = $this->postJson('/api/user/waybills', completeWaybillPayload($this))
+        ->assertCreated()
+        ->assertJsonPath('data.canceled_by', null)
+        ->assertJsonPath('data.canceled_at', null)
+        ->json('data.id');
+
+    $this->patchJson("/api/user/waybills/{$waybillId}/cancel", [
+        'reason' => 'بار تخلیه نشد',
+    ])
+        ->assertSuccessful()
+        ->assertJsonPath('data.status', WaybillStatus::Canceled->value)
+        ->assertJsonPath('data.canceled_by', $this->user->id)
+        ->assertJsonPath('data.canceled_by_print_name', 'کاربر صادرکننده')
+        ->assertJsonPath('data.canceled_at', '2026-11-11 10:30:00')
+        ->assertJsonPath('data.cancel_reason', 'بار تخلیه نشد');
+
+    $this->assertDatabaseHas("company_{$this->company->id}_waybills", [
+        'id' => $waybillId,
+        'status' => WaybillStatus::Canceled->value,
+        'canceled_by' => $this->user->id,
+        'cancel_reason' => 'بار تخلیه نشد',
+    ]);
+
+    CarbonImmutable::setTestNow();
+});
+
+test('canceling a waybill without a reason still records who canceled it', function () {
+    $waybillId = $this->postJson('/api/user/waybills', completeWaybillPayload($this))
+        ->assertCreated()
+        ->json('data.id');
+
+    $this->patchJson("/api/user/waybills/{$waybillId}/cancel")
+        ->assertSuccessful()
+        ->assertJsonPath('data.canceled_by', $this->user->id)
+        ->assertJsonPath('data.cancel_reason', null);
+});
+
+test('cancel fields cannot be set through the waybill payload', function () {
+    $otherUser = User::factory()->create();
+
+    $this->postJson('/api/user/waybills', [
+        ...completeWaybillPayload($this),
+        'canceled_by' => $otherUser->id,
+        'canceled_at' => '2026-01-01 00:00:00',
+        'cancel_reason' => 'جعلی',
+    ])
+        ->assertCreated()
+        ->assertJsonPath('data.canceled_by', null)
+        ->assertJsonPath('data.canceled_at', null)
+        ->assertJsonPath('data.cancel_reason', null);
+});
+
 test('an incomplete waybill does not prevent deleting its references', function () {
     $payload = completeWaybillPayload($this);
     $payload['status'] = WaybillStatus::Incomplete->value;

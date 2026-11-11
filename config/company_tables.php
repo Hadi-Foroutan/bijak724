@@ -70,6 +70,11 @@ return [
         ['name' => 'deleted_at', 'type' => 'dateTime', 'api' => false, 'searchable' => false, 'index' => true],
         ['name' => 'description', 'type' => 'text'],
         ['name' => 'status', 'type' => 'enum', 'values' => WaybillStatus::values(), 'default' => WaybillStatus::Incomplete->value, 'nullable' => false, 'index' => true],
+        // Who voided the waybill, when and why. Set only by WaybillService::cancel(), never from the request payload.
+        ['name' => 'canceled_by', 'type' => 'unsignedBigInteger', 'index' => true, 'foreign' => ['table' => 'users', 'column' => 'id', 'on_delete' => 'null']],
+        ['name' => 'canceled_by_print_name', 'type' => 'string'],
+        ['name' => 'canceled_at', 'type' => 'dateTime'],
+        ['name' => 'cancel_reason', 'type' => 'text', 'global_search' => false],
         ['name' => 'transport_contract_id', 'type' => 'unsignedBigInteger', 'index' => true, 'foreign' => ['table' => 'transport_contracts', 'column' => 'id', 'on_delete' => 'null']],
         ['name' => 'base_freight_amount', 'type' => 'unsignedBigInteger'],
         ['name' => 'advance_freight_amount', 'type' => 'unsignedBigInteger'],

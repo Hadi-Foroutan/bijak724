@@ -16,24 +16,25 @@ class CompanySupportTokenService
 {
     public const DEFAULT_DURATION = 1;
 
+    /** The name prefix of a company user's own login tokens (`company-user:{companyId}:{uuid}`). */
+    public const COMPANY_USER_TOKEN_PREFIX = 'company-user:';
+
     private const COMPANY_USER_ABILITY = 'company-user';
 
     private const SUPPORT_ABILITY = 'company-support';
 
     public function __construct(
         protected AccessTokenService $accessTokenService,
-    )
-    {
-    }
+    ) {}
 
     public function tokenName(Company $company): string
     {
-        return "company-support:{$company->id}:" . Str::uuid();
+        return "company-support:{$company->id}:".Str::uuid();
     }
 
     public function companyUserTokenName(Company $company): string
     {
-        return "company-user:{$company->id}:" . Str::uuid();
+        return self::COMPANY_USER_TOKEN_PREFIX."{$company->id}:".Str::uuid();
     }
 
     /**
@@ -62,7 +63,7 @@ class CompanySupportTokenService
 
     public function canAccessSupportPermission(PersonalAccessToken $token, string $permission): bool
     {
-        if (!$this->isSupportAccessToken($token)) {
+        if (! $this->isSupportAccessToken($token)) {
             return false;
         }
 
@@ -104,7 +105,7 @@ class CompanySupportTokenService
     {
         $token = $this->accessTokenService->current($user);
 
-        if (!$token) {
+        if (! $token) {
             return null;
         }
 
@@ -124,7 +125,7 @@ class CompanySupportTokenService
     {
         $token = $this->accessTokenService->current($user);
 
-        if (!$token) {
+        if (! $token) {
             return null;
         }
 
@@ -138,7 +139,7 @@ class CompanySupportTokenService
         $companyId = $this->companyIdFromToken($token);
         $company = $companyId ? Company::query()->find($companyId) : null;
 
-        if (!$company) {
+        if (! $company) {
             return null;
         }
 
@@ -167,7 +168,7 @@ class CompanySupportTokenService
 
         return array_values(array_filter(
             $this->accessTokenService->abilities($token),
-            fn(string $ability): bool => Str::is(['user.*', 'profile.*'], $ability),
+            fn (string $ability): bool => Str::is(['user.*', 'profile.*'], $ability),
         ));
     }
 
@@ -175,7 +176,7 @@ class CompanySupportTokenService
     {
         foreach ($this->accessTokenService->abilities($token) as $ability) {
             if (preg_match('/^company:(\d+)$/', $ability, $matches) === 1) {
-                return (int)$matches[1];
+                return (int) $matches[1];
             }
         }
 
