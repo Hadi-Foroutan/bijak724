@@ -222,4 +222,17 @@ return [
     'user.cargo-groups.index' => 'مشاهده لیست گروه‌بندی کالاها',
     'user.cargo-groups.show' => 'مشاهده گروه‌بندی کالا',
     'user.cargo-groups-cargos.update' => 'ویرایش محموله‌های گروه کالا',
+
+    'user.sms-panel.show' => 'مشاهده وضعیت سامانه پیامک',
+    'user.sms-panel.register' => 'فعال‌سازی سامانه پیامک شرکت (دسترسی روت)',
+    'user.sms-panel.token.update' => 'ثبت کلید دسترسی پیامک خود کاربر',
+    'user.sms-panel.wallet.refresh' => 'به‌روزرسانی موجودی کیف پول پیامک',
+    'user.sms-panel.driver-broadcast.drivers' => 'مشاهده لیست رانندگان یک مسیر برای ارسال پیامک',
+    'user.sms-panel.driver-broadcast.send' => 'ارسال پیامک گروهی به رانندگان یک مسیر',
+    'user.sms-templates.index' => 'مشاهده قالب‌های پیامک',
+    'user.sms-templates.placeholders' => 'مشاهده کلیدهای قابل استفاده در قالب پیامک',
+    'user.sms-templates.update' => 'ثبت و ویرایش قالب پیامک',
+    'user.sms-templates.destroy' => 'حذف قالب پیامک',
+    'user.waybills.sms.show' => 'مشاهده گیرندگان پیامک بارنامه',
+    'user.waybills.sms.store' => 'ارسال پیامک بارنامه',
 ];

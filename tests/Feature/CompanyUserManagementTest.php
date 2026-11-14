@@ -175,6 +175,39 @@ test('original company sees users of all branches while a branch only sees its o
         );
 });
 
+test('company users get a generated username from the panel code and never reuse a deleted one', function () {
+    $create = function (string $nationalCode, array $extra = []) {
+        $payload = [...companyUserPayload(), 'national_code' => $nationalCode, 'email' => "{$nationalCode}@example.com", 'phone' => null, ...$extra];
+
+        return $this->postJson('/api/user/users', $payload)->assertSuccessful();
+    };
+
+    // The username sent by the company is ignored.
+    $first = $create('1234567801', ['username' => 'chosen-by-company']);
+    $second = $create('1234567802');
+    $third = $create('1234567803');
+
+    $first->assertJsonPath('data.username', '100011000');
+    $second->assertJsonPath('data.username', '100011001');
+    $third->assertJsonPath('data.username', '100011002');
+
+    $this->deleteJson('/api/user/users/' . $third->json('data.id'))->assertSuccessful();
+
+    $create('1234567804')->assertJsonPath('data.username', '100011003');
+
+    // Another company counts on its own.
+    expect(app(\App\Services\User\UsernameGenerator::class)->nextFor($this->otherCompany->id))->toBe('100021000');
+});
+
+test('company manager cannot change the username of a user', function () {
+    $user = companyPanelUser($this->company, 'fixed-username', '1234567891', '09120000001');
+
+    $this->postJson("/api/user/users/{$user->id}", ['first_name' => 'تغییر', 'username' => 'other'])
+        ->assertSuccessful();
+
+    expect($user->fresh()->username)->toBe('fixed-username');
+});
+
 test('company manager cannot delete own account', function () {
     $this->deleteJson("/api/user/users/{$this->manager->id}")
         ->assertUnprocessable();

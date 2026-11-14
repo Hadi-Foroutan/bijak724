@@ -19,11 +19,7 @@ class InsuranceResource extends JsonResource
             'id' => $this->id,
             'company_id' => $this->company_id,
             'insurance_company_id' => $this->insurance_company_id,
-            'insurance_company' => $this->whenLoaded('insuranceCompany', fn(): array => [
-                'id' => $this->insuranceCompany->id,
-                'org_code' => $this->insuranceCompany->org_code,
-                'name' => $this->insuranceCompany->name,
-            ]),
+            'insurance_company' => new InsuranceCompanyResource($this->whenLoaded('insuranceCompany')),
             'title' => $this->title,
             'contract_number' => $this->contract_number,
             'is_default' => $this->is_default,

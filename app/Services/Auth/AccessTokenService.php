@@ -34,6 +34,15 @@ class AccessTokenService
         $user->tokens()->where('name', 'like', $namePrefix.'%')->delete();
     }
 
+    /**
+     * Expire every token of the user, so none of them can be used again and the user has to log in once more.
+     * They are expired rather than deleted to keep the record of the sessions.
+     */
+    public function expireAll(User $user): void
+    {
+        $user->tokens()->update(['expires_at' => now()->subSecond()]);
+    }
+
     public function current(User $user): ?PersonalAccessToken
     {
         $token = $user->currentAccessToken();

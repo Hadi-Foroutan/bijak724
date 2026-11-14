@@ -7,6 +7,7 @@ use App\Exceptions\NotFoundHttpException;
 use App\Exceptions\TooManyRequestsHttpException;
 use App\Http\Middleware\CheckPermission;
 use App\Http\Middleware\EnforceCompanySupportTokenScope;
+use App\Http\Middleware\EnsureSiteIsAvailable;
 use App\Http\Middleware\ForceJsonResponse;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -45,7 +46,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             // 👤 USER (auto load)
             Route::prefix('api/user')
-                ->middleware(['api', 'auth:sanctum', 'company.support.scope', 'check.permissions'])
+                ->middleware(['api', 'site.available', 'auth:sanctum', 'company.support.scope', 'check.permissions'])
                 ->as('user.')
                 ->where([
                     'account' => '[0-9]+',
@@ -84,7 +85,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             // 🛡 INSURANCE (auto load): the panel of the insurers' agents
             Route::prefix('api/insurance')
-                ->middleware(['api', 'auth:sanctum', 'company.support.scope', 'check.permissions'])
+                ->middleware(['api', 'site.available', 'auth:sanctum', 'company.support.scope', 'check.permissions'])
                 ->as('insurance.')
                 ->where(['company' => '[0-9]+', 'waybill' => '[0-9]+'])
                 ->group(function () {
@@ -101,6 +102,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'check.permissions' => CheckPermission::class,
             'company.support.scope' => EnforceCompanySupportTokenScope::class,
+            'site.available' => EnsureSiteIsAvailable::class,
         ]);
 
         $middleware->api(prepend: [

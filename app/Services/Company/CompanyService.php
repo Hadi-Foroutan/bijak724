@@ -11,6 +11,7 @@ class CompanyService
 {
     public function __construct(
         protected CompanyInterface $companyRepository,
+        protected PanelCodeGenerator $panelCodeGenerator,
     )
     {
     }
@@ -33,7 +34,7 @@ class CompanyService
     public function create(array $data): ServiceResult
     {
         $data['status'] ??= StatusEnum::ACTIVE->value;
-        $data['panel_code'] = random_int(10000, 99999);
+        $data['panel_code'] = $this->panelCodeGenerator->generate();
         $company = $this->companyRepository->create($data);
 
         return ServiceResult::success($company);

@@ -7,9 +7,11 @@ use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Models\Company\Waybill;
 use App\Models\User;
 use App\Services\Company\Waybill\WaybillVisibilityService;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\LazyCollection;
 
 class WaybillRepository implements WaybillRepositoryInterface
 {
@@ -84,6 +86,33 @@ class WaybillRepository implements WaybillRepositoryInterface
         $waybill->restore();
 
         return $this->findOrFail($companyId, $id);
+    }
+
+    public function issuedOnRoute(
+        int             $companyId,
+        int             $originCityCode,
+        int             $destinationCityCode,
+        CarbonInterface $from,
+        CarbonInterface $to,
+        User            $viewer,
+    ): LazyCollection
+    {
+        return $this->visibility->scope($this->query($companyId), $viewer)
+            ->select([
+                'driver1_national_code', 'driver1_full_name', 'driver1_phone',
+                'driver2_national_code', 'driver2_full_name', 'driver2_phone',
+                'referral_driver_national_code', 'referral_driver_full_name', 'referral_driver_phone',
+            ])
+            ->where('status', WaybillStatus::Completed->value)
+            ->where('sender_address_city_code', $originCityCode)
+            ->where('receiver_address_city_code', $destinationCityCode)
+            ->whereBetween('issued_at', [$from, $to])
+            ->cursor();
+    }
+
+    public function hasIssuedBy(int $companyId, int $userId): bool
+    {
+        return $this->issuedQuery($companyId)->where('created_by', $userId)->exists();
     }
 
     /** @param list<string> $columns */

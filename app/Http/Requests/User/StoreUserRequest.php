@@ -68,8 +68,10 @@ class StoreUserRequest extends BaseRequest
                 Rule::unique('users', 'email')->ignore($user),
             ],
 
+            // Left empty on creation, a company's user gets the generated `<panel_code><sequence>` username.
             'username' => [
-                'required',
+                Rule::requiredIf(!is_null($user) || blank($this->input('company_id'))),
+                'nullable',
                 'string',
                 Rule::unique('users', 'username')->ignore($user),
             ],

@@ -1,12 +1,19 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
+namespace App\Console\Commands;
 
-return new class extends Migration {
-    /** The logo of each existing insurer, by org_code (InsuranceCompanySeeder holds the same paths for fresh installs). */
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
+
+class SyncInsuranceCompanyLogo extends Command
+{
+    /**
+     * The name and signature of the console command.
+     *
+     * @var string
+     */
+    protected $signature = 'app:sync-insurance-company-logo';
+
     private const LOGOS = [
         2 => 'Iran.webp',
         4 => 'Asia.webp',
@@ -44,28 +51,21 @@ return new class extends Migration {
     ];
 
     /**
-     * Run the migrations.
+     * The console command description.
+     *
+     * @var string
      */
-    public function up(): void
-    {
-        Schema::table('insurance_companies', function (Blueprint $table) {
-            $table->string('logo', 255)->nullable()->after('website');
-        });
+    protected $description = 'Command description';
 
+    /**
+     * Execute the console command.
+     */
+    public function handle()
+    {
         foreach (self::LOGOS as $orgCode => $file) {
             DB::table('insurance_companies')
                 ->where('org_code', $orgCode)
                 ->update(['logo' => "images/insurance/logo/{$file}"]);
         }
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('insurance_companies', function (Blueprint $table) {
-            $table->dropColumn('logo');
-        });
-    }
-};
+}

@@ -22,8 +22,13 @@ use App\Http\Controllers\User\ReferralNumberController;
 use App\Http\Controllers\User\SharedAdditionalFieldController;
 use App\Http\Controllers\User\ShipmentParty\ShipmentPartyAddressController;
 use App\Http\Controllers\User\ShipmentParty\ShipmentPartyController;
+use App\Http\Controllers\User\Sms\DriverBroadcastController;
+use App\Http\Controllers\User\Sms\SmsPanelController;
+use App\Http\Controllers\User\Sms\SmsTemplateController;
+use App\Http\Controllers\User\Sms\WaybillSmsController;
 use App\Http\Controllers\User\TransportContractController;
 use App\Http\Controllers\User\Waybill\WaybillController;
+use App\Enums\SmsRecipientParty;
 use Illuminate\Support\Facades\Route;
 
 // Dashboard
@@ -142,8 +147,31 @@ Route::prefix('waybills')->name('waybills.')->group(function () {
     Route::patch('{waybill}/cancel', [WaybillController::class, 'cancel'])->name('cancel');
     Route::patch('{waybill}/referral/cancel', [WaybillController::class, 'cancelReferral'])
         ->name('referral.cancel');
+    Route::get('{waybill}/sms', [WaybillSmsController::class, 'show'])->name('sms.show');
+    Route::post('{waybill}/sms', [WaybillSmsController::class, 'store'])->name('sms.store');
 });
 Route::apiResource('waybills', WaybillController::class);
+
+// SMS Panel
+Route::prefix('sms-panel')->name('sms-panel.')->group(function () {
+    Route::get('/', [SmsPanelController::class, 'show'])->name('show');
+    Route::post('register', [SmsPanelController::class, 'register'])->name('register');
+    Route::put('token', [SmsPanelController::class, 'updateToken'])->name('token.update');
+    Route::post('wallet/refresh', [SmsPanelController::class, 'refreshWallet'])->name('wallet.refresh');
+
+    Route::prefix('driver-broadcast')->name('driver-broadcast.')->controller(DriverBroadcastController::class)->group(function () {
+        Route::get('drivers', 'drivers')->name('drivers');
+        Route::post('/', 'send')->name('send');
+    });
+});
+
+// SMS Templates (one per party)
+Route::prefix('sms-templates')->name('sms-templates.')->controller(SmsTemplateController::class)->group(function () {
+    Route::get('/', 'index')->name('index');
+    Route::get('placeholders', 'placeholders')->name('placeholders');
+    Route::put('{party}', 'update')->name('update')->whereIn('party', SmsRecipientParty::values());
+    Route::delete('{party}', 'destroy')->name('destroy')->whereIn('party', SmsRecipientParty::values());
+});
 
 // Product Owners
 Route::apiResource('product-owners', ProductOwnerController::class)

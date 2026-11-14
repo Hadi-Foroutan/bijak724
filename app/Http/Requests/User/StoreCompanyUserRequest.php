@@ -28,7 +28,6 @@ class StoreCompanyUserRequest extends BaseRequest
             'phone' => ['sometimes', 'nullable', 'string', Rule::unique('users', 'phone')->ignore($userId)],
             'national_code' => ['required', 'string', Rule::unique('users', 'national_code')->ignore($userId)],
             'email' => ['nullable', 'email', Rule::unique('users', 'email')->ignore($userId)],
-            'username' => ['required', 'string', Rule::unique('users', 'username')->ignore($userId)],
             'password' => [Rule::requiredIf($userId === null), 'nullable', 'string', 'min:7'],
             'min_commission_percentage' => ['required', 'numeric', 'min:0', 'max:100'],
             'max_commission_percentage' => ['required', 'numeric', 'min:0', 'max:100'],

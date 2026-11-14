@@ -82,6 +82,10 @@ use App\Repositories\Permission\PermissionRepository;
 use App\Repositories\Permission\RoleRepository;
 use App\Repositories\User\UserRepository;
 use App\Repositories\WaybillRepository as SharedWaybillRepository;
+use App\Interfaces\Company\SmsPanelRepositoryInterface;
+use App\Interfaces\Company\SmsTemplateRepositoryInterface;
+use App\Repositories\Company\SmsPanelRepository;
+use App\Repositories\Company\SmsTemplateRepository;
 use App\Services\Company\CompanyDataOwnerResolver;
 use App\Services\Company\Report\WaybillReportFieldCatalog;
 use App\Services\Company\Settings\CompanySettingService;
@@ -139,6 +143,8 @@ class AppServiceProvider extends ServiceProvider
         ReportWaybillRepositoryInterface::class => ReportWaybillRepository::class,
         ReportFieldRepositoryInterface::class => ReportFieldRepository::class,
         GlobalSettingRepositoryInterface::class => GlobalSettingRepository::class,
+        SmsPanelRepositoryInterface::class => SmsPanelRepository::class,
+        SmsTemplateRepositoryInterface::class => SmsTemplateRepository::class,
     ];
 
     /**

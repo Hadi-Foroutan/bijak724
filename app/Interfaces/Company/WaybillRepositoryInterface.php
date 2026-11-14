@@ -4,9 +4,11 @@ namespace App\Interfaces\Company;
 
 use App\Models\Company\Waybill;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\LazyCollection;
 
 interface WaybillRepositoryInterface
 {
@@ -30,6 +32,23 @@ interface WaybillRepositoryInterface
     public function delete(int $companyId, int $id): void;
 
     public function restore(int $companyId, int $id): Waybill;
+
+    /**
+     * The issued waybills from one city to another in a period, with only their driver columns.
+     *
+     * @return LazyCollection<int, Waybill>
+     */
+    public function issuedOnRoute(
+        int             $companyId,
+        int             $originCityCode,
+        int             $destinationCityCode,
+        CarbonInterface $from,
+        CarbonInterface $to,
+        User            $viewer,
+    ): LazyCollection;
+
+    /** Whether the user issued (completed or canceled) any waybill in the company's waybill table. */
+    public function hasIssuedBy(int $companyId, int $userId): bool;
 
     /** @param list<string> $columns */
     public function hasIssuedReference(int $companyId, array $columns, int $referenceId): bool;

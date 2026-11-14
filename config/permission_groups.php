@@ -29,6 +29,9 @@ return [
         'user.shipment-parties.' => 'مدیریت فرستندگان و گیرندگان',
         'user.addresses.' => 'مدیریت آدرس‌های فرستندگان و گیرندگان',
         'user.waybills.view-' => 'نمایش بارنامه',
+        'user.waybills.sms.' => 'ارسال پیامک بارنامه',
+        'user.sms-panel.' => 'سامانه پیامک',
+        'user.sms-templates.' => 'مدیریت قالب‌های پیامک',
         'user.waybills.' => 'مدیریت بارنامه‌ها',
         'user.cargos.' => 'مدیریت محموله‌ها',
         'user.product-owners.' => 'مدیریت صاحبان کالا',
@@ -79,6 +82,12 @@ return [
             'user.users.destroy',
             'user.permissions.update',
             '*.destroy',
+            // ارسال پیامک هزینه دارد و با کلید واقعی انجام می‌شود.
+            'user.sms-panel.register',
+            'user.sms-panel.token.update',
+            'user.sms-panel.driver-broadcast.send',
+            'user.sms-templates.update',
+            'user.waybills.sms.store',
         ],
     ],
 
@@ -95,6 +104,11 @@ return [
         'user.permissions.*',
         // فقط با تیک دستی مدیر داده می‌شوند؛ کاربر ساده به‌صورت پیش‌فرض آن‌ها را ندارد.
         'user.waybills.view-*',
+        // فعال‌سازی سامانه پیامک همان دسترسی «روت» است.
+        'user.sms-panel.register',
+        'user.sms-panel.driver-broadcast.*',
+        'user.sms-templates.*',
+        'user.waybills.sms.*',
         //        'user.fleets.*'
     ],
 ];

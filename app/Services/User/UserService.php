@@ -4,9 +4,11 @@ namespace App\Services\User;
 
 use App\Enums\RoleEnum;
 use App\Helpers\ServiceResult;
+use App\Interfaces\Company\WaybillRepositoryInterface;
 use App\Interfaces\RoleInterface;
 use App\Interfaces\UserInterface;
 use App\Models\User;
+use App\Services\Auth\AccessTokenService;
 use App\Services\Uploads\UserImageUploader;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +36,9 @@ class UserService
         protected UserInterface     $userRepository,
         protected RoleInterface     $roleRepository,
         protected UserImageUploader $imageUploader,
+        protected UsernameGenerator $usernameGenerator,
+        protected WaybillRepositoryInterface $waybillRepository,
+        protected AccessTokenService $accessTokenService,
     )
     {
     }
@@ -84,6 +89,10 @@ class UserService
 
         try {
             $user = DB::transaction(function () use ($data, $images, $role, &$uploadedPaths): ?User {
+                if (blank($data['username'] ?? null) && !empty($data['company_id'])) {
+                    $data['username'] = $this->usernameGenerator->nextFor((int)$data['company_id']);
+                }
+
                 $user = $this->userRepository->store($data);
 
                 if (!$user) {
@@ -148,6 +157,15 @@ class UserService
         $data = $this->withInsuranceFields($data, $role->name);
         $this->validateParent($data, $user);
 
+        // An empty password means "keep the current one".
+        if (blank($data['password'] ?? null)) {
+            unset($data['password']);
+        }
+
+        // A new username or password must not leave the old sessions usable.
+        $credentialsChanged = filled($data['password'] ?? null)
+            || (filled($data['username'] ?? null) && $data['username'] !== $user->username);
+
         $currentPaths = collect(array_keys(self::IMAGE_FIELDS))
             ->mapWithKeys(fn(string $field): array => [$field => $user->{$field}])
             ->all();
@@ -191,6 +209,10 @@ class UserService
             return ServiceResult::error(__('public.not_found', ['attribute' => 'کاربر']));
         }
 
+        if ($credentialsChanged) {
+            $this->accessTokenService->expireAll($user);
+        }
+
         foreach ($currentPaths as $field => $currentPath) {
             if (array_key_exists($field, $data) || isset($images[$field])) {
                 $this->imageUploader->delete($currentPath);
@@ -203,6 +225,11 @@ class UserService
     public function destroy(?User $user = null): ServiceResult
     {
         $user ??= auth()->user();
+
+        if ($user->company_id !== null && $this->waybillRepository->hasIssuedBy((int)$user->company_id, (int)$user->getKey())) {
+            ServiceResult::error(__('public.user_has_issued_waybills'), Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
         $imagePaths = collect(array_keys(self::IMAGE_FIELDS))
             ->map(fn(string $field): ?string => $user->{$field})
             ->all();

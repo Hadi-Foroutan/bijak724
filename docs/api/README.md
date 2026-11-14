@@ -42,3 +42,5 @@
 | ۳۵ | پنل بیمه | [35-insurance-panel.md](35-insurance-panel.md) |
 | ۳۶ | **راهنمای تغییرات نمایندگی بیمه برای فرانت (از اینجا شروع کنید)** | [36-insurance-frontend-handoff.md](36-insurance-frontend-handoff.md) |
 | ۳۷ | اتصال نمایندهٔ بیمه به قرارداد بیمهٔ شرکت (تغییرات برای فرانت) | [37-insurance-agency-contract-connection.md](37-insurance-agency-contract-connection.md) |
+| ۳۸ | سامانه پیامک، قالب‌ها، پیامک بارنامه و ارسال گروهی به رانندگان | [38-sms-panel.md](38-sms-panel.md) |
+| ۳۹ | **راهنمای بخش پیامک برای فرانت (از اینجا شروع کنید)** | [39-sms-frontend-handoff.md](39-sms-frontend-handoff.md) |

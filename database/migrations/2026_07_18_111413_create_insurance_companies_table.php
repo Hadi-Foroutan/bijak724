@@ -24,6 +24,7 @@ return new class extends Migration {
             $table->string('national_code', 255)->nullable();
             $table->string('phone', 255)->nullable();
             $table->string('website', 255)->nullable();
+            $table->string('logo', 255)->nullable();
             $table->enum('status', StatusEnum::values())->default(StatusEnum::ACTIVE->value);
             $table->timestamps(); // created_at & updated_at
         });

@@ -6,11 +6,14 @@ namespace App\Enums;
 enum GlobalSettingKey: string
 {
     case ReportRetentionHours = 'reports.retention_hours';
+    case SmsPanelUrl = 'sms.panel_url';
+    case SiteStatus = 'site.status';
 
     public function valueType(): SettingValueType
     {
         return match ($this) {
             self::ReportRetentionHours => SettingValueType::Integer,
+            self::SmsPanelUrl, self::SiteStatus => SettingValueType::String,
         };
     }
 
@@ -18,6 +21,8 @@ enum GlobalSettingKey: string
     {
         return match ($this) {
             self::ReportRetentionHours => 8,
+            self::SmsPanelUrl => config('sms.drivers.panel.base_url'),
+            self::SiteStatus => SiteStatus::Active->value,
         };
     }
 
@@ -26,6 +31,8 @@ enum GlobalSettingKey: string
     {
         return match ($this) {
             self::ReportRetentionHours => ['integer', 'min:1', 'max:720'],
+            self::SmsPanelUrl => ['string', 'url:http,https', 'max:255'],
+            self::SiteStatus => ['string', 'in:' . implode(',', SiteStatus::values())],
         };
     }
 
@@ -33,6 +40,8 @@ enum GlobalSettingKey: string
     {
         return match ($this) {
             self::ReportRetentionHours => 'مدت نگهداری فایل گزارش‌ها (ساعت)',
+            self::SmsPanelUrl => 'آدرس سامانه پیامک',
+            self::SiteStatus => 'وضعیت سایت',
         };
     }
 }

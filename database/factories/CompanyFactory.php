@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Enums\UserStatusEnum;
 use App\Models\Company;
+use App\Services\Company\PanelCodeGenerator;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,7 +21,7 @@ class CompanyFactory extends Factory
     {
         return [
             'parent_type' => 'original',
-            'panel_code' => fake()->unique()->numerify('#####'),
+            'panel_code' => app(PanelCodeGenerator::class)->generate(),
             'organization_code' => fake()->unique()->bothify('ORG-####'),
             'name' => fake()->company(),
             'national_code' => fake()->unique()->numerify('###########'),
