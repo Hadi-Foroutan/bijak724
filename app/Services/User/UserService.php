@@ -33,12 +33,12 @@ class UserService
     ];
 
     public function __construct(
-        protected UserInterface     $userRepository,
-        protected RoleInterface     $roleRepository,
-        protected UserImageUploader $imageUploader,
-        protected UsernameGenerator $usernameGenerator,
+        protected UserInterface              $userRepository,
+        protected RoleInterface              $roleRepository,
+        protected UserImageUploader          $imageUploader,
+        protected UsernameGenerator          $usernameGenerator,
         protected WaybillRepositoryInterface $waybillRepository,
-        protected AccessTokenService $accessTokenService,
+        protected AccessTokenService         $accessTokenService,
     )
     {
     }
@@ -165,6 +165,7 @@ class UserService
         // A new username or password must not leave the old sessions usable.
         $credentialsChanged = filled($data['password'] ?? null)
             || (filled($data['username'] ?? null) && $data['username'] !== $user->username);
+        $currentToken = $this->accessTokenService->current($user);
 
         $currentPaths = collect(array_keys(self::IMAGE_FIELDS))
             ->mapWithKeys(fn(string $field): array => [$field => $user->{$field}])
@@ -210,7 +211,10 @@ class UserService
         }
 
         if ($credentialsChanged) {
-            $this->accessTokenService->expireAll($user);
+            $this->accessTokenService->expireAllExcept(
+                $user,
+                $currentToken,
+            );
         }
 
         foreach ($currentPaths as $field => $currentPath) {

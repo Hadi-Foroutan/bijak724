@@ -47,9 +47,9 @@ beforeEach(function (): void {
         );
     }
 
-    $this->withToken(
-        $this->user->createToken('company-session', ["company:{$company->id}"])->plainTextToken,
-    );
+    $currentToken = $this->user->createToken('company-session', ["company:{$company->id}"]);
+    $this->currentAccessToken = $currentToken->accessToken;
+    $this->withToken($currentToken->plainTextToken);
 });
 
 test('user updates own profile fields and profile image with the profile permission', function () {
@@ -69,8 +69,8 @@ test('user updates own profile fields and profile image with the profile permiss
         ->and($user->personnel_code)->toBe('EMP-1024')
         ->and($user->telephone)->toBe('02112345678')
         ->and($user->phone)->toBe('09121111111')
-        ->and((int)$user->min_commission_percentage)->toBe(5)
-        ->and((int)$user->max_commission_percentage)->toBe(15)
+        ->and((int) $user->min_commission_percentage)->toBe(5)
+        ->and((int) $user->max_commission_percentage)->toBe(15)
         ->and($user->address)->toBe('تهران')
         ->and($user->profile_image)->toStartWith("users/{$user->id}/profile-images/")
         ->and(Hash::check('old-password', $user->password))->toBeTrue()
@@ -87,6 +87,17 @@ test('password is changed only when provided', function () {
     $this->post('/api/user/profile', ['password' => 'new-password'], ['Accept' => 'application/json'])
         ->assertSuccessful();
     expect(Hash::check('new-password', $this->user->fresh()->password))->toBeTrue();
+});
+
+test('changing own password expires other sessions but keeps the current session', function () {
+    $otherToken = $this->user->createToken('other-session')->accessToken;
+
+    $this->post('/api/user/profile', ['password' => 'new-password'], ['Accept' => 'application/json'])
+        ->assertSuccessful();
+
+    expect($this->currentAccessToken->fresh()->expires_at)->toBeNull()
+        ->and($otherToken->fresh()->expires_at)->not->toBeNull()
+        ->and($otherToken->fresh()->expires_at->isPast())->toBeTrue();
 });
 
 test('username must be unique but may keep its own value', function () {
@@ -145,7 +156,7 @@ function profileImage(): UploadedFile
 {
     return UploadedFile::fake()->createWithContent(
         'profile.png',
-        (string)base64_decode(
+        (string) base64_decode(
             'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z1pAAAAAASUVORK5CYII=',
             true,
         ),

@@ -43,6 +43,20 @@ class AccessTokenService
         $user->tokens()->update(['expires_at' => now()->subSecond()]);
     }
 
+    /** Expire every token except the supplied current token. */
+    public function expireAllExcept(User $user, ?PersonalAccessToken $currentToken): void
+    {
+        if ($currentToken === null) {
+            $this->expireAll($user);
+
+            return;
+        }
+
+        $user->tokens()
+            ->where('id', '!=', $currentToken->getKey())
+            ->update(['expires_at' => now()->subSecond()]);
+    }
+
     public function current(User $user): ?PersonalAccessToken
     {
         $token = $user->currentAccessToken();

@@ -7,6 +7,7 @@ use App\Models\Company;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\User\UsernameGenerator;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 
 uses(LazilyRefreshDatabase::class);
@@ -167,7 +168,7 @@ test('original company sees users of all branches while a branch only sees its o
         ->assertJsonFragment(['id' => $branchUser->id])
         ->assertJsonPath(
             'data',
-            fn(array $users): bool => !in_array(
+            fn (array $users): bool => ! in_array(
                 $this->manager->id,
                 array_column($users, 'id'),
                 true,
@@ -191,12 +192,12 @@ test('company users get a generated username from the panel code and never reuse
     $second->assertJsonPath('data.username', '100011001');
     $third->assertJsonPath('data.username', '100011002');
 
-    $this->deleteJson('/api/user/users/' . $third->json('data.id'))->assertSuccessful();
+    $this->deleteJson('/api/user/users/'.$third->json('data.id'))->assertSuccessful();
 
     $create('1234567804')->assertJsonPath('data.username', '100011003');
 
     // Another company counts on its own.
-    expect(app(\App\Services\User\UsernameGenerator::class)->nextFor($this->otherCompany->id))->toBe('100021000');
+    expect(app(UsernameGenerator::class)->nextFor($this->otherCompany->id))->toBe('100021000');
 });
 
 test('company manager cannot change the username of a user', function () {
@@ -206,6 +207,20 @@ test('company manager cannot change the username of a user', function () {
         ->assertSuccessful();
 
     expect($user->fresh()->username)->toBe('fixed-username');
+});
+
+test('changing a user password expires all of that user’s sessions', function () {
+    $user = companyPanelUser($this->company, 'password-user', '1234567895', '09120000005');
+    $firstToken = $user->createToken('first-session')->accessToken;
+    $secondToken = $user->createToken('second-session')->accessToken;
+
+    $this->postJson("/api/user/users/{$user->id}", ['password' => 'new-password'])
+        ->assertSuccessful();
+
+    expect($firstToken->fresh()->expires_at)->not->toBeNull()
+        ->and($firstToken->fresh()->expires_at->isPast())->toBeTrue()
+        ->and($secondToken->fresh()->expires_at)->not->toBeNull()
+        ->and($secondToken->fresh()->expires_at->isPast())->toBeTrue();
 });
 
 test('company manager cannot delete own account', function () {
@@ -227,11 +242,10 @@ function companyForUserManagement(string $panelCode, string $nationalCode): Comp
 
 function companyPanelUser(
     Company $company,
-    string  $username,
-    string  $nationalCode,
-    string  $phone,
-): User
-{
+    string $username,
+    string $nationalCode,
+    string $phone,
+): User {
     return User::query()->forceCreate([
         'company_id' => $company->id,
         'national_code' => $nationalCode,
