@@ -25,11 +25,9 @@ class ReferralNumberService
 
     public function __construct(
         protected ReferralNumberRepositoryInterface $referralNumberRepository,
-        protected CompanyDataOwnerResolver          $companyDataOwnerResolver,
-        protected WaybillRepositoryInterface        $waybillRepository,
-    )
-    {
-    }
+        protected CompanyDataOwnerResolver $companyDataOwnerResolver,
+        protected WaybillRepositoryInterface $waybillRepository,
+    ) {}
 
     public function index(int $companyId, array $params): ServiceResult
     {
@@ -92,6 +90,7 @@ class ReferralNumberService
             $this->lockCompany($companyId);
             /** @var ReferralNumber $record */
             $record = $this->referralNumberRepository->findOrFail($companyId, $id);
+            $this->ensureNoIssuedWaybill($companyId, $record);
             $data = array_replace($record->only([
                 'title', 'serial_number', 'from_number', 'to_number', 'last_number', 'status',
             ]), $data);
@@ -109,6 +108,9 @@ class ReferralNumberService
     {
         return DB::transaction(function () use ($companyId, $id): ServiceResult {
             $this->lockCompany($companyId);
+            /** @var ReferralNumber $record */
+            $record = $this->referralNumberRepository->findOrFail($companyId, $id);
+            $this->ensureNoIssuedWaybill($companyId, $record);
 
             $this->referralNumberRepository->delete($companyId, $id);
 
@@ -141,8 +143,8 @@ class ReferralNumberService
             $next = $this->reserveNext($companyId, $waybillId)->data;
 
             $this->waybillRepository->update($companyId, $waybillId, [
-                'referral_number' => (string)$next['referral_number'],
-                'referral_serial' => (string)$next['serial_number'],
+                'referral_number' => (string) $next['referral_number'],
+                'referral_serial' => (string) $next['serial_number'],
                 'status' => WaybillStatus::Referral->value,
             ]);
 
@@ -160,7 +162,7 @@ class ReferralNumberService
 
         $next = $this->nextNumber($companyId, $record);
 
-        if ((int)$next['referral_number'] > (int)$record->to_number) {
+        if ((int) $next['referral_number'] > (int) $record->to_number) {
             return ServiceResult::error(__('public.referral_not_found'), Response::HTTP_NOT_FOUND);
         }
 
@@ -186,15 +188,14 @@ class ReferralNumberService
     }
 
     private function reserve(
-        int            $companyId,
+        int $companyId,
         ReferralNumber $record,
-        ?int           $ignoreWaybillId = null,
-    ): ServiceResult
-    {
+        ?int $ignoreWaybillId = null,
+    ): ServiceResult {
         $next = $this->nextNumber($companyId, $record);
-        $issuedNumber = (int)$next['referral_number'];
+        $issuedNumber = (int) $next['referral_number'];
 
-        if ($issuedNumber > (int)$record->to_number) {
+        if ($issuedNumber > (int) $record->to_number) {
             return ServiceResult::error(
                 __('public.referral_issuance_unavailable'),
                 Response::HTTP_UNPROCESSABLE_ENTITY,
@@ -203,8 +204,8 @@ class ReferralNumberService
 
         if ($this->waybillRepository->referralNumberExists(
             $companyId,
-            (string)$record->serial_number,
-            (string)$issuedNumber,
+            (string) $record->serial_number,
+            (string) $issuedNumber,
             $ignoreWaybillId,
         )) {
             return ServiceResult::error(
@@ -233,9 +234,9 @@ class ReferralNumberService
     /** @param array<string, mixed> $data */
     private function validateRange(array $data): void
     {
-        $from = (int)$data['from_number'];
-        $to = (int)$data['to_number'];
-        $last = $data['last_number'] === null ? null : (int)$data['last_number'];
+        $from = (int) $data['from_number'];
+        $to = (int) $data['to_number'];
+        $last = $data['last_number'] === null ? null : (int) $data['last_number'];
 
         if ($from > $to || $last !== null && ($last < $from || $last > $to)) {
             ServiceResult::error(
@@ -248,7 +249,7 @@ class ReferralNumberService
     /** @param array<string, mixed> $data */
     private function normalizeStatus(array &$data): void
     {
-        if ($data['last_number'] !== null && (int)$data['last_number'] >= (int)$data['to_number']) {
+        if ($data['last_number'] !== null && (int) $data['last_number'] >= (int) $data['to_number']) {
             $data['status'] = ReferralNumberStatus::Completed->value;
         }
 
@@ -275,22 +276,39 @@ class ReferralNumberService
             ->firstOrFail();
     }
 
+    private function ensureNoIssuedWaybill(int $companyId, ReferralNumber $record): void
+    {
+        if (! $this->waybillRepository->hasIssuedReferralNumberInRange(
+            $companyId,
+            (string) $record->serial_number,
+            (int) $record->from_number,
+            (int) $record->to_number,
+        )) {
+            return;
+        }
+
+        ServiceResult::error(
+            __('public.issued_waybill_number_range_modify_forbidden', ['attribute' => 'شماره حواله']),
+            Response::HTTP_UNPROCESSABLE_ENTITY,
+        );
+    }
+
     /** @return array<string, int|string|Carbon> */
     private function nextNumber(int $companyId, ReferralNumber $record): array
     {
         $rangeNextNumber = $record->last_number === null
-            ? (int)$record->from_number
-            : (int)$record->last_number + 1;
+            ? (int) $record->from_number
+            : (int) $record->last_number + 1;
         $highestUsedNumber = $this->waybillRepository->highestUsedReferralNumber(
             $companyId,
-            (string)$record->serial_number,
-            (int)$record->from_number,
-            (int)$record->to_number,
+            (string) $record->serial_number,
+            (int) $record->from_number,
+            (int) $record->to_number,
         );
 
         return [
-            'id' => (int)$record->id,
-            'serial_number' => (string)$record->serial_number,
+            'id' => (int) $record->id,
+            'serial_number' => (string) $record->serial_number,
             'referral_number' => max($rangeNextNumber, ($highestUsedNumber ?? 0) + 1),
             'date' => Carbon::now(),
         ];

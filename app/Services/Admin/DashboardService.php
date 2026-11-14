@@ -12,10 +12,8 @@ class DashboardService
 {
     public function __construct(
         protected AdminDashboardRepositoryInterface $dashboardRepository,
-        protected DashboardCache                    $cache,
-    )
-    {
-    }
+        protected DashboardCache $cache,
+    ) {}
 
     /** Totals of the whole system and today's numbers. */
     public function summary(): ServiceResult
@@ -25,7 +23,7 @@ class DashboardService
         return ServiceResult::success(
             $this->cache->remember(
                 ['admin', 'summary', $today->toDateString()],
-                fn(): array => $this->dashboardRepository->summary($today),
+                fn (): array => $this->dashboardRepository->summary($today),
             ),
         );
     }
@@ -36,7 +34,7 @@ class DashboardService
         return ServiceResult::success(
             $this->cache->remember(
                 ['admin', 'top-seven-companies'],
-                fn(): array => ['items' => $this->dashboardRepository->topCompanies(7)],
+                fn (): array => ['items' => $this->dashboardRepository->topCompanies(7)],
             ),
         );
     }
@@ -47,7 +45,7 @@ class DashboardService
         return ServiceResult::success(
             $this->cache->remember(
                 ['admin', 'top-companies'],
-                fn(): array => ['items' => $this->dashboardRepository->topCompanies()],
+                fn (): array => ['items' => $this->dashboardRepository->topCompanies()],
             ),
         );
     }
@@ -66,8 +64,8 @@ class DashboardService
                     return [
                         'from' => $from->format('Y-m'),
                         'to' => $to->format('Y-m'),
-                        'items' => $this->months($from, fn(CarbonImmutable $month, string $key): array => [
-                            'count' => (int)($counts[$key] ?? 0),
+                        'items' => $this->months($from, fn (CarbonImmutable $month, string $key): array => [
+                            'count' => (int) ($counts[$key] ?? 0),
                         ]),
                     ];
                 },
@@ -75,23 +73,21 @@ class DashboardService
         );
     }
 
-    /** For each of the last 12 months, the 7 companies that issued the most waybills in it. */
-    public function monthlyTopCompanies(): ServiceResult
+    /** The 7 companies that issued the most waybills in the current month. */
+    public function currentMonthTopCompanies(): ServiceResult
     {
-        [$from, $to] = $this->lastTwelveMonths();
+        $from = CarbonImmutable::today()->startOfMonth();
+        $to = $from->endOfMonth();
+        $month = $from->format('Y-m');
 
         return ServiceResult::success(
             $this->cache->remember(
-                ['admin', 'monthly-top-companies', $to->format('Y-m')],
-                function () use ($from, $to): array {
+                ['admin', 'current-month-top-companies', $month],
+                function () use ($from, $to, $month): array {
                     $companies = $this->dashboardRepository->topCompaniesByMonth($from, $to, 7);
 
                     return [
-                        'from' => $from->format('Y-m'),
-                        'to' => $to->format('Y-m'),
-                        'items' => $this->months($from, fn(CarbonImmutable $month, string $key): array => [
-                            'companies' => $companies[$key] ?? [],
-                        ]),
+                        'items' => $companies[$month] ?? [],
                     ];
                 },
             ),
@@ -109,7 +105,7 @@ class DashboardService
     /**
      * One entry per month, oldest first: `month` (`Y-m`), `label` and whatever the callback adds.
      *
-     * @param callable(CarbonImmutable, string): array<string, mixed> $details
+     * @param  callable(CarbonImmutable, string): array<string, mixed>  $details
      * @return list<array<string, mixed>>
      */
     private function months(CarbonImmutable $from, callable $details): array

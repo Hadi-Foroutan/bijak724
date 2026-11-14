@@ -39,12 +39,12 @@ interface WaybillRepositoryInterface
      * @return LazyCollection<int, Waybill>
      */
     public function issuedOnRoute(
-        int             $companyId,
-        int             $originCityCode,
-        int             $destinationCityCode,
+        int $companyId,
+        int $originCityCode,
+        int $destinationCityCode,
         CarbonInterface $from,
         CarbonInterface $to,
-        User            $viewer,
+        User $viewer,
     ): LazyCollection;
 
     /** Whether the user issued (completed or canceled) any waybill in the company's waybill table. */
@@ -55,33 +55,47 @@ interface WaybillRepositoryInterface
 
     public function hasIssuedCargoReference(int $companyId, string $column, int $referenceId): bool;
 
+    public function hasIssuedBijakNumberInRange(
+        int $companyId,
+        string $serialNumber,
+        int $fromNumber,
+        int $toNumber,
+    ): bool;
+
+    public function hasIssuedReferralNumberInRange(
+        int $companyId,
+        string $serialNumber,
+        int $fromNumber,
+        int $toNumber,
+    ): bool;
+
     public function trackingCodeExists(int $companyId, string $trackingCode): bool;
 
     public function referralNumberExists(
-        int    $companyId,
+        int $companyId,
         string $referralSerial,
         string $referralNumber,
-        ?int   $ignoreWaybillId = null,
+        ?int $ignoreWaybillId = null,
     ): bool;
 
     public function highestUsedReferralNumber(
-        int    $companyId,
+        int $companyId,
         string $referralSerial,
-        int    $fromNumber,
-        int    $toNumber,
+        int $fromNumber,
+        int $toNumber,
     ): ?int;
 
     public function bijakNumberExists(
-        int    $companyId,
+        int $companyId,
         string $serialNumber,
         string $bijakNumber,
-        ?int   $ignoreWaybillId = null,
+        ?int $ignoreWaybillId = null,
     ): bool;
 
     public function firstAvailableBijakNumber(
-        int    $companyId,
+        int $companyId,
         string $serialNumber,
-        int    $fromNumber,
-        int    $toNumber,
+        int $fromNumber,
+        int $toNumber,
     ): ?int;
 }

@@ -9,9 +9,7 @@ use Illuminate\Http\JsonResponse;
 
 class DashboardController extends Controller
 {
-    public function __construct(protected DashboardService $dashboardService)
-    {
-    }
+    public function __construct(protected DashboardService $dashboardService) {}
 
     /** تعداد کل بیجک‌ها، بیجک‌های امروز، شرکت‌های فعال امروز، تعداد شرکت‌ها و کاربران */
     public function index(): JsonResponse
@@ -37,9 +35,9 @@ class DashboardController extends Controller
         return ResponseHandler::success($this->dashboardService->monthlyWaybills()->data);
     }
 
-    /** ۷ شرکت برتر هر یک از ۱۲ ماه اخیر از نظر تعداد بارنامه‌های صادرشده */
-    public function monthlyTopCompanies(): JsonResponse
+    /** ۷ شرکت برتر ماه جاری از نظر تعداد بارنامه‌های صادرشده */
+    public function currentMonthTopCompanies(): JsonResponse
     {
-        return ResponseHandler::success($this->dashboardService->monthlyTopCompanies()->data);
+        return ResponseHandler::success($this->dashboardService->currentMonthTopCompanies()->data);
     }
 }

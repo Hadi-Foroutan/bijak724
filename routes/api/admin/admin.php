@@ -25,7 +25,7 @@ Route::prefix('dashboard')->name('dashboard.')->controller(DashboardController::
     Route::get('/', 'index')->name('index');
     //    Route::get('companies/top', 'topCompanies')->name('companies-top');
     Route::get('companies/top/seven', 'topSevenCompanies')->name('companies-top-seven');
-    Route::get('companies/top/monthly', 'monthlyTopCompanies')->name('companies-top-monthly');
+    Route::get('companies/top/monthly', 'currentMonthTopCompanies')->name('companies-top-monthly');
     Route::get('waybills/monthly', 'monthlyWaybills')->name('waybills-monthly');
 });
 
@@ -62,14 +62,14 @@ Route::prefix('insurance-agencies/{insuranceAgency}')->name('insurance-agencies.
     Route::controller(InsuranceAgencyController::class)->group(function () {
         // Companies: the connected ones, and the ones not connected yet (before the {company} route, so it is not taken as an id)
         Route::get('companies', 'companies')->name('companies.index');
-//        Route::get('companies/unconnected', 'unconnectedCompanies')->name('companies.unconnected');
+        //        Route::get('companies/unconnected', 'unconnectedCompanies')->name('companies.unconnected');
         // The contracts of one company that can be connected to the agency
         Route::get('companies/{company}/insurances', 'companyInsurances')->name('companies.insurances.index');
 
         // Contracts: connected to the agency, connect, cut off
         Route::get('insurances', 'insurances')->name('insurances.index');
-//        Route::post('insurances', 'connectInsurance')->name('insurances.store');
-//        Route::delete('insurances/{insurance}', 'disconnectInsurance')->name('insurances.destroy');
+        //        Route::post('insurances', 'connectInsurance')->name('insurances.store');
+        //        Route::delete('insurances/{insurance}', 'disconnectInsurance')->name('insurances.destroy');
     });
 });
 // InsuranceAgencyController: CRUD of the agents

@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\ReferralNumberStatus;
+use App\Enums\WaybillStatus;
 use App\Helpers\ServiceResult;
 use App\Http\Middleware\CheckPermission;
 use App\Models\Company;
@@ -52,6 +53,26 @@ test('it creates lists shows updates and deletes referral number ranges', functi
     $tableName = "company_{$this->company->id}_referral_numbers";
     expect(Schema::hasIndex($tableName, "{$tableName}_active_unique"))->toBeTrue()
         ->and(Schema::hasColumn($tableName, 'serial_number'))->toBeTrue();
+});
+
+test('a referral number range used by an issued waybill cannot be updated or deleted', function () {
+    $id = $this->getJson('/api/user/referral-numbers')->json('data.0.id');
+    $now = now();
+
+    DB::table("company_{$this->company->id}_waybills")->insert([
+        'owner_company_id' => $this->company->id,
+        'referral_serial' => '1405',
+        'referral_number' => '100000',
+        'status' => WaybillStatus::Completed->value,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    $this->patchJson("/api/user/referral-numbers/{$id}", ['title' => 'ویرایش‌نشده'])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.error.0', __('public.issued_waybill_number_range_modify_forbidden', ['attribute' => 'شماره حواله']));
+    $this->deleteJson("/api/user/referral-numbers/{$id}")
+        ->assertUnprocessable();
 });
 
 test('it allows only one active referral number range per company', function () {

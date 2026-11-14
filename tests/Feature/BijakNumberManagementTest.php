@@ -57,6 +57,26 @@ test('bijak number ranges have independent crud and inquiry endpoints', function
         ->and(Schema::hasIndex($tableName, "{$tableName}_active_unique"))->toBeTrue();
 });
 
+test('a bijak number range used by an issued waybill cannot be updated or deleted', function () {
+    $id = $this->getJson('/api/user/bijak-numbers')->json('data.0.id');
+    $now = now();
+
+    DB::table("company_{$this->company->id}_waybills")->insert([
+        'owner_company_id' => $this->company->id,
+        'serial_number' => '1405',
+        'bijak_number' => '100000',
+        'status' => WaybillStatus::Completed->value,
+        'created_at' => $now,
+        'updated_at' => $now,
+    ]);
+
+    $this->patchJson("/api/user/bijak-numbers/{$id}", ['title' => 'ویرایش‌نشده'])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.error.0', __('public.issued_waybill_number_range_modify_forbidden', ['attribute' => 'شماره بیجک']));
+    $this->deleteJson("/api/user/bijak-numbers/{$id}")
+        ->assertUnprocessable();
+});
+
 test('bijak and referral ranges store and consume numbers independently', function () {
     removeDefaultBijakNumber($this);
     removeDefaultReferralNumberForBijakTest($this);

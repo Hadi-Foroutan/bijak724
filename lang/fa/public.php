@@ -91,6 +91,7 @@ return [
     'waybill_status_canceled' => 'باطل‌شده',
     'user_has_issued_waybills' => 'این کاربر بارنامه صادر کرده است و قابل حذف نیست.',
     'issued_waybill_reference_delete_forbidden' => ':attribute به یک بارنامه صادرشده یا باطل‌شده متصل است و قابل حذف نیست.',
+    'issued_waybill_number_range_modify_forbidden' => ':attribute دارای بارنامه صادرشده یا باطل‌شده است و قابل ویرایش یا حذف نیست.',
     'parent_user_invalid' => 'کاربر بالادستی باید یکی از اعضای فعال همان شرکت باشد.',
     'transport_contract_users_invalid' => 'یک یا چند کاربر انتخاب‌شده متعلق به این شرکت نیستند.',
     'admin_company_forbidden' => 'برای کاربران ادمین و سوپر ادمین، انتخاب شرکت مجاز نیست.',
