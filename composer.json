@@ -17,7 +17,7 @@
         "laravel/reverb": "^1.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
-        "maatwebsite/excel": "4.0.6",
+        "maatwebsite/excel": "^3.1",
         "mpdf/mpdf": "*"
     },
     "require-dev": {
@@ -96,6 +96,9 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "platform": {
+            "php": "8.2.0"
         }
     },
     "minimum-stability": "stable",
