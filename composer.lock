@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bc69e7b81402b89755546fbb7a555830",
+    "content-hash": "512ae949aae4801ce125fc65e3baec9c",
     "packages": [
         {
             "name": "alireza_malekei/peykad-sms",
@@ -74,74 +74,6 @@
             },
             "time": "2026-11-09T11:35:39+00:00",
             "published-time": "2026-11-09T11:40:48+00:00"
-        },
-        {
-            "name": "beberlei/assert",
-            "version": "v3.3.4",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/beberlei/assert.git",
-                "reference": "f193f4613c7d7fbcee2c05e4daff4061d49c040e"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/beberlei/assert/zipball/f193f4613c7d7fbcee2c05e4daff4061d49c040e",
-                "reference": "f193f4613c7d7fbcee2c05e4daff4061d49c040e",
-                "shasum": ""
-            },
-            "require": {
-                "ext-ctype": "*",
-                "ext-json": "*",
-                "ext-mbstring": "*",
-                "ext-simplexml": "*",
-                "php": "^7.1 || ^8.0"
-            },
-            "require-dev": {
-                "friendsofphp/php-cs-fixer": "*",
-                "phpstan/phpstan": "*",
-                "phpunit/phpunit": ">=6.0.0",
-                "yoast/phpunit-polyfills": "^0.1.0"
-            },
-            "suggest": {
-                "ext-intl": "Needed to allow Assertion::count(), Assertion::isCountable(), Assertion::minCount(), and Assertion::maxCount() to operate on ResourceBundles"
-            },
-            "type": "library",
-            "autoload": {
-                "files": [
-                    "lib/Assert/functions.php"
-                ],
-                "psr-4": {
-                    "Assert\\": "lib/Assert"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-2-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Benjamin Eberlei",
-                    "email": "kontakt@beberlei.de",
-                    "role": "Lead Developer"
-                },
-                {
-                    "name": "Richard Quadling",
-                    "email": "rquadling@gmail.com",
-                    "role": "Collaborator"
-                }
-            ],
-            "description": "Thin assertion library for input validation in business models.",
-            "keywords": [
-                "assert",
-                "assertion",
-                "validation"
-            ],
-            "support": {
-                "issues": "https://github.com/beberlei/assert/issues",
-                "source": "https://github.com/beberlei/assert/tree/v3.3.4"
-            },
-            "time": "2026-06-10T19:47:05+00:00",
-            "published-time": "2026-06-10T19:57:42+00:00"
         },
         {
             "name": "brick/math",
@@ -1691,6 +1623,192 @@
             "published-time": "2026-08-24T09:15:56+00:00"
         },
         {
+            "name": "hekmatinasser/jalali",
+            "version": "v8.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hekmatinasser/jalali.git",
+                "reference": "e4d38a3693d6e1189a6bd0ad4ef006422b5ce0f8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hekmatinasser/jalali/zipball/e4d38a3693d6e1189a6bd0ad4ef006422b5ce0f8",
+                "reference": "e4d38a3693d6e1189a6bd0ad4ef006422b5ce0f8",
+                "shasum": ""
+            },
+            "require": {
+                "hekmatinasser/notowo": "^1.0",
+                "php": "^8.0"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^4.18|^5.20|^6.24|^7.0"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "Hekmatinasser\\Jalali\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nasser Hekmati",
+                    "email": "hekmati.nasser@gmail.com"
+                }
+            ],
+            "description": "This Package helps developers to work with Jalali Datetime class for PHP",
+            "keywords": [
+                "Jalali",
+                "date",
+                "datetime",
+                "php",
+                "shamsi"
+            ],
+            "support": {
+                "issues": "https://github.com/hekmatinasser/jalali/issues",
+                "source": "https://github.com/hekmatinasser/jalali/tree/v8.3"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/hekmatinasser",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-10-25T08:59:52+00:00",
+            "published-time": "2026-10-25T09:02:10+00:00"
+        },
+        {
+            "name": "hekmatinasser/notowo",
+            "version": "v1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hekmatinasser/notowo.git",
+                "reference": "c51ad5dcedac966dd93ce558ac7e6a84e0020d6d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hekmatinasser/notowo/zipball/c51ad5dcedac966dd93ce558ac7e6a84e0020d6d",
+                "reference": "c51ad5dcedac966dd93ce558ac7e6a84e0020d6d",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.5"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "Hekmatinasser\\Notowo\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nasser Hekmati",
+                    "email": "hekmati.nasser@gmail.com"
+                }
+            ],
+            "description": "This Package helps developers change number to word for all language on Laravel freamwork PHP",
+            "keywords": [
+                "Notowo",
+                "laravel",
+                "n2w",
+                "number",
+                "word"
+            ],
+            "support": {
+                "issues": "https://github.com/hekmatinasser/notowo/issues",
+                "source": "https://github.com/hekmatinasser/notowo/tree/v1.0.1"
+            },
+            "time": "2017-09-22T13:41:16+00:00",
+            "published-time": "2017-09-22T13:44:28+00:00"
+        },
+        {
+            "name": "hekmatinasser/verta",
+            "version": "v9.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hekmatinasser/verta.git",
+                "reference": "b31c5f84f4588b579d0aae656a407bbe537089af"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hekmatinasser/verta/zipball/b31c5f84f4588b579d0aae656a407bbe537089af",
+                "reference": "b31c5f84f4588b579d0aae656a407bbe537089af",
+                "shasum": ""
+            },
+            "require": {
+                "hekmatinasser/jalali": "^8.3",
+                "illuminate/support": ">=8.0",
+                "illuminate/validation": ">=8.0",
+                "php": "^8.0"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^6.23|^7.0|^8.0|^11.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "Verta": "Hekmatinasser\\Verta\\Verta"
+                    },
+                    "providers": [
+                        "Hekmatinasser\\Verta\\Laravel\\VertaServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/helpers.php"
+                ],
+                "psr-4": {
+                    "Hekmatinasser\\Verta\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Nasser Hekmati",
+                    "email": "hekmati.nasser@gmail.com"
+                }
+            ],
+            "description": "This Package helps developers to work with Jalali Datetime class for Laravel Framework PHP",
+            "keywords": [
+                "Jalali",
+                "Verta",
+                "date",
+                "datetime",
+                "laravel",
+                "shamsi"
+            ],
+            "support": {
+                "issues": "https://github.com/hekmatinasser/verta/issues",
+                "source": "https://github.com/hekmatinasser/verta/tree/v9.3"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/hekmatinasser",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-10-25T11:26:43+00:00",
+            "published-time": "2026-10-25T11:29:13+00:00"
+        },
+        {
             "name": "laravel/framework",
             "version": "v12.72.0",
             "source": {
@@ -3189,72 +3307,6 @@
             ],
             "time": "2026-09-29T19:21:12+00:00",
             "published-time": "2026-09-29T19:21:44+00:00"
-        },
-        {
-            "name": "morilog/jalali",
-            "version": "v3.5.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/morilog/jalali.git",
-                "reference": "40b906c405b72edd20e73797b40be1e650e872c1"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/morilog/jalali/zipball/40b906c405b72edd20e73797b40be1e650e872c1",
-                "reference": "40b906c405b72edd20e73797b40be1e650e872c1",
-                "shasum": ""
-            },
-            "require": {
-                "beberlei/assert": "^3.0",
-                "nesbot/carbon": "^1.21 || ^2.0 || ^3.0",
-                "php": "^7.1 | ^8.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": ">4.0"
-            },
-            "type": "library",
-            "autoload": {
-                "files": [
-                    "src/helpers.php"
-                ],
-                "psr-4": {
-                    "Morilog\\Jalali\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Milad Rey",
-                    "email": "miladr@gmail.com"
-                },
-                {
-                    "name": "Morteza Parvini",
-                    "email": "m.parvini@outlook.com"
-                }
-            ],
-            "description": "This Package helps developers to easily work with Jalali (Shamsi or Iranian) dates in PHP applications, based on Jalali (Shamsi) DateTime class.",
-            "keywords": [
-                "Jalali",
-                "date",
-                "datetime",
-                "laravel",
-                "morilog"
-            ],
-            "support": {
-                "issues": "https://github.com/morilog/jalali/issues",
-                "source": "https://github.com/morilog/jalali/tree/v3.5.0"
-            },
-            "funding": [
-                {
-                    "url": "https://issuehunt.io/r/morilog",
-                    "type": "issuehunt"
-                }
-            ],
-            "time": "2025-12-25T07:12:28+00:00",
-            "published-time": "2025-12-25T07:14:46+00:00"
         },
         {
             "name": "mpdf/mpdf",

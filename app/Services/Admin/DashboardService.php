@@ -78,8 +78,8 @@ class DashboardService
     /** The 7 companies that issued the most waybills in the current month. */
     public function currentMonthTopCompanies(): ServiceResult
     {
-        $from = JalaliDate::startOfMonth()->toCarbon();
-        $to = JalaliDate::endOfMonth()->toCarbon();
+        $from = JalaliDate::startOfMonth();
+        $to = JalaliDate::endOfMonth();
 
         $month = $from->format('Y-m');
 

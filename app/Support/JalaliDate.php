@@ -58,41 +58,13 @@ class JalaliDate
         return sprintf('%04d/%02d/%02d', $year, $month, $day);
     }
 
-    public static function startOfMonth(Carbon $dt = null): Jalalian
+    public static function startOfMonth(): Carbon
     {
-        $dt = $dt ?? now();
-
-        $jdt = jdate($dt);
-
-        return new Jalalian(
-            $jdt->getYear(),
-            $jdt->getMonth(),
-            1,
-            0,
-            0,
-            0,
-            $jdt->getTimezone()
-        );
+        return verta()->startMonth()->toCarbon();
     }
 
-    public static function endOfMonth(Carbon $dt = null): Jalalian
+    public static function endOfMonth(): Carbon
     {
-        $dt = $dt ?? now();
-
-        $jdt = jdate($dt);
-
-        $lastDay = $jdt->getMonth() === 12
-            ? ($jdt->isLeapYear() ? 30 : 29)
-            : ($jdt->getMonth() <= 6 ? 31 : 30);
-
-        return new Jalalian(
-            $jdt->getYear(),
-            $jdt->getMonth(),
-            $lastDay,
-            23,
-            59,
-            59,
-            $jdt->getTimezone()
-        );
+        return verta()->endMonth()->toCarbon();
     }
 }

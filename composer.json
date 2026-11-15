@@ -13,12 +13,12 @@
         "ext-zip": "*",
         "alireza_malekei/peykad-sms": "*",
         "dedoc/scramble": "^0.13.33",
+        "hekmatinasser/verta": "*",
         "laravel/framework": "^12.0",
         "laravel/reverb": "^1.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "maatwebsite/excel": "^3.1",
-        "morilog/jalali": "3.*",
         "mpdf/mpdf": "*"
     },
     "require-dev": {
