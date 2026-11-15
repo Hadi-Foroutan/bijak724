@@ -5,7 +5,9 @@ namespace App\Services\Admin;
 use App\Helpers\ServiceResult;
 use App\Interfaces\AdminDashboardRepositoryInterface;
 use App\Support\DashboardCache;
+use App\Support\JalaliDate;
 use Carbon\CarbonImmutable;
+use Morilog\Jalali\Jalalian;
 
 /** The admin dashboard: each part has its own method and its own cache entry (DASHBOARD_CACHE switches the cache). */
 class DashboardService
@@ -76,15 +78,17 @@ class DashboardService
     /** The 7 companies that issued the most waybills in the current month. */
     public function currentMonthTopCompanies(): ServiceResult
     {
-        $from = CarbonImmutable::today()->startOfMonth();
-        $to = $from->endOfMonth();
+        $from = JalaliDate::startOfMonth()->toCarbon();
+        $to = JalaliDate::endOfMonth()->toCarbon();
+
         $month = $from->format('Y-m');
 
         return ServiceResult::success(
             $this->cache->remember(
                 ['admin', 'current-month-top-companies', $month],
                 function () use ($from, $to, $month): array {
-                    $companies = $this->dashboardRepository->topCompaniesByMonth($from, $to, 7);
+                    $companies = $this->dashboardRepository
+                        ->topCompaniesByMonth($from, $to, 7);
 
                     return [
                         'items' => $companies[$month] ?? [],

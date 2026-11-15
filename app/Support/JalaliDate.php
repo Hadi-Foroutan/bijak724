@@ -3,6 +3,8 @@
 namespace App\Support;
 
 use Carbon\CarbonInterface;
+use Illuminate\Support\Carbon;
+use Morilog\Jalali\Jalalian;
 
 /** Gregorian to Jalali (Shamsi) conversion for the dates printed in Excel/PDF reports. */
 class JalaliDate
@@ -54,5 +56,43 @@ class JalaliDate
         [$year, $month, $day] = self::fromGregorian($date->year, $date->month, $date->day);
 
         return sprintf('%04d/%02d/%02d', $year, $month, $day);
+    }
+
+    public static function startOfMonth(Carbon $dt = null): Jalalian
+    {
+        $dt = $dt ?? now();
+
+        $jdt = jdate($dt);
+
+        return new Jalalian(
+            $jdt->getYear(),
+            $jdt->getMonth(),
+            1,
+            0,
+            0,
+            0,
+            $jdt->getTimezone()
+        );
+    }
+
+    public static function endOfMonth(Carbon $dt = null): Jalalian
+    {
+        $dt = $dt ?? now();
+
+        $jdt = jdate($dt);
+
+        $lastDay = $jdt->getMonth() === 12
+            ? ($jdt->isLeapYear() ? 30 : 29)
+            : ($jdt->getMonth() <= 6 ? 31 : 30);
+
+        return new Jalalian(
+            $jdt->getYear(),
+            $jdt->getMonth(),
+            $lastDay,
+            23,
+            59,
+            59,
+            $jdt->getTimezone()
+        );
     }
 }

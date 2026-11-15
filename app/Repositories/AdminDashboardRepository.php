@@ -92,21 +92,39 @@ class AdminDashboardRepository implements AdminDashboardRepositoryInterface
         return DB::query()
             ->fromSub($counts, 'issued')
             ->join('companies', 'companies.id', '=', 'issued.company_id')
-            ->selectRaw('issued.month, companies.id as company_id, companies.name, companies.organization_code, SUM(issued.waybills_count) as waybills_count')
-            ->groupBy('issued.month', 'companies.id', 'companies.name', 'companies.organization_code')
+            ->select([
+                'issued.month',
+                'companies.id as company_id',
+                'companies.name',
+                'companies.organization_code',
+            ])
+            ->selectRaw('SUM(issued.waybills_count) as waybills_count')
+            ->groupBy(
+                'issued.month',
+                'companies.id',
+                'companies.name',
+                'companies.organization_code',
+            )
             ->get()
             ->groupBy('month')
-            ->map(fn (Collection $rows): array => $rows
-                ->sortBy([['waybills_count', 'desc'], ['company_id', 'asc']])
-                ->when($limit !== null, fn (Collection $rows) => $rows->take($limit))
-                ->map(fn (object $row): array => [
+            ->map(fn (Collection $rows) => $rows
+                ->sortBy([
+                    ['waybills_count', 'desc'],
+                    ['company_id', 'asc'],
+                ])
+                ->when(
+                    $limit !== null,
+                    fn (Collection $rows) => $rows->take($limit)
+                )
+                ->map(fn (object $row) => [
                     'company_id' => (int) $row->company_id,
-                    'name' => (string) $row->name,
+                    'name' => $row->name,
                     'organization_code' => $row->organization_code,
                     'count' => (int) $row->waybills_count,
                 ])
                 ->values()
-                ->all())
+                ->all()
+            )
             ->all();
     }
 
