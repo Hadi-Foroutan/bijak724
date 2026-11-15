@@ -93,38 +93,29 @@ class AdminDashboardRepository implements AdminDashboardRepositoryInterface
             ->fromSub($counts, 'issued')
             ->join('companies', 'companies.id', '=', 'issued.company_id')
             ->select([
-                'issued.month',
                 'companies.id as company_id',
                 'companies.name',
                 'companies.organization_code',
             ])
             ->selectRaw('SUM(issued.waybills_count) as waybills_count')
             ->groupBy(
-                'issued.month',
                 'companies.id',
                 'companies.name',
                 'companies.organization_code',
             )
-            ->get()
-            ->groupBy('month')
-            ->map(fn (Collection $rows) => $rows
-                ->sortBy([
-                    ['waybills_count', 'desc'],
-                    ['company_id', 'asc'],
-                ])
-                ->when(
-                    $limit !== null,
-                    fn (Collection $rows) => $rows->take($limit)
-                )
-                ->map(fn (object $row) => [
-                    'company_id' => (int) $row->company_id,
-                    'name' => $row->name,
-                    'organization_code' => $row->organization_code,
-                    'count' => (int) $row->waybills_count,
-                ])
-                ->values()
-                ->all()
+            ->orderByDesc('waybills_count')
+            ->orderBy('companies.id')
+            ->when(
+                $limit !== null,
+                fn (QueryBuilder $query) => $query->limit($limit)
             )
+            ->get()
+            ->map(fn (object $row) => [
+                'company_id' => (int) $row->company_id,
+                'name' => $row->name,
+                'organization_code' => $row->organization_code,
+                'count' => (int) $row->waybills_count,
+            ])
             ->all();
     }
 
@@ -190,27 +181,43 @@ class AdminDashboardRepository implements AdminDashboardRepositoryInterface
      * (its branches write into it, told apart by `owner_company_id`), so the counts are read from each table and put together.
      * With a period the counts are also split by month (`month` = `Y-m` of the issue date) and only that period is read.
      */
-    private function issuedWaybillCounts(?CarbonInterface $from = null, ?CarbonInterface $to = null): ?QueryBuilder
-    {
-        $perMonth = $from !== null && $to !== null;
-
+    private function issuedWaybillCounts(
+        ?CarbonInterface $from = null,
+        ?CarbonInterface $to = null,
+        bool $groupByMonth = false,
+    ): ?QueryBuilder {
         $counts = Company::query()
             ->whereNull('parent_id')
             ->pluck('id')
-            ->map(function (int $companyId) use ($perMonth, $from, $to): ?QueryBuilder {
-                $table = $this->companyTableRegistry->tableName($companyId, 'waybills');
+            ->map(function (int $companyId) use ($from, $to, $groupByMonth): ?QueryBuilder {
+                $table = $this->companyTableRegistry->tableName(
+                    $companyId,
+                    'waybills'
+                );
 
                 if (! Schema::hasTable($table)) {
                     return null;
                 }
 
                 return DB::table($table)
-                    ->when(Schema::hasColumn($table, 'deleted_at'), fn (QueryBuilder $query) => $query->whereNull('deleted_at'))
+                    ->when(
+                        Schema::hasColumn($table, 'deleted_at'),
+                        fn (QueryBuilder $query) => $query->whereNull('deleted_at')
+                    )
                     ->where('status', WaybillStatus::Completed->value)
-                    ->when($perMonth, fn (QueryBuilder $query) => $query
-                        ->whereBetween('issued_at', [$from, $to])
-                        ->selectRaw('SUBSTR(issued_at, 1, 7) as month')
-                        ->groupBy('month'))
+                    ->when(
+                        $from !== null && $to !== null,
+                        fn (QueryBuilder $query) => $query->whereBetween(
+                            'issued_at',
+                            [$from, $to]
+                        )
+                    )
+                    ->when(
+                        $groupByMonth,
+                        fn (QueryBuilder $query) => $query
+                            ->selectRaw('SUBSTR(issued_at, 1, 7) as month')
+                            ->groupByRaw('SUBSTR(issued_at, 1, 7)')
+                    )
                     ->selectRaw('owner_company_id as company_id, COUNT(*) as waybills_count')
                     ->groupBy('owner_company_id');
             })

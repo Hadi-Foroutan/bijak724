@@ -7,6 +7,8 @@ use App\Interfaces\AdminDashboardRepositoryInterface;
 use App\Support\DashboardCache;
 use App\Support\JalaliDate;
 use Carbon\CarbonImmutable;
+use Exception;
+use Illuminate\Support\Facades\Log;
 use Morilog\Jalali\Jalalian;
 
 /** The admin dashboard: each part has its own method and its own cache entry (DASHBOARD_CACHE switches the cache). */
@@ -75,11 +77,15 @@ class DashboardService
         );
     }
 
-    /** The 7 companies that issued the most waybills in the current month. */
+    /** The 7 companies that issued the most waybills in the current month.
+     * @throws Exception
+     */
     public function currentMonthTopCompanies(): ServiceResult
     {
-        $from = JalaliDate::startOfMonth();
-        $to = JalaliDate::endOfMonth();
+        $from = JalaliDate::startOfMonth()->toCarbon();
+        $to = JalaliDate::endOfMonth()->toCarbon();
+
+        Log::info('from: ' . $from . ' to: ' . $to);
 
         $month = $from->format('Y-m');
 
@@ -91,7 +97,7 @@ class DashboardService
                         ->topCompaniesByMonth($from, $to, 7);
 
                     return [
-                        'items' => $companies[$month] ?? [],
+                        'items' => $companies,
                     ];
                 },
             ),

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\Dashboard;
 use App\Helpers\ResponseHandler;
 use App\Http\Controllers\Controller;
 use App\Services\Admin\DashboardService;
+use Exception;
 use Illuminate\Http\JsonResponse;
 
 class DashboardController extends Controller
@@ -35,7 +36,9 @@ class DashboardController extends Controller
         return ResponseHandler::success($this->dashboardService->monthlyWaybills()->data);
     }
 
-    /** ۷ شرکت برتر ماه جاری از نظر تعداد بارنامه‌های صادرشده */
+    /** ۷ شرکت برتر ماه جاری از نظر تعداد بارنامه‌های صادرشده
+     * @throws Exception
+     */
     public function currentMonthTopCompanies(): JsonResponse
     {
         return ResponseHandler::success($this->dashboardService->currentMonthTopCompanies()->data);

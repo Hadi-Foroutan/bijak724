@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use Carbon\CarbonInterface;
+use Hekmatinasser\Verta\Verta;
 use Illuminate\Support\Carbon;
 use Morilog\Jalali\Jalalian;
 
@@ -58,13 +59,13 @@ class JalaliDate
         return sprintf('%04d/%02d/%02d', $year, $month, $day);
     }
 
-    public static function startOfMonth(): Carbon
+    public static function startOfMonth(): Verta
     {
-        return verta()->startMonth()->toCarbon();
+        return verta()->startMonth();
     }
 
-    public static function endOfMonth(): Carbon
+    public static function endOfMonth(): Verta
     {
-        return verta()->endMonth()->toCarbon();
+        return verta()->endMonth();
     }
 }
