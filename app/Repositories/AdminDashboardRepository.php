@@ -63,7 +63,7 @@ class AdminDashboardRepository implements AdminDashboardRepositoryInterface
 
     public function waybillsByMonth(CarbonInterface $from, CarbonInterface $to): array
     {
-        $counts = $this->issuedWaybillCounts($from, $to);
+        $counts = $this->issuedWaybillCounts($from, $to,true);
 
         if ($counts === null) {
             return [];

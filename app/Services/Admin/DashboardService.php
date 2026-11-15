@@ -69,7 +69,7 @@ class DashboardService
                         'from' => $from->format('Y-m'),
                         'to' => $to->format('Y-m'),
                         'items' => $this->months($from, fn (CarbonImmutable $month, string $key): array => [
-                            'count' => (int) ($counts[$key] ?? 0),
+                            'count' => $counts[$key] ?? 0,
                         ]),
                     ];
                 },
