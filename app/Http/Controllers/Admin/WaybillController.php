@@ -16,9 +16,9 @@ class WaybillController extends Controller
     {
     }
 
-    public function index(IndexWaybillRequest $request): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $result = $this->waybillService->index($request->validated());
+        $result = $this->waybillService->index($request->all());
 
         return ResponseHandler::success(
             $this->resourceCollection($result->data, AdminWaybillResource::class, $request),
