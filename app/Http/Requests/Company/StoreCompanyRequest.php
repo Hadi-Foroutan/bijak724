@@ -20,7 +20,6 @@ class StoreCompanyRequest extends BaseRequest
             'max:' . config('company_uploads.image_max_size_kb', 5120),
         ];
         $imageRequired = [
-            'sometimes',
             'required',
             'image',
             'mimes:jpg,jpeg,png,webp',
