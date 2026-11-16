@@ -332,7 +332,8 @@ return [
         'license_expire_date' => 'اعتبار گواهینامه',
         'organization_code' => 'کد سازمانی',
         'parent_type' => 'شعبه',
-        'city_code' => 'کد شهر'
+        'city_code' => 'کد شهر',
+        'license_image' => 'عکس پروانه فعالیت',
     ],
 
 ];
