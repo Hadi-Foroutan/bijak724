@@ -31,7 +31,11 @@ use App\Http\Controllers\User\Waybill\WaybillController;
 use App\Enums\SmsRecipientParty;
 use Illuminate\Support\Facades\Route;
 
-// Dashboard
+/*
+|--------------------------------------------------------------------------
+| Dashboard
+|--------------------------------------------------------------------------
+*/
 Route::prefix('dashboard')->name('dashboard.')->controller(DashboardController::class)->group(function () {
     Route::get('/', 'index')->name('index');
     Route::get('waybills/daily', 'dailyWaybills')->name('waybills.daily');
@@ -40,28 +44,48 @@ Route::prefix('dashboard')->name('dashboard.')->controller(DashboardController::
     Route::get('drivers/top', 'topDrivers')->name('drivers.top');
 });
 
-// Notifications
+/*
+|--------------------------------------------------------------------------
+| Notifications
+|--------------------------------------------------------------------------
+*/
 Route::apiResource('notifications', NotificationController::class)
     ->only(['index', 'show']);
 
-// The company's own information (multipart to upload the logo and the signature, so it is POST like the other upload forms)
+/*
+|--------------------------------------------------------------------------
+| The company's own information (multipart to upload the logo and the signature, so it is POST like the other upload forms)
+|--------------------------------------------------------------------------
+*/
 Route::prefix('company')->name('company.')->controller(CompanyProfileController::class)->group(function () {
     Route::get('/', 'show')->name('show');
     Route::match(['post', 'put', 'patch'], '/', 'update')->name('update');
 });
 
-// Company Settings
+/*
+|--------------------------------------------------------------------------
+| Company Settings
+|--------------------------------------------------------------------------
+*/
 Route::prefix('settings')->name('settings.')->group(function () {
     Route::get('/', [CompanySettingController::class, 'show'])->name('show');
     Route::match(['put', 'patch'], '/', [CompanySettingController::class, 'update'])->name('update');
 });
 
-// Shared Additional Fields (six fixed fields per company: no store/destroy)
+/*
+|--------------------------------------------------------------------------
+| Shared Additional Fields (six fixed fields per company: no store/destroy)
+|--------------------------------------------------------------------------
+*/
 Route::apiResource('shared-additional-fields', SharedAdditionalFieldController::class)
     ->only(['index', 'show', 'update'])
     ->parameters(['shared-additional-fields' => 'sharedAdditionalField']);
 
-// Company Users
+/*
+|--------------------------------------------------------------------------
+| Company Users
+|--------------------------------------------------------------------------
+*/
 Route::prefix('{user}/permissions')->name('permissions.')->group(function () {
     Route::get('/', [CompanyUserController::class, 'permissions'])->name('index');
     Route::put('/', [CompanyUserController::class, 'syncPermissions'])->name('update');
@@ -73,7 +97,11 @@ Route::prefix('users')->name('users.')->group(function () {
 Route::apiResource('users', CompanyUserController::class)
     ->except(['update']);
 
-// Drivers
+/*
+|--------------------------------------------------------------------------
+| Drivers
+|--------------------------------------------------------------------------
+*/
 Route::prefix('drivers')->name('drivers.')->group(function () {
     Route::match(['get', 'post'], '/inquiry', [DriverController::class, 'inquiry'])
         ->name('inquiry');
@@ -94,33 +122,53 @@ Route::apiResource('drivers.accounts', DriverAccountController::class)
         'accounts' => 'account',
     ]);
 
-// Fleets
+/*
+|--------------------------------------------------------------------------
+| Fleets
+|--------------------------------------------------------------------------
+*/
 Route::prefix('fleets')->name('fleets.')->group(function () {
     Route::match(['get', 'post'], '/inquiry', [FleetController::class, 'inquiry'])
         ->name('inquiry');
 });
 Route::apiResource('fleets', FleetController::class);
 
-// Bijak Numbers
+/*
+|--------------------------------------------------------------------------
+| Bijak Numbers
+|--------------------------------------------------------------------------
+*/
 Route::prefix('bijak-numbers')->name('bijak-numbers.')->group(function () {
     Route::match(['get', 'post'], '/inquiry', [BijakNumberController::class, 'inquiry'])->name('inquiry');
 });
 Route::apiResource('bijak-numbers', BijakNumberController::class)
     ->parameters(['bijak-numbers' => 'bijakNumber']);
 
-// Referral Numbers
+/*
+|--------------------------------------------------------------------------
+| Referral Numbers
+|--------------------------------------------------------------------------
+*/
 Route::prefix('referral-numbers')->name('referral-numbers.')->group(function () {
     Route::post('/inquiry', [ReferralNumberController::class, 'inquiry'])->name('inquiry');
 });
 Route::apiResource('referral-numbers', ReferralNumberController::class)
     ->parameters(['referral-numbers' => 'referralNumber']);
 
-// Canceled Referrals
+/*
+|--------------------------------------------------------------------------
+| Canceled Referrals.
+|--------------------------------------------------------------------------
+*/
 Route::prefix('canceled-referrals')->name('canceled-referrals.')->group(function () {
     Route::get('/', [CanceledReferralController::class, 'index'])->name('index');
 });
 
-// Shipment Parties
+/*
+|--------------------------------------------------------------------------
+| Shipment Parties
+|--------------------------------------------------------------------------
+*/
 Route::prefix('shipment-parties')->name('shipment-parties.')->group(function () {
     Route::match(['get', 'post'], '/inquiry', [ShipmentPartyController::class, 'inquiry'])->name('inquiry');
     Route::match(['get', 'post'], '/addresses/inquiry', [ShipmentPartyAddressController::class, 'inquiry'])
@@ -141,7 +189,11 @@ Route::apiResource('shipment-parties.addresses', ShipmentPartyAddressController:
         'addresses' => 'address',
     ]);
 
-// Waybills
+/*
+|--------------------------------------------------------------------------
+| Waybills
+|--------------------------------------------------------------------------
+*/
 Route::prefix('waybills')->name('waybills.')->group(function () {
     Route::get('/options', [WaybillController::class, 'options'])->name('options');
     Route::patch('{waybill}/cancel', [WaybillController::class, 'cancel'])->name('cancel');
@@ -152,7 +204,11 @@ Route::prefix('waybills')->name('waybills.')->group(function () {
 });
 Route::apiResource('waybills', WaybillController::class);
 
-// SMS Panel
+/*
+|--------------------------------------------------------------------------
+| SMS Panel
+|--------------------------------------------------------------------------
+*/
 Route::prefix('sms-panel')->name('sms-panel.')->group(function () {
     Route::get('/', [SmsPanelController::class, 'show'])->name('show');
     Route::post('register', [SmsPanelController::class, 'register'])->name('register');
@@ -165,7 +221,11 @@ Route::prefix('sms-panel')->name('sms-panel.')->group(function () {
     });
 });
 
-// SMS Templates (one per party)
+/*
+|--------------------------------------------------------------------------
+| SMS Templates (one per party)
+|--------------------------------------------------------------------------
+*/
 Route::prefix('sms-templates')->name('sms-templates.')->controller(SmsTemplateController::class)->group(function () {
     Route::get('/', 'index')->name('index');
     Route::get('placeholders', 'placeholders')->name('placeholders');
@@ -173,11 +233,19 @@ Route::prefix('sms-templates')->name('sms-templates.')->controller(SmsTemplateCo
     Route::delete('{party}', 'destroy')->name('destroy')->whereIn('party', SmsRecipientParty::values());
 });
 
-// Product Owners
+/*
+|--------------------------------------------------------------------------
+| Product Owners
+|--------------------------------------------------------------------------
+*/
 Route::apiResource('product-owners', ProductOwnerController::class)
     ->parameters(['product-owners' => 'productOwner']);
 
-// Transport Contracts
+/*
+|--------------------------------------------------------------------------
+| Transport Contracts
+|--------------------------------------------------------------------------
+*/
 Route::prefix('transport-contracts')->name('transport-contracts.')->group(function () {
     Route::get('/options', [TransportContractController::class, 'options'])->name('options');
     Route::get('{transportContract}/users', [TransportContractController::class, 'users'])
@@ -188,18 +256,22 @@ Route::prefix('transport-contracts')->name('transport-contracts.')->group(functi
 Route::apiResource('transport-contracts', TransportContractController::class)
     ->parameters(['transport-contracts' => 'transportContract']);
 
-// ─────────────────────────────────────────────────────────────
-// Frequent reports (گزارش‌های پرکاربرد): ready-made types with fixed columns; the client sends only the type, the format
-// and the period. Separate from the report builder below.
-// ─────────────────────────────────────────────────────────────
+/*
+|--------------------------------------------------------------------------
+| Frequent reports (گزارش‌های پرکاربرد): ready-made types with fixed columns; the client sends only the type, the format
+| and the period. Separate from the report builder below.
+|--------------------------------------------------------------------------
+*/
 Route::prefix('frequent-reports')->name('frequent-reports.')->controller(FrequentReportController::class)->group(function () {
     Route::get('/', 'index')->name('index');
     Route::post('{type}/exports', 'export')->name('exports.store');
 });
 
-// ─────────────────────────────────────────────────────────────
-// Report builder (گزارش‌ساز): the user's own reports
-// ─────────────────────────────────────────────────────────────
+/*
+|--------------------------------------------------------------------------
+| Report builder (گزارش‌ساز): the user's own reports
+|--------------------------------------------------------------------------
+*/
 Route::prefix('reports')->name('reports.')->group(function () {
     Route::get('/fields', [ReportController::class, 'fields'])->name('fields');
     Route::get('{report}/waybills', [ReportController::class, 'waybills'])->name('waybills');
@@ -210,11 +282,19 @@ Route::apiResource('report-exports', ReportExportController::class)
     ->only(['index', 'show', 'destroy'])
     ->parameters(['report-exports' => 'reportExport']);
 
-// Technical managers
+/*
+|--------------------------------------------------------------------------
+| Technical managers
+|--------------------------------------------------------------------------
+*/
 Route::apiResource('technical-managers', TechnicalManagerController::class)
     ->parameters(['technical-managers' => 'technicalManager']);
 
-// Insurances
+/*
+|--------------------------------------------------------------------------
+| Insurances
+|--------------------------------------------------------------------------
+*/
 Route::prefix('insurances')->name('insurances.')->group(function () {
     Route::match(['get', 'post'], '/inquiry', [InsuranceController::class, 'inquiry'])->name('inquiry');
     Route::match(['get', 'post'], '/agency-inquiry', [InsuranceController::class, 'agencyInquiry'])->name('agency-inquiry');
@@ -223,7 +303,12 @@ Route::apiResource('insurances', InsuranceController::class);
 Route::apiResource('insurances.tariffs', InsuranceTariffController::class)
     ->parameters(['tariffs' => 'tariff']);
 
-// Cargo Groups
+
+/*
+|--------------------------------------------------------------------------
+| Cargo Groups
+|--------------------------------------------------------------------------
+*/
 Route::prefix('cargo-groups')->group(function () {
     Route::name('cargo-groups.')->group(function () {
         Route::get('/', [CargoGroupController::class, 'index'])->name('index');

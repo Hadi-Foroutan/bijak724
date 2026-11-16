@@ -22,6 +22,13 @@ class UpdateOwnCompanyRequest extends BaseRequest
             'mimes:jpg,jpeg,png,webp',
             'max:' . config('company_uploads.image_max_size_kb', 5120),
         ];
+        $imageRequired = [
+            'sometimes',
+            'required',
+            'image',
+            'mimes:jpg,jpeg,png,webp',
+            'max:' . config('company_uploads.image_max_size_kb', 5120),
+        ];
 
         return [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
@@ -60,6 +67,7 @@ class UpdateOwnCompanyRequest extends BaseRequest
             'logo' => $image,
             'remove_logo' => ['sometimes', 'boolean'],
             'signature' => $image,
+            'license_image' => $imageRequired,
             'remove_signature' => ['sometimes', 'boolean'],
         ];
     }

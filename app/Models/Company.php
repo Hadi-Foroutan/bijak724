@@ -44,6 +44,7 @@ class Company extends Model
 
         'logo',
         'signature',
+        'license_image',
         'brand',
         'description',
         'status',

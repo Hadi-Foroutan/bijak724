@@ -47,9 +47,9 @@ Route::apiResource('companies', CompanyController::class);
 /*
 |--------------------------------------------------------------------------
 | Insurers (insurance companies) and insurance agencies
+| InsuranceCompanyController: the active insurers, for the agency forms and filters
 |--------------------------------------------------------------------------
 */
-// InsuranceCompanyController: the active insurers, for the agency forms and filters
 Route::get('insurance-companies', [InsuranceCompanyController::class, 'index'])->name('insurance-companies.index');
 
 Route::prefix('insurance-agencies/{insuranceAgency}')->name('insurance-agencies.')->group(function () {
@@ -72,7 +72,12 @@ Route::prefix('insurance-agencies/{insuranceAgency}')->name('insurance-agencies.
         //        Route::delete('insurances/{insurance}', 'disconnectInsurance')->name('insurances.destroy');
     });
 });
-// InsuranceAgencyController: CRUD of the agents
+
+/*
+|--------------------------------------------------------------------------
+| InsuranceAgencyController: CRUD of the agents
+|--------------------------------------------------------------------------
+*/
 Route::apiResource('insurance-agencies', InsuranceAgencyController::class)
     ->parameters(['insurance-agencies' => 'insuranceAgency']);
 
