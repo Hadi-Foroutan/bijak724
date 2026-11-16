@@ -22,6 +22,7 @@ return new class extends Migration {
             $table->enum('parent_type', CompanyParentEnum::values())->default(CompanyParentEnum::ORIGINAL->value);
 //            $table->string('code')->unique();
             $table->string('panel_code')->unique();
+            $table->unsignedInteger('last_user_sequence')->default(999);
             $table->string('organization_code')->nullable()->unique();
             $table->string('name');
 
@@ -47,6 +48,7 @@ return new class extends Migration {
 
             $table->string('logo')->nullable();
             $table->string('signature')->nullable();
+            $table->string('license_image')->nullable();
             $table->string('brand')->nullable();
             $table->text('description')->nullable();
             $table->enum('status', StatusEnum::values())->default(StatusEnum::ACTIVE->value);

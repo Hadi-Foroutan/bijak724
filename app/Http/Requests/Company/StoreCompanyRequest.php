@@ -12,6 +12,21 @@ class StoreCompanyRequest extends BaseRequest
 {
     public function rules(): array
     {
+        $image = [
+            'sometimes',
+            'nullable',
+            'image',
+            'mimes:jpg,jpeg,png,webp',
+            'max:' . config('company_uploads.image_max_size_kb', 5120),
+        ];
+        $imageRequired = [
+            'sometimes',
+            'required',
+            'image',
+            'mimes:jpg,jpeg,png,webp',
+            'max:' . config('company_uploads.image_max_size_kb', 5120),
+        ];
+
         return [
             'parent_type' => [
                 'required',
@@ -57,7 +72,12 @@ class StoreCompanyRequest extends BaseRequest
             'fax' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
 
-            'logo' => ['nullable', 'string', 'max:255'],
+            'logo' => $image,
+            'remove_logo' => ['sometimes', 'boolean'],
+            'signature' => $image,
+            'remove_signature' => ['sometimes', 'boolean'],
+            'license_image' => $imageRequired,
+
             'brand' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
 

@@ -14,7 +14,7 @@ use Throwable;
 class CompanyProfileService
 {
     /** The image fields: each is a column of the company and the folder its files are kept in. */
-    private const IMAGE_FIELDS = ['logo', 'signature','license_image'];
+    private const IMAGE_FIELDS = ['logo', 'signature'];
 
     public function __construct(
         protected CompanyInterface     $companyRepository,
