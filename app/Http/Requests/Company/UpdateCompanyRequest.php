@@ -14,6 +14,19 @@ class UpdateCompanyRequest extends BaseRequest
     {
         /** @var Company $company */
         $company = $this->route('company');
+        $image = [
+            'sometimes',
+            'nullable',
+            'image',
+            'mimes:jpg,jpeg,png,webp',
+            'max:' . config('company_uploads.image_max_size_kb', 5120),
+        ];
+        $imageRequired = [
+            'required',
+            'image',
+            'mimes:jpg,jpeg,png,webp',
+            'max:' . config('company_uploads.image_max_size_kb', 5120),
+        ];
 
         return [
             'parent_type' => [
@@ -77,6 +90,12 @@ class UpdateCompanyRequest extends BaseRequest
             'postal_code' => ['sometimes', 'nullable', 'string', 'max:20'],
             'fax' => ['sometimes', 'nullable', 'string', 'max:255'],
             'email' => ['sometimes', 'nullable', 'email', 'max:255'],
+
+            'logo' => $image,
+            'remove_logo' => ['sometimes', 'boolean'],
+            'signature' => $image,
+            'remove_signature' => ['sometimes', 'boolean'],
+            'license_image' => $imageRequired,
 
             'brand' => ['sometimes', 'nullable', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],

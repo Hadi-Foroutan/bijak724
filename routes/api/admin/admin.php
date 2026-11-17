@@ -38,6 +38,7 @@ Route::prefix('companies')->name('companies.')->group(function () {
     // CompanyController: report and CRUD (the report comes first so `aggregate-report` is not taken as a company id)
     Route::controller(CompanyController::class)->group(function () {
         Route::get('aggregate-report', 'aggregateReport')->name('aggregate-report');
+        Route::post('/{company}', 'update')->name('update');
     });
     // CompanySupportTokenController: the admin enters a company's panel
     Route::post('{company}/login-as', [CompanySupportTokenController::class, 'store'])->name('loginAs');

@@ -8,6 +8,7 @@ use App\Interfaces\CompanyInterface;
 use App\Models\Company;
 use App\Services\Uploads\CompanyImageUploader;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use Throwable;
 
@@ -40,6 +41,7 @@ class CompanyService
 
     public function create(array $data): ServiceResult
     {
+        Log::info(json_encode($data));
         $data['status'] ??= StatusEnum::ACTIVE->value;
         $data['panel_code'] = $this->panelCodeGenerator->generate();
         $company = $this->companyRepository->create($data);
@@ -74,6 +76,7 @@ class CompanyService
 
     public function update(Company $company, array $data): ServiceResult
     {
+        Log::info(json_encode($data));
         $newPaths = [];
         $oldPaths = [];
 

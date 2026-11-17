@@ -40,6 +40,7 @@ class CompanyResource extends JsonResource
             'logo' => $this->logo,
             'logo_url' => $this->imageUrl($this->logo),
             'signature_url' => $this->imageUrl($this->signature),
+            'license_url' => $this->imageUrl($this->license_image),
             'brand' => $this->brand,
             'description' => $this->description,
             'status' => $this->status,
